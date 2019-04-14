@@ -1,0 +1,104 @@
+{
+	"metadata": {
+		"version": 4.5,
+		"type": "Object",
+		"generator": "Object3D.toJSON"
+	},
+	"geometries": [
+		{
+			"uuid": "3EF31D7B-C4DF-408E-8D9D-BB53181AA3D1",
+			"type": "CylinderBufferGeometry",
+			"radiusTop": 1,
+			"radiusBottom": 1,
+			"height": 1,
+			"radialSegments": 8,
+			"heightSegments": 1,
+			"openEnded": false,
+			"thetaStart": 0,
+			"thetaLength": 6.283185
+		}],
+	"materials": [
+		{
+			"uuid": "51B48057-B683-4584-9F63-F25C3B8E44C6",
+			"type": "MeshStandardMaterial",
+			"color": 16777215,
+			"roughness": 0.5,
+			"metalness": 0.5,
+			"emissive": 16577197,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true
+		},
+		{
+			"uuid": "3D9C7884-CAD1-41A7-BC2A-4E1D95985CF1",
+			"type": "MeshStandardMaterial",
+			"color": 7428403,
+			"roughness": 0.5,
+			"metalness": 0.5,
+			"emissive": 0,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true
+		}],
+	"object": {
+		"uuid": "889E9B9C-AC38-4EEA-AFF4-05210C18DCCD",
+		"type": "Group",
+		"name": "lamp",
+		"layers": 1,
+		"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+		"children": [
+			{
+				"uuid": "E3D901EF-B274-4DAB-8890-3340247BEB79",
+				"type": "Mesh",
+				"name": "lampshade",
+				"layers": 1,
+				"matrix": [0.6,0,0,0,0,1,0,0,0,0,0.6,0,0,2,0,1],
+				"geometry": "3EF31D7B-C4DF-408E-8D9D-BB53181AA3D1",
+				"material": "51B48057-B683-4584-9F63-F25C3B8E44C6"
+			},
+			{
+				"uuid": "2C5AAB2F-2BEE-4D40-B00D-26F78BF45CF1",
+				"type": "PointLight",
+				"name": "lamp light",
+				"layers": 1,
+				"matrix": [0.80544,0,0,0,0,0.80544,0,0,0,0,0.80544,0,0,2,0,1],
+				"color": 16766634,
+				"intensity": 0.8,
+				"distance": 0,
+				"decay": 1,
+				"shadow": {
+					"camera": {
+						"uuid": "D64995ED-4FA4-4A3B-9FCC-E1C64F1477DA",
+						"type": "PerspectiveCamera",
+						"layers": 1,
+						"fov": 90,
+						"zoom": 1,
+						"near": 0.5,
+						"far": 500,
+						"focus": 10,
+						"aspect": 1,
+						"filmGauge": 35,
+						"filmOffset": 0
+					}
+				}
+			},
+			{
+				"uuid": "53245596-C9C5-4BF4-9D48-114D2F887AA1",
+				"type": "Mesh",
+				"name": "lamp base",
+				"layers": 1,
+				"matrix": [0.5,0,0,0,0,0.3,0,0,0,0,0.5,0,0,0.15,0,1],
+				"geometry": "3EF31D7B-C4DF-408E-8D9D-BB53181AA3D1",
+				"material": "3D9C7884-CAD1-41A7-BC2A-4E1D95985CF1"
+			},
+			{
+				"uuid": "6FBBD985-387C-4804-AE8D-3E76F588A408",
+				"type": "Mesh",
+				"name": "lamp pole",
+				"layers": 1,
+				"matrix": [0.1,0,0,0,0,1.5,0,0,0,0,0.1,0,0,0.75,0,1],
+				"geometry": "3EF31D7B-C4DF-408E-8D9D-BB53181AA3D1",
+				"material": "3D9C7884-CAD1-41A7-BC2A-4E1D95985CF1"
+			}]
+	}
+}
