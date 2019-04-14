@@ -1,5 +1,5 @@
 const FOV = 75;
-const CAMERA_HEIGHT = 10;
+const CAMERA_HEIGHT = 11;
 const MOVEMENT_SPEED = 0.05;
 const MIN_Z = -497;
 
@@ -38,11 +38,12 @@ document.addEventListener('keyup', e => {
 });
 
 const scene = new THREE.Scene();
-setupRoom(scene);
+const onframe = setupRoom(scene);
 
 let lastTime;
-function animate(time) {
-  const elapsedTime = time - lastTime;
+function animate(timeStamp) {
+  const now = Date.now();
+  const elapsedTime = now - lastTime;
 
   const dx = Math.sin(camera.rotation.y);
   const dz = Math.cos(camera.rotation.y);
@@ -64,9 +65,11 @@ function animate(time) {
   }
   if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
 
+  onframe.forEach(fn => fn(elapsedTime, timeStamp));
+
   renderer.render(scene, camera);
   window.requestAnimationFrame(animate);
-  lastTime = time;
+  lastTime = now;
 }
 
 document.addEventListener('DOMContentLoaded', e => {
