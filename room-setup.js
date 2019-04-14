@@ -1,3 +1,12 @@
+function createMat(x, z) {
+  const mat = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(10, 0.4, 20),
+    new THREE.MeshStandardMaterial({color: 0xbf4d4d, roughness: 0.9, metalness: 0.5})
+  );
+  mat.position.set(x, 0, z);
+  return mat;
+}
+
 function setupRoom(scene) {
   const floor = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, 1000),
@@ -8,7 +17,7 @@ function setupRoom(scene) {
 
   const lampSphere = new THREE.Mesh(
     new THREE.SphereBufferGeometry(3),
-    new THREE.MeshPhysicalMaterial({emissive: 0xffd6aa, roughness: 0.6, metalness: 0.2})
+    new THREE.MeshStandardMaterial({emissive: 0xffd6aa, roughness: 0.6, metalness: 0.2})
   );
   lampSphere.position.set(0, 10, -450);
   scene.add(lampSphere);
@@ -23,4 +32,6 @@ function setupRoom(scene) {
   );
   frontWall.position.set(0, 50, -500);
   scene.add(frontWall);
+
+  scene.add(createMat(10, -450));
 }
