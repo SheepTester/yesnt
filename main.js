@@ -14,6 +14,7 @@ window.addEventListener('resize', e => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+	composer.setSize(window.innerWidth, window.innerHeight);
 });
 
 document.addEventListener('click', e => {
@@ -40,6 +41,23 @@ document.addEventListener('keyup', e => {
 const scene = new THREE.Scene();
 setupRoom(scene);
 
+var params = {
+	exposure: 1,
+	bloomStrength: 1.5,
+	bloomThreshold: 0,
+	bloomRadius: 0
+};
+var renderScene = new THREE.RenderPass( scene, camera );
+var bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+bloomPass.threshold = params.bloomThreshold;
+bloomPass.strength = params.bloomStrength;
+bloomPass.radius = params.bloomRadius;
+composer = new THREE.EffectComposer( renderer );
+composer.setSize( window.innerWidth, window.innerHeight );
+composer.addPass( renderScene );
+composer.addPass( bloomPass );
+
+
 let lastTime;
 function animate(time) {
   const elapsedTime = time - lastTime;
@@ -64,7 +82,8 @@ function animate(time) {
   }
   if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
 
-  renderer.render(scene, camera);
+  // renderer.render(scene, camera);
+  composer.render();
   window.requestAnimationFrame(animate);
   lastTime = time;
 }
