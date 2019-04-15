@@ -7,6 +7,12 @@ const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.inner
 camera.position.set(0, CAMERA_HEIGHT, -400);
 camera.rotation.order = 'YXZ';
 
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+let userInteracted;
+const userInteraction = new Promise(res => userInteracted = res);
+
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -18,6 +24,7 @@ window.addEventListener('resize', e => {
 
 document.addEventListener('click', e => {
   document.body.requestPointerLock();
+  userInteracted();
 });
 document.addEventListener('mousemove', e => {
   if (document.pointerLockElement) {

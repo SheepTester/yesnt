@@ -137,16 +137,27 @@ function setupRoom(scene) {
   }
 
   new THREE.ObjectLoader().load('./models/lamp.json', lampModel => {
-    const lamp = lampModel.clone();
-    lamp.position.set(50, 0, -480);
-    scene.add(lamp);
+    lampModel.scale.multiplyScalar(2);
+    const lamp1 = lampModel.clone();
+    const lampLight1 = lamp1.getObjectByName('lamp light');
+    lamp1.position.set(50, 0, -480);
+    scene.add(lamp1);
     const lamp2 = lampModel.clone();
+    const lampLight2 = lamp2.getObjectByName('lamp light');
     lamp2.position.set(-80, 0, -480);
     scene.add(lamp2);
-    console.log(lamp);
+    const lamp3 = lampModel.clone();
+    const lampLight3 = lamp3.getObjectByName('lamp light');
+    lamp3.position.set(2, 0, -480);
+    scene.add(lamp3);
+    onframe.push((elapsedTime, timeStamp) => {
+      lampLight1.intensity = Math.sin(timeStamp / 513 + 1) * 0.1 + 0.7;
+      lampLight2.intensity = Math.sin(timeStamp / 445 + 2) * 0.1 + 0.7;
+      lampLight3.intensity = Math.sin(timeStamp / 598 + 3) * 0.1 + 0.7;
+    });
   });
 
-  const {person, limbs} = createPerson(0xFFCFA6, 0x3C2017, 2.5, './textures/face-sleeping.png');
+  const {person, limbs} = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-sleeping.png');
   person.position.set(100, 0, -475);
   scene.add(person);
   person.rotation.y = Math.PI / 2;
@@ -190,7 +201,7 @@ function setupRoom(scene) {
     }
   });
 
-  const forcefulNose = createPerson(0xFFCFA6, 0x3C2017, 2.5, './textures/face-sleeping.png');
+  const forcefulNose = createPerson(0xF5E7E0, 0x7C5542, 2.5, './textures/face-sleeping.png');
   forcefulNose.person.position.set(-15, -5, -450);
   scene.add(forcefulNose.person);
   forcefulNose.limbs[2].limb.rotation.x = -Math.PI / 2 - 0.3;
@@ -204,6 +215,19 @@ function setupRoom(scene) {
     forcefulNose.limbs[0].forearm.rotation.x = -Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
     forcefulNose.limbs[1].limb.rotation.x = Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
     forcefulNose.limbs[1].forearm.rotation.x = -Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+  });
+
+  const sound = new THREE.PositionalAudio(listener);
+  new THREE.AudioLoader().load('sounds/sohum.mp3', buffer => {
+    sound.setBuffer(buffer);
+  	sound.setRefDistance(5);
+  	userInteraction.then(() => sound.play());
+  });
+  new THREE.ObjectLoader().load('./models/cassette-player.json', cassettePlayer => {
+    cassettePlayer.position.set(5, 0, -495);
+    cassettePlayer.scale.multiplyScalar(3);
+    scene.add(cassettePlayer);
+    cassettePlayer.add(sound);
   });
 
   return onframe;
