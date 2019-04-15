@@ -3,6 +3,8 @@ const CAMERA_HEIGHT = 11;
 const MOVEMENT_SPEED = 0.05;
 const MIN_Z = -497;
 
+const shaders = window.location.pathname.slice(-12) === 'shaders.html';
+
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, CAMERA_HEIGHT, -400);
 camera.rotation.order = 'YXZ';
@@ -10,17 +12,36 @@ camera.rotation.order = 'YXZ';
 const listener = new THREE.AudioListener();
 camera.add(listener);
 
-let userInteracted;
-const userInteraction = new Promise(res => userInteracted = res);
+const scene = new THREE.Scene();
+const onframe = setupRoom(scene);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
+let composer;
+if (shaders) {
+  const renderScene = new THREE.RenderPass(scene, camera);
+  const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+	bloomPass.threshold = 0;
+	bloomPass.strength = 0.5;
+	bloomPass.radius = 0;
+  composer = new THREE.EffectComposer(renderer);
+	composer.setSize(window.innerWidth, window.innerHeight);
+	composer.addPass(renderScene);
+	composer.addPass(bloomPass);
+}
+
 window.addEventListener('resize', e => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(width, height);
+  if (shaders) composer.setSize(width, height);
 });
+
+let userInteracted;
+const userInteraction = new Promise(res => userInteracted = res);
 
 document.addEventListener('click', e => {
   document.body.requestPointerLock();
@@ -43,9 +64,6 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => {
   if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = false;
 });
-
-const scene = new THREE.Scene();
-const onframe = setupRoom(scene);
 
 let lastTime;
 function animate(timeStamp) {
@@ -74,7 +92,9 @@ function animate(timeStamp) {
 
   onframe.forEach(fn => fn(elapsedTime, timeStamp));
 
-  renderer.render(scene, camera);
+  if (shaders) composer.render();
+  else renderer.render(scene, camera);
+
   window.requestAnimationFrame(animate);
   lastTime = now;
 }
