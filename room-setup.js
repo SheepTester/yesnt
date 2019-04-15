@@ -46,7 +46,7 @@ function createLimb(limbLength, skinColour, sleeveLength = 0, sleeveColour = 0xf
   };
   return obj;
 }
-function createPerson(skinColour, hairColour, hairHeight = 2.6, faceExpression = null, shirtColour = 0xeeeeee, shortsColour = 0x333333) {
+function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression = null, shirtColour = 0xeeeeee, shortsColour = 0x333333) {
   const person = new THREE.Group();
   const head = new THREE.Group();
   const face = new THREE.Mesh(
@@ -98,6 +98,10 @@ function createPerson(skinColour, hairColour, hairHeight = 2.6, faceExpression =
   return {person, limbs, head};
 }
 
+function easeOutSine(t) {
+  return Math.sin(t * Math.PI / 2);
+}
+
 function setupRoom(scene) {
   const onframe = [];
 
@@ -142,7 +146,7 @@ function setupRoom(scene) {
     console.log(lamp);
   });
 
-  const {person, limbs} = createPerson(0xFFCFA6, 0x3C2017, 2.6, './textures/face-sleeping.png');
+  const {person, limbs} = createPerson(0xFFCFA6, 0x3C2017, 2.5, './textures/face-sleeping.png');
   person.position.set(100, 0, -475);
   scene.add(person);
   person.rotation.y = Math.PI / 2;
@@ -152,6 +156,54 @@ function setupRoom(scene) {
     limbs[2].forearm.rotation.x = -0.3 + Math.sin(timeStamp / 200 - 2.5) * 0.3;
     limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 200) * 0.3 + 0.1;
     limbs[3].forearm.rotation.x = -0.3 - Math.sin(timeStamp / 200 - 2.5) * 0.3;
+  });
+
+  // is it:
+  // up 2 3 4 5 6
+  // hold 2 3 4
+  // down 2 3 4 5 6
+  // rest 2
+  // ?
+  const strawBreather = createPerson(0xFFCFA6, 0x3C2017, 2.5, './textures/face-sleeping.png');
+  strawBreather.person.position.set(-30, -5, -450);
+  scene.add(strawBreather.person);
+  strawBreather.limbs[2].limb.rotation.x = -Math.PI / 2 - 0.3;
+  strawBreather.limbs[3].limb.rotation.x = -Math.PI / 2 - 0.3;
+  strawBreather.limbs[2].forearm.rotation.x = Math.PI + 0.3;
+  strawBreather.limbs[3].forearm.rotation.x = Math.PI + 0.3;
+  strawBreather.limbs[0].forearm.rotation.z = 0.1;
+  strawBreather.limbs[1].forearm.rotation.z = -0.1;
+  onframe.push((elapsedTime, timeStamp) => {
+    const stage = timeStamp / 500 % 18;
+    if (stage < 6) {
+      strawBreather.limbs[0].limb.rotation.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
+      strawBreather.limbs[1].limb.rotation.z = -easeOutSine(stage / 6) * (Math.PI - 0.2) - 0.1;
+    } else if (stage < 10) {
+      strawBreather.limbs[0].limb.rotation.z = Math.PI - 0.1;
+      strawBreather.limbs[1].limb.rotation.z = -Math.PI + 0.1;
+    } else if (stage < 16) {
+      strawBreather.limbs[0].limb.rotation.z = (1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) + 0.1;
+      strawBreather.limbs[1].limb.rotation.z = -(1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) - 0.1;
+    } else {
+      strawBreather.limbs[0].limb.rotation.z = 0.1;
+      strawBreather.limbs[1].limb.rotation.z = -0.1;
+    }
+  });
+
+  const forcefulNose = createPerson(0xFFCFA6, 0x3C2017, 2.5, './textures/face-sleeping.png');
+  forcefulNose.person.position.set(-15, -5, -450);
+  scene.add(forcefulNose.person);
+  forcefulNose.limbs[2].limb.rotation.x = -Math.PI / 2 - 0.3;
+  forcefulNose.limbs[3].limb.rotation.x = -Math.PI / 2 - 0.3;
+  forcefulNose.limbs[2].forearm.rotation.x = Math.PI + 0.3;
+  forcefulNose.limbs[3].forearm.rotation.x = Math.PI + 0.3;
+  forcefulNose.limbs[0].limb.rotation.z = 0.1;
+  forcefulNose.limbs[1].limb.rotation.z = -0.1;
+  onframe.push((elapsedTime, timeStamp) => {
+    forcefulNose.limbs[0].limb.rotation.x = Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
+    forcefulNose.limbs[0].forearm.rotation.x = -Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+    forcefulNose.limbs[1].limb.rotation.x = Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
+    forcefulNose.limbs[1].forearm.rotation.x = -Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
   });
 
   return onframe;
