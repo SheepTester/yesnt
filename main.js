@@ -4,6 +4,7 @@ const MOVEMENT_SPEED = 0.05;
 const MIN_Z = -497;
 
 const shaders = window.location.pathname.slice(-12) === 'shaders.html';
+const params = new URL(window.location).searchParams;
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, CAMERA_HEIGHT, -400);

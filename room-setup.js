@@ -101,6 +101,20 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
 function easeOutSine(t) {
   return Math.sin(t * Math.PI / 2);
 }
+function randomSkin() {
+  // http://johnthemathguy.blogspot.com/2013/08/what-color-is-human-skin.html
+  const k = Math.random() * 6 - 3;
+  return Math.floor(224.3 + 9.6 * k) * 0x10000
+       + Math.floor(193.1 + 17.0 * k) * 0x100
+       + Math.floor(177.6 + 21.0 * k);
+}
+function randomHair() {
+  // technically skin colours, but dark brown enough
+  const k = -Math.random() * 2 - 1.6768;
+  return Math.floor(168.8 + 38.5 * k) * 0x10000
+       + Math.floor(122.5 + 32.1 * k) * 0x100
+       + Math.floor(96.7 + 26.3 * k);
+}
 
 function setupRoom(scene) {
   const onframe = [];
@@ -133,6 +147,16 @@ function setupRoom(scene) {
   for (let x = 0; x < 21; x++) {
     for (let z = 0; z < 6; z++) {
       scene.add(createMat((x - 10) * 15, -450 + z * 25));
+      if (x === 8 && z === 0) continue;
+      if (x === 9 && z === 0) continue;
+      if (Math.random() < 0.5) continue;
+      const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
+      student.person.position.set((x - 10) * 15, -5, -450 + z * 25);
+      scene.add(student.person);
+      student.limbs[2].limb.rotation.x = -Math.PI / 2 - 0.3;
+      student.limbs[3].limb.rotation.x = -Math.PI / 2 - 0.3;
+      student.limbs[2].forearm.rotation.x = Math.PI + 0.3;
+      student.limbs[3].forearm.rotation.x = Math.PI + 0.3;
     }
   }
 
@@ -221,7 +245,7 @@ function setupRoom(scene) {
   new THREE.AudioLoader().load('sounds/sohum.mp3', buffer => {
     sound.setBuffer(buffer);
   	sound.setRefDistance(5);
-  	userInteraction.then(() => sound.play());
+  	if (!params.get('shut-up')) userInteraction.then(() => sound.play());
   });
   new THREE.ObjectLoader().load('./models/cassette-player.json', cassettePlayer => {
     cassettePlayer.position.set(5, 0, -495);
