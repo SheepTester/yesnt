@@ -182,14 +182,3 @@ function loadPeople(scene, onframe) {
     });
   });
 }
-
-function createPlayerLegs() {
-  const left = createLimb(3, randomSkin(), 2, 0x333333).setPos(-1, 1, 0); // left leg
-  const right = createLimb(3, randomSkin(), 2, 0x333333).setPos(1, 1, 0); // right leg
-  kneel(left);
-  kneel(right);
-  const legs = new THREE.Group();
-  legs.add(left.limb);
-  legs.add(right.limb);
-  return legs;
-}

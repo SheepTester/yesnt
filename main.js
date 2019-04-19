@@ -19,10 +19,6 @@ const onframe = [];
 setupRoom(scene, onframe);
 loadPeople(scene, onframe);
 
-const legs = createPlayerLegs();
-legs.position.set(camera.position.x, 0, camera.position.z);
-scene.add(legs);
-
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -103,7 +99,6 @@ function animate(timeStamp) {
     if (keys.shift) {
       camera.position.y = STANDING_EYE_HEIGHT;
       moving = true;
-      scene.remove(legs);
     }
   }
 
