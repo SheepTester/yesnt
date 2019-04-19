@@ -111,7 +111,7 @@ function randomHair() {
 
 function loadPeople(scene, onframe) {
   const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-sleeping.png');
-  instructor.person.position.set(100, 0, -300);
+  instructor.person.position.set(100, 0, -475);
   scene.add(instructor.person);
   instructor.person.rotation.y = Math.PI / 2;
   const lookLight = new THREE.SpotLight(0x990000, 0.5);
@@ -120,13 +120,15 @@ function loadPeople(scene, onframe) {
   instructor.head.add(lookLight);
   lookLight.target.position.set(0, -10, -10);
   instructor.head.add(lookLight.target);
-  onframe.push((timeStamp, elapsedTime) => {
-    instructor.person.position.x -= elapsedTime / 200;
+  onframe.push(timeStamp => {
+    const pos = timeStamp / 200 % 600;
+    instructor.person.position.x = pos > 300 ? 450 - pos : pos - 150;
+    instructor.person.rotation.y = pos > 300 ? Math.PI / 2 : -Math.PI / 2;
     instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 200) * 0.3 + 0.1;
     instructor.limbs[2].forearm.rotation.x = -0.3 + Math.sin(timeStamp / 200 - 2.5) * 0.3;
     instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 200) * 0.3 + 0.1;
     instructor.limbs[3].forearm.rotation.x = -0.3 - Math.sin(timeStamp / 200 - 2.5) * 0.3;
-    instructor.head.rotation.y = Math.sin(timeStamp / 500) * Math.PI * 0.1 - Math.PI / 4;
+    instructor.head.rotation.y = Math.sin(timeStamp / 800) * Math.PI * 0.2 + Math.PI / 4 * (pos > 300 ? 1 : -1);
   });
 
   const students = [];

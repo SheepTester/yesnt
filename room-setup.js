@@ -34,7 +34,7 @@ function setupRoom(scene, onframe) {
 
   const frontWall = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, 200),
-    new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.6, metalness: 0.4})
+    new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.6, metalness: 0.1})
   );
   frontWall.position.set(0, 50, -500);
   scene.add(frontWall);
@@ -62,9 +62,9 @@ function setupRoom(scene, onframe) {
     lamp3.position.set(2, 0, -480);
     scene.add(lamp3);
     onframe.push(timeStamp => {
-      lampLight1.intensity = Math.sin(timeStamp / 513 + 1) * 0.1 + 0.7;
-      lampLight2.intensity = Math.sin(timeStamp / 445 + 2) * 0.1 + 0.7;
-      lampLight3.intensity = Math.sin(timeStamp / 598 + 3) * 0.1 + 0.7;
+      lampLight1.intensity = Math.sin(timeStamp / 513 + 1) * 0.05 + 0.3;
+      lampLight2.intensity = Math.sin(timeStamp / 445 + 2) * 0.05 + 0.3;
+      lampLight3.intensity = Math.sin(timeStamp / 598 + 3) * 0.05 + 0.3;
     });
   });
 
