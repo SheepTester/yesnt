@@ -14,7 +14,9 @@ const listener = new THREE.AudioListener();
 camera.add(listener);
 
 const scene = new THREE.Scene();
-const onframe = setupRoom(scene);
+const onframe = [];
+setupRoom(scene, onframe);
+loadPeople(scene, onframe);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
