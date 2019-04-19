@@ -68,7 +68,8 @@ document.addEventListener('keyup', e => {
   if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = false;
 });
 
-let lastTime;
+const raycaster = new THREE.Raycaster();
+let lastTime, lastSelectedMat = null;
 function animate(timeStamp) {
   const now = Date.now();
   const elapsedTime = now - lastTime;
@@ -93,7 +94,19 @@ function animate(timeStamp) {
   }
   if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
 
-  onframe.forEach(fn => fn(elapsedTime, timeStamp));
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  const selectedMat = raycaster.intersectObjects(mats)[0] || null;
+  if (selectedMat !== lastSelectedMat) {
+    if (lastSelectedMat) {
+      lastSelectedMat.object.material.emissive = new THREE.Color(0x000000);
+    }
+    lastSelectedMat = selectedMat;
+    if (selectedMat) {
+      selectedMat.object.material.emissive = new THREE.Color(0xf44336);
+    }
+  }
+
+  onframe.forEach(fn => fn(timeStamp, elapsedTime));
 
   if (shaders) composer.render();
   else renderer.render(scene, camera);

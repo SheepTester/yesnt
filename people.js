@@ -107,15 +107,22 @@ function randomHair() {
 
 function loadPeople(scene, onframe) {
   const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-sleeping.png');
-  instructor.person.position.set(100, 0, -475);
+  instructor.person.position.set(100, 0, -300);
   scene.add(instructor.person);
   instructor.person.rotation.y = Math.PI / 2;
-  onframe.push((elapsedTime, timeStamp) => {
+  const lookLight = new THREE.SpotLight(0x990000, 0.5);
+  lookLight.penumbra = 1;
+  lookLight.position.set(0, 0, -1.25);
+  instructor.head.add(lookLight);
+  lookLight.target.position.set(0, -10, -10);
+  instructor.head.add(lookLight.target);
+  onframe.push((timeStamp, elapsedTime) => {
     instructor.person.position.x -= elapsedTime / 200;
     instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 200) * 0.3 + 0.1;
     instructor.limbs[2].forearm.rotation.x = -0.3 + Math.sin(timeStamp / 200 - 2.5) * 0.3;
     instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 200) * 0.3 + 0.1;
     instructor.limbs[3].forearm.rotation.x = -0.3 - Math.sin(timeStamp / 200 - 2.5) * 0.3;
+    instructor.head.rotation.y = Math.sin(timeStamp / 500) * Math.PI * 0.1 - Math.PI / 4;
   });
 
   const students = [];
@@ -145,7 +152,7 @@ function loadPeople(scene, onframe) {
   /*
   strawBreather.limbs[0].forearm.rotation.z = 0.1;
   strawBreather.limbs[1].forearm.rotation.z = -0.1;
-  onframe.push((elapsedTime, timeStamp) => {
+  onframe.push(timeStamp => {
     const stage = timeStamp / 500 % 18;
     if (stage < 6) {
       strawBreather.limbs[0].limb.rotation.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
@@ -163,7 +170,7 @@ function loadPeople(scene, onframe) {
   });
   */
 
-  onframe.push((elapsedTime, timeStamp) => {
+  onframe.push(timeStamp => {
     students.forEach(student => {
       const pos = Math.sin(timeStamp / 250 + student.offset);
       student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
