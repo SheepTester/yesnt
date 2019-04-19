@@ -118,6 +118,7 @@ function loadPeople(scene, onframe) {
     instructor.limbs[3].forearm.rotation.x = -0.3 - Math.sin(timeStamp / 200 - 2.5) * 0.3;
   });
 
+  const students = [];
   for (let x = 0; x < 21; x++) {
     const stop = Math.random() < 0.5 ? 4 : 3;
     for (let z = 0; z < stop; z++) {
@@ -128,24 +129,20 @@ function loadPeople(scene, onframe) {
       student.limbs[3].limb.rotation.x = -Math.PI / 2 - 0.3;
       student.limbs[2].forearm.rotation.x = Math.PI + 0.3;
       student.limbs[3].forearm.rotation.x = Math.PI + 0.3;
+
+      student.limbs[0].limb.rotation.z = 0.1; // forceful nose breath
+      student.limbs[1].limb.rotation.z = -0.1;
+      student.offset = Math.random() / 2;
+      students.push(student);
     }
   }
 
-  // is it:
   // up 2 3 4 5 6
   // hold 2 3 4
   // down 2 3 4 5 6
   // rest 2
-  // ?
 
   /*
-  const strawBreather = createPerson(0xFFCFA6, 0x3C2017, 2.5, './textures/face-sleeping.png');
-  strawBreather.person.position.set(-30, -5, -450);
-  scene.add(strawBreather.person);
-  strawBreather.limbs[2].limb.rotation.x = -Math.PI / 2 - 0.3;
-  strawBreather.limbs[3].limb.rotation.x = -Math.PI / 2 - 0.3;
-  strawBreather.limbs[2].forearm.rotation.x = Math.PI + 0.3;
-  strawBreather.limbs[3].forearm.rotation.x = Math.PI + 0.3;
   strawBreather.limbs[0].forearm.rotation.z = 0.1;
   strawBreather.limbs[1].forearm.rotation.z = -0.1;
   onframe.push((elapsedTime, timeStamp) => {
@@ -164,21 +161,15 @@ function loadPeople(scene, onframe) {
       strawBreather.limbs[1].limb.rotation.z = -0.1;
     }
   });
-
-  const forcefulNose = createPerson(0xF5E7E0, 0x7C5542, 2.5, './textures/face-sleeping.png');
-  forcefulNose.person.position.set(-15, -5, -450);
-  scene.add(forcefulNose.person);
-  forcefulNose.limbs[2].limb.rotation.x = -Math.PI / 2 - 0.3;
-  forcefulNose.limbs[3].limb.rotation.x = -Math.PI / 2 - 0.3;
-  forcefulNose.limbs[2].forearm.rotation.x = Math.PI + 0.3;
-  forcefulNose.limbs[3].forearm.rotation.x = Math.PI + 0.3;
-  forcefulNose.limbs[0].limb.rotation.z = 0.1;
-  forcefulNose.limbs[1].limb.rotation.z = -0.1;
-  onframe.push((elapsedTime, timeStamp) => {
-    forcefulNose.limbs[0].limb.rotation.x = Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
-    forcefulNose.limbs[0].forearm.rotation.x = -Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
-    forcefulNose.limbs[1].limb.rotation.x = Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
-    forcefulNose.limbs[1].forearm.rotation.x = -Math.sin(timeStamp / 250) * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
-  });
   */
+
+  onframe.push((elapsedTime, timeStamp) => {
+    students.forEach(student => {
+      const pos = Math.sin(timeStamp / 250 + student.offset);
+      student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
+      student.limbs[0].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+      student.limbs[1].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
+      student.limbs[1].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+    });
+  });
 }
