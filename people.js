@@ -35,6 +35,10 @@ function createLimb(limbLength, skinColour, sleeveLength = 0, sleeveColour = 0xf
   };
   return obj;
 }
+function kneel(leg) {
+  leg.limb.rotation.x = -Math.PI / 2 - 0.3;
+  leg.forearm.rotation.x = Math.PI + 0.3;
+}
 function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression = null, shirtColour = 0xeeeeee, shortsColour = 0x333333) {
   const person = new THREE.Group();
   const head = new THREE.Group();
@@ -128,14 +132,12 @@ function loadPeople(scene, onframe) {
   const students = [];
   for (let x = 0; x < 21; x++) {
     const stop = Math.random() < 0.5 ? 4 : 3;
-    for (let z = 0; z < stop; z++) {
+    for (let z = x === 10 ? 1 : 0; z < stop; z++) {
       const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
       student.person.position.set((x - 10) * (MAT_WIDTH + MAT_SPACING), -5, -450 + z * (MAT_LENGTH + MAT_SPACING));
+      kneel(student.limbs[2]);
+      kneel(student.limbs[3]);
       scene.add(student.person);
-      student.limbs[2].limb.rotation.x = -Math.PI / 2 - 0.3;
-      student.limbs[3].limb.rotation.x = -Math.PI / 2 - 0.3;
-      student.limbs[2].forearm.rotation.x = Math.PI + 0.3;
-      student.limbs[3].forearm.rotation.x = Math.PI + 0.3;
 
       student.limbs[0].limb.rotation.z = 0.1; // forceful nose breath
       student.limbs[1].limb.rotation.z = -0.1;
@@ -179,4 +181,15 @@ function loadPeople(scene, onframe) {
       student.limbs[1].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
     });
   });
+}
+
+function createPlayerLegs() {
+  const left = createLimb(3, randomSkin(), 2, 0x333333).setPos(-1, 1, 0); // left leg
+  const right = createLimb(3, randomSkin(), 2, 0x333333).setPos(1, 1, 0); // right leg
+  kneel(left);
+  kneel(right);
+  const legs = new THREE.Group();
+  legs.add(left.limb);
+  legs.add(right.limb);
+  return legs;
 }
