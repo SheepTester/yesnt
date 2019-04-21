@@ -14,6 +14,8 @@ camera.rotation.order = 'YXZ';
 const listener = new THREE.AudioListener();
 camera.add(listener);
 
+const manager = new THREE.LoadingManager();
+
 const scene = new THREE.Scene();
 const onframe = [];
 setupRoom(scene, onframe);
@@ -117,11 +119,68 @@ document.addEventListener('keyup', e => {
   if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = false;
 });
 
+function easeOutCubic(t) {
+  t--;
+  return t * t * t + 1;
+}
+function easeInCubic(t) {
+  return t * t * t;
+}
+
 const raycaster = new THREE.Raycaster();
 let lastTime, lastSelectedMat = null, moving = false;
+let currentAnimation;
 function animate(timeStamp) {
   const now = Date.now();
   const elapsedTime = now - lastTime;
+
+  if (currentAnimation) {
+    const progress = (now - currentAnimation.start) / currentAnimation.duration;
+    if (progress > 1) {
+      let end = true;
+      switch (currentAnimation.type) {
+        case 'fade-in': {
+          renderer.domElement.style.opacity = null;
+          camera.zoom = 1;
+          camera.updateProjectionMatrix();
+          break;
+        }
+        case 'intensify': {
+          currentAnimation = {type: 'fade-in', start: Date.now(), duration: 1000};
+          end = false;
+          break;
+        }
+        case 'get-up': {
+          camera.position.y = STANDING_EYE_HEIGHT;
+          break;
+        }
+      }
+      if (end) currentAnimation = null;
+    } else {
+      switch (currentAnimation.type) {
+        case 'fade-in': {
+          const position = easeOutCubic(progress);
+          renderer.domElement.style.opacity = position;
+          camera.zoom = 2 - position;
+          camera.updateProjectionMatrix();
+          break;
+        }
+        case 'intensify': {
+          const position = easeInCubic(progress);
+          camera.filmOffset = (Math.random() - 0.5) * position * 3;
+          if (!currentAnimation.anchorY) currentAnimation.anchorY = camera.position.y;
+          camera.position.y = currentAnimation.anchorY + (Math.random() - 0.5) * position * 3;
+          camera.zoom = position + 1;
+          camera.updateProjectionMatrix();
+          break;
+        }
+        case 'get-up': {
+          camera.position.y = easeOutCubic(progress) * (STANDING_EYE_HEIGHT - SITTING_EYE_HEIGHT) + SITTING_EYE_HEIGHT;
+          break;
+        }
+      }
+    }
+  }
 
   if (moving) {
     const dx = Math.sin(camera.rotation.y);
@@ -145,10 +204,10 @@ function animate(timeStamp) {
     if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
   } else {
     if (keys.shift) {
-      camera.position.y = STANDING_EYE_HEIGHT;
       moving = true;
       scene.remove(sittingPlayer.person);
       clearInterval(codeChangeInterval);
+      currentAnimation = {type: 'get-up', start: Date.now(), duration: 200};
     }
   }
 
@@ -178,5 +237,9 @@ function animate(timeStamp) {
 document.addEventListener('DOMContentLoaded', e => {
   document.body.appendChild(renderer.domElement);
   lastTime = Date.now();
+  renderer.domElement.style.opacity = 0;
+  manager.onLoad = () => {
+    currentAnimation = {type: 'fade-in', start: Date.now(), duration: 1000};
+  };
   animate();
 });

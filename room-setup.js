@@ -1,5 +1,3 @@
-const textureLoader = new THREE.TextureLoader();
-
 const MAT_WIDTH = 10;
 const MAT_LENGTH = 20;
 const MAT_SPACING = 5;
@@ -47,7 +45,7 @@ function setupRoom(scene, onframe) {
     }
   }
 
-  new THREE.ObjectLoader().load('./models/lamp.json', lampModel => {
+  new THREE.ObjectLoader(manager).load('./models/lamp.json', lampModel => {
     lampModel.scale.multiplyScalar(2);
     const lamp1 = lampModel.clone();
     const lampLight1 = lamp1.getObjectByName('lamp light');
@@ -69,12 +67,12 @@ function setupRoom(scene, onframe) {
   });
 
   const sound = new THREE.PositionalAudio(listener);
-  new THREE.AudioLoader().load('sounds/sohum.mp3', buffer => {
+  new THREE.AudioLoader(manager).load('sounds/sohum.mp3', buffer => {
     sound.setBuffer(buffer);
   	sound.setRefDistance(5);
   	if (!params.get('shut-up')) userInteraction.then(() => sound.play());
   });
-  new THREE.ObjectLoader().load('./models/cassette-player.json', cassettePlayer => {
+  new THREE.ObjectLoader(manager).load('./models/cassette-player.json', cassettePlayer => {
     cassettePlayer.position.set(5, 0, -495);
     cassettePlayer.scale.multiplyScalar(3);
     scene.add(cassettePlayer);

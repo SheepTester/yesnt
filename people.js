@@ -39,6 +39,7 @@ function kneel(leg) {
   leg.limb.rotation.x = -Math.PI / 2 - 0.3;
   leg.forearm.rotation.x = Math.PI + 0.3;
 }
+let textureLoader;
 function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression = null, shirtColour = 0xeeeeee, shortsColour = 0x333333) {
   const person = new THREE.Group();
   const head = new THREE.Group();
@@ -134,6 +135,8 @@ function animateForcefulNose(student, timeStamp) {
 }
 
 function loadPeople(scene, onframe) {
+  textureLoader = new THREE.TextureLoader(manager);
+
   const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-sleeping.png');
   instructor.person.position.set(100, 0, -475);
   scene.add(instructor.person);
