@@ -109,6 +109,30 @@ function randomHair() {
        + Math.floor(96.7 + 26.3 * k);
 }
 
+function animateStrawBreath(student, timestamp) {
+  const stage = (timeStamp / 500 + student.offset) % 18;
+  if (stage < 6) {
+    student.limbs[0].limb.rotation.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
+    student.limbs[1].limb.rotation.z = -easeOutSine(stage / 6) * (Math.PI - 0.2) - 0.1;
+  } else if (stage < 10) {
+    student.limbs[0].limb.rotation.z = Math.PI - 0.1;
+    student.limbs[1].limb.rotation.z = -Math.PI + 0.1;
+  } else if (stage < 16) {
+    student.limbs[0].limb.rotation.z = (1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) + 0.1;
+    student.limbs[1].limb.rotation.z = -(1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) - 0.1;
+  } else {
+    student.limbs[0].limb.rotation.z = 0.1;
+    student.limbs[1].limb.rotation.z = -0.1;
+  }
+}
+function animateForcefulNose(student, timeStamp) {
+  const pos = Math.sin(timeStamp / 250 + student.offset);
+  student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
+  student.limbs[0].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+  student.limbs[1].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
+  student.limbs[1].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+}
+
 function loadPeople(scene, onframe) {
   const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-sleeping.png');
   instructor.person.position.set(100, 0, -475);
@@ -141,7 +165,8 @@ function loadPeople(scene, onframe) {
       kneel(student.limbs[3]);
       scene.add(student.person);
 
-      student.limbs[0].limb.rotation.z = 0.1; // forceful nose breath
+      // forceful nose breath prep
+      student.limbs[0].limb.rotation.z = 0.1;
       student.limbs[1].limb.rotation.z = -0.1;
       student.offset = Math.random() / 2;
       students.push(student);
@@ -154,6 +179,7 @@ function loadPeople(scene, onframe) {
   // rest 2
 
   /*
+  // straw breath prep
   strawBreather.limbs[0].forearm.rotation.z = 0.1;
   strawBreather.limbs[1].forearm.rotation.z = -0.1;
   onframe.push(timeStamp => {
@@ -175,12 +201,66 @@ function loadPeople(scene, onframe) {
   */
 
   onframe.push(timeStamp => {
+    // if (!moving) animateForcefulNose(sittingPlayer, timeStamp);
     students.forEach(student => {
-      const pos = Math.sin(timeStamp / 250 + student.offset);
-      student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
-      student.limbs[0].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
-      student.limbs[1].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
-      student.limbs[1].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+      animateForcefulNose(student, timeStamp);
     });
   });
+}
+
+function createPhone() {
+  const phone = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(0.7, 0.1, 1.3),
+    new THREE.MeshStandardMaterial({color: 0x343539, roughness: 0.9, metalness: 0.8})
+  );
+  phone.add(body);
+  const screen = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(0.6, 0.01, 1.2),
+    new THREE.MeshStandardMaterial({emissive: 0xffffff, roughness: 0.9, metalness: 0.8})
+  );
+  screen.position.y = 0.1;
+  phone.add(screen);
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 256;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  const content = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(0.6, 1.2),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true
+    })
+  );
+  content.rotation.x = -Math.PI / 2;
+  content.position.y = 0.11;
+  phone.add(content);
+  return {
+    phone,
+    canvas,
+    content,
+    update() {
+      texture.needsUpdate = true;
+    }
+  };
+}
+function createPlayerSittingPerson() {
+  const person = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5);
+  kneel(person.limbs[2]);
+  kneel(person.limbs[3]);
+  person.offset = 0;
+  // TEMP: prepare for temporary forceful nose animation
+  // person.limbs[0].limb.rotation.z = 0.1;
+  // person.limbs[1].limb.rotation.z = -0.1;
+
+  person.limbs[0].limb.rotation.x = Math.PI * 5 / 4;
+  person.limbs[0].forearm.rotation.x = Math.PI / 4;
+  person.limbs[0].forearm.rotation.z = -Math.PI * 0.2;
+  person.limbs[1].limb.rotation.x = Math.PI * 5 / 4;
+  person.limbs[1].forearm.rotation.x = Math.PI / 4;
+  person.limbs[1].forearm.rotation.z = Math.PI * 0.2;
+  person.person.remove(person.head);
+  return person;
 }

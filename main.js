@@ -19,6 +19,34 @@ const onframe = [];
 setupRoom(scene, onframe);
 loadPeople(scene, onframe);
 
+const sittingPlayer = createPlayerSittingPerson();
+sittingPlayer.person.position.set(camera.position.x, -5, camera.position.z);
+scene.add(sittingPlayer.person);
+camera.position.z -= 0.7;
+const phone = createPhone();
+phone.phone.position.set(0.4, 2.5, 0);
+phone.phone.rotation.set(Math.PI * 4 / 5, Math.PI / 8, -Math.PI * 3 / 20);
+sittingPlayer.limbs[0].forearm.add(phone.phone);
+const c = phone.canvas.getContext('2d');
+c.fillStyle = '#BE1E2D';
+c.fillRect(0, 0, 128, 30);
+c.fillStyle = 'black';
+c.fillRect(20, 50, 88, 100);
+c.font = '15px monospace';
+c.fillStyle = 'white';
+c.fillText('Gunn admin MSG', 5, 25);
+c.font = 'bold 100px monospace';
+const code = (Math.random() * 1e6 >> 0).toString().padStart(6, '0') + ' ';
+let char = code.length - 1;
+const codeChangeInterval = setInterval(() => {
+  c.fillStyle = 'black';
+  c.fillRect(20, 50, 88, 100);
+  char = (char + 1) % code.length;
+  c.fillStyle = 'white';
+  c.fillText(code[char], 20 + Math.random() * 40, 150 - Math.random() * 40);
+  phone.update();
+}, 3000);
+
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -51,9 +79,29 @@ document.addEventListener('click', e => {
   document.body.requestPointerLock();
   userInteracted();
 });
+const MAX_ROTATION = Math.PI / 2;
+let yRotation = camera.rotation.y;
 document.addEventListener('mousemove', e => {
   if (document.pointerLockElement) {
-    camera.rotation.y -= e.movementX / 700;
+    if (moving) {
+      camera.rotation.y -= e.movementX / 700;
+    } else {
+      // this is probably more complicated than it needs to be
+      const change = -e.movementX / 700;
+      yRotation += change;
+      if (yRotation > MAX_ROTATION && change > 0) {
+        camera.rotation.y = MAX_ROTATION + 1 - 1 / (1 + yRotation - MAX_ROTATION);
+      } else if (yRotation < -MAX_ROTATION && change < 0) {
+        camera.rotation.y = -MAX_ROTATION - 1 + 1 / (1 - yRotation - MAX_ROTATION);
+      } else {
+        camera.rotation.y += change;
+        if (camera.rotation.y > MAX_ROTATION) {
+          yRotation = MAX_ROTATION + 1 / (1 - camera.rotation.y + MAX_ROTATION) - 1;
+        } else if (camera.rotation.y < -MAX_ROTATION) {
+          yRotation = -MAX_ROTATION + 1 - 1 / (1 + camera.rotation.y + MAX_ROTATION);
+        } else yRotation = camera.rotation.y;
+      }
+    }
     camera.rotation.x -= e.movementY / 700;
     if (camera.rotation.x > Math.PI / 2) camera.rotation.x = Math.PI / 2;
     else if (camera.rotation.x < -Math.PI / 2) camera.rotation.x = -Math.PI / 2;
@@ -99,6 +147,8 @@ function animate(timeStamp) {
     if (keys.shift) {
       camera.position.y = STANDING_EYE_HEIGHT;
       moving = true;
+      scene.remove(sittingPlayer.person);
+      clearInterval(codeChangeInterval);
     }
   }
 
