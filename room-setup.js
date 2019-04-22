@@ -1,6 +1,7 @@
 const MAT_WIDTH = 10;
 const MAT_LENGTH = 20;
 const MAT_SPACING = 5;
+const MAT_FIRST_ROW_Z = -450;
 function createMat(x, z) {
   const mat = new THREE.Mesh(
     new THREE.BoxBufferGeometry(MAT_WIDTH, 0.4, MAT_LENGTH),
@@ -11,7 +12,7 @@ function createMat(x, z) {
 }
 
 const mats = [];
-function setupRoom(scene, onframe) {
+function setupRoom(scene, onframe,collisions) {
   const floor = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, 1000),
     new THREE.MeshStandardMaterial({color: 0xF1C38E, roughness: 0.6, metalness: 0.2})
@@ -37,32 +38,29 @@ function setupRoom(scene, onframe) {
   frontWall.position.set(0, 50, -500);
   scene.add(frontWall);
 
-  for (let x = 0; x < 21; x++) {
+  for (let x = -10; x <= 10; x++) {
     for (let z = 0; z < 6; z++) {
-      const mat = createMat((x - 10) * (MAT_WIDTH + MAT_SPACING), -450 + z * (MAT_LENGTH + MAT_SPACING));
+      const mat = createMat(x * (MAT_WIDTH + MAT_SPACING), MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING));
       scene.add(mat);
       mats.push(mat);
     }
   }
 
+  const LAMP_RADIUS = 1.5 + PLAYER_THICKNESS;
   new THREE.ObjectLoader(manager).load('./models/lamp.json', lampModel => {
     lampModel.scale.multiplyScalar(2);
-    const lamp1 = lampModel.clone();
-    const lampLight1 = lamp1.getObjectByName('lamp light');
-    lamp1.position.set(50, 0, -480);
-    scene.add(lamp1);
-    const lamp2 = lampModel.clone();
-    const lampLight2 = lamp2.getObjectByName('lamp light');
-    lamp2.position.set(-80, 0, -480);
-    scene.add(lamp2);
-    const lamp3 = lampModel.clone();
-    const lampLight3 = lamp3.getObjectByName('lamp light');
-    lamp3.position.set(2, 0, -480);
-    scene.add(lamp3);
+    const lampLights = [[50, -480], [-80, -480], [2, -480]].map(([x, z]) => {
+      const lamp = lampModel.clone();
+      const lampLight = lamp.getObjectByName('lamp light');
+      lamp.position.set(x, 0, z);
+      collisions.push([x - LAMP_RADIUS, x + LAMP_RADIUS, z - LAMP_RADIUS, z + LAMP_RADIUS]);
+      scene.add(lamp);
+      return lampLight;
+    });
     onframe.push(timeStamp => {
-      lampLight1.intensity = Math.sin(timeStamp / 513 + 1) * 0.05 + 0.3;
-      lampLight2.intensity = Math.sin(timeStamp / 445 + 2) * 0.05 + 0.3;
-      lampLight3.intensity = Math.sin(timeStamp / 598 + 3) * 0.05 + 0.3;
+      lampLights[0].intensity = Math.sin(timeStamp / 513 + 1) * 0.05 + 0.3;
+      lampLights[1].intensity = Math.sin(timeStamp / 445 + 2) * 0.05 + 0.3;
+      lampLights[2].intensity = Math.sin(timeStamp / 598 + 3) * 0.05 + 0.3;
     });
   });
 
@@ -77,5 +75,6 @@ function setupRoom(scene, onframe) {
     cassettePlayer.scale.multiplyScalar(3);
     scene.add(cassettePlayer);
     cassettePlayer.add(sound);
+    collisions.push([5 - 4.5 - PLAYER_THICKNESS, 5 + 4.5 + PLAYER_THICKNESS, -495 - 1.5 - PLAYER_THICKNESS, -495 + 1.5 + PLAYER_THICKNESS]);
   });
 }

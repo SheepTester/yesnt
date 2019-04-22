@@ -2,7 +2,12 @@ const FOV = 75;
 const SITTING_EYE_HEIGHT = 6;
 const STANDING_EYE_HEIGHT = 11;
 const MOVEMENT_SPEED = 0.05;
-const MIN_Z = -497;
+const PLAYER_THICKNESS = 1;
+const MIN_Z = -500 + PLAYER_THICKNESS;
+const STUDENT_X_RADIUS = 2.5 + PLAYER_THICKNESS;
+const STUDENT_BACK_SIZE = 1.75 + PLAYER_THICKNESS;
+const STUDENT_FRONT_SIZE = 2.75 + PLAYER_THICKNESS;
+const INSTRUCTOR_RUN_SPEED = 0.04;
 
 const shaders = window.location.pathname.slice(-12) === 'shaders.html';
 const params = new URL(window.location).searchParams;
@@ -10,10 +15,13 @@ const params = new URL(window.location).searchParams;
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
 function start() {
-  camera.position.set(0, SITTING_EYE_HEIGHT, -450.7);
+  camera.position.set(0, SITTING_EYE_HEIGHT, MAT_FIRST_ROW_Z - 0.7);
   camera.rotation.set(0, 0, 0);
-  instructor.moving = true;
+  instructor.moving = 'watch';
   instructor.head.rotation.set(0, 0, 0);
+  instructor.person.position.z = -475;
+  instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI;
+  instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = 0;
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
   moving = false;
@@ -26,11 +34,12 @@ const manager = new THREE.LoadingManager();
 
 const scene = new THREE.Scene();
 const onframe = [];
-setupRoom(scene, onframe);
-loadPeople(scene, onframe);
+const collisionBoxes = [];
+setupRoom(scene, onframe, collisionBoxes);
+const {studentMap, instructor} = loadPeople(scene, onframe);
 
 const sittingPlayer = createPlayerSittingPerson();
-sittingPlayer.person.position.set(camera.position.x, -5, -450);
+sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
 const phone = createPhone();
 phone.phone.position.set(0.4, 2.5, 0);
 phone.phone.rotation.set(Math.PI * 4 / 5, Math.PI / 8, -Math.PI * 3 / 20);
@@ -46,7 +55,7 @@ c.fillText('Gunn admin MSG', 5, 25);
 c.font = 'bold 100px monospace';
 const code = (Math.random() * 1e6 >> 0).toString().padStart(6, '0') + ' ';
 let char = code.length - 1;
-const codeChangeInterval = setInterval(() => {
+const codeChangeInterval = setInterval(() => { // don't clear! that way it can continue when you die
   c.fillStyle = 'black';
   c.fillRect(20, 50, 88, 100);
   char = (char + 1) % code.length;
@@ -212,31 +221,81 @@ function animate(timeStamp) {
   }
 
   if (moving) {
-    const dx = Math.sin(camera.rotation.y);
-    const dz = Math.cos(camera.rotation.y);
+    const sin = Math.sin(camera.rotation.y);
+    const cos = Math.cos(camera.rotation.y);
+    let dx = 0, dz = 0;
     if (keys.w) {
-      camera.position.x -= dx * MOVEMENT_SPEED * elapsedTime;
-      camera.position.z -= dz * MOVEMENT_SPEED * elapsedTime;
+      dx -= sin * MOVEMENT_SPEED * elapsedTime;
+      dz -= cos * MOVEMENT_SPEED * elapsedTime;
     }
     if (keys.s) {
-      camera.position.x += dx * MOVEMENT_SPEED * elapsedTime;
-      camera.position.z += dz * MOVEMENT_SPEED * elapsedTime;
+      dx += sin * MOVEMENT_SPEED * elapsedTime;
+      dz += cos * MOVEMENT_SPEED * elapsedTime;
     }
     if (keys.a) {
-      camera.position.x -= dz * MOVEMENT_SPEED * elapsedTime;
-      camera.position.z += dx * MOVEMENT_SPEED * elapsedTime;
+      dx -= cos * MOVEMENT_SPEED * elapsedTime;
+      dz += sin * MOVEMENT_SPEED * elapsedTime;
     }
     if (keys.d) {
-      camera.position.x += dz * MOVEMENT_SPEED * elapsedTime;
-      camera.position.z -= dx * MOVEMENT_SPEED * elapsedTime;
+      dx += cos * MOVEMENT_SPEED * elapsedTime;
+      dz -= sin * MOVEMENT_SPEED * elapsedTime;
     }
+
+    const matX = Math.round(camera.position.x / (MAT_WIDTH + MAT_SPACING));
+    const matZ = Math.round((camera.position.z - MAT_FIRST_ROW_Z) / (MAT_LENGTH + MAT_SPACING));
+    const studentX = matX * (MAT_WIDTH + MAT_SPACING);
+    const studentZ = matZ * (MAT_LENGTH + MAT_SPACING) + MAT_FIRST_ROW_Z;
+    const rects = [...collisionBoxes];
+    if (studentMap[`${matX},${matZ}`]) {
+      rects.push([
+        studentX - STUDENT_X_RADIUS,
+        studentX + STUDENT_X_RADIUS,
+        studentZ - STUDENT_FRONT_SIZE,
+        studentZ + STUDENT_BACK_SIZE
+      ]);
+    }
+
+    camera.position.x += dx;
+    rects.forEach(([minX, maxX, minZ, maxZ]) => {
+      if (camera.position.z > minZ && camera.position.z < maxZ) {
+        if (camera.position.x > minX && camera.position.x < maxX) {
+          if (dx > 0) camera.position.x = minX;
+          else camera.position.x = maxX;
+        }
+      }
+    });
+
+    camera.position.z += dz;
     if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
+    rects.forEach(([minX, maxX, minZ, maxZ]) => {
+      if (camera.position.x > minX && camera.position.x < maxX) {
+        if (camera.position.z > minZ && camera.position.z < maxZ) {
+          if (dz > 0) camera.position.z = minZ;
+          else camera.position.z = maxZ;
+        }
+      }
+    });
+
+    const angle = Math.atan2(
+      instructor.person.position.x - camera.position.x,
+      instructor.person.position.z - camera.position.z
+    );
+    instructor.person.rotation.y = angle;
+    instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+
+    if (camera.position.distanceToSquared(instructor.person.position) < 144) {
+      caught();
+    }
   } else if (moving !== null) {
     if (keys.shift) {
       moving = true;
       scene.remove(sittingPlayer.person);
-      clearInterval(codeChangeInterval);
       animations.push({type: 'get-up', start: Date.now(), duration: 200});
+      instructor.moving = 'chase';
+      instructor.head.rotation.y = 0;
+      instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
+      instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
     }
     if (camera.rotation.x <= -0.4) {
       const instructorDirection = instructor.head.getWorldDirection(new THREE.Vector3()).setY(0);

@@ -132,12 +132,10 @@ function animateForcefulNose(student, timeStamp) {
   student.limbs[1].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
 }
 
-let instructor;
 function loadPeople(scene, onframe) {
   textureLoader = new THREE.TextureLoader(manager);
 
-  instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-creepy.png');
-  instructor.person.position.set(100, 0, -475);
+  const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-creepy.png');
   scene.add(instructor.person);
   instructor.person.rotation.y = Math.PI / 2;
   const lookLight = new THREE.SpotLight(0x990000, 0.5);
@@ -148,22 +146,30 @@ function loadPeople(scene, onframe) {
   instructor.head.add(lookLight.target);
   onframe.push(timeStamp => {
     if (!instructor.moving) return;
-    const pos = timeStamp / 200 % 600;
-    instructor.person.position.x = pos > 300 ? 450 - pos : pos - 150;
-    instructor.person.rotation.y = pos > 300 ? Math.PI / 2 : -Math.PI / 2;
-    instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 200) * 0.3 + 0.1;
-    instructor.limbs[2].forearm.rotation.x = -0.3 + Math.sin(timeStamp / 200 - 2.5) * 0.3;
-    instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 200) * 0.3 + 0.1;
-    instructor.limbs[3].forearm.rotation.x = -0.3 - Math.sin(timeStamp / 200 - 2.5) * 0.3;
-    instructor.head.rotation.y = Math.sin(timeStamp / 800) * Math.PI * 0.2 + Math.PI / 4 * (pos > 300 ? 1 : -1);
+    if (instructor.moving === 'watch') {
+      const pos = timeStamp / 200 % 600;
+      instructor.person.position.x = pos > 300 ? 450 - pos : pos - 150;
+      instructor.person.rotation.y = pos > 300 ? Math.PI / 2 : -Math.PI / 2;
+      instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 200) * 0.3 + 0.1;
+      instructor.limbs[2].forearm.rotation.x = -0.3 + Math.sin(timeStamp / 200 - 2.5) * 0.3;
+      instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 200) * 0.3 + 0.1;
+      instructor.limbs[3].forearm.rotation.x = -0.3 - Math.sin(timeStamp / 200 - 2.5) * 0.3;
+      instructor.head.rotation.y = Math.sin(timeStamp / 800) * Math.PI * 0.2 + Math.PI / 4 * (pos > 300 ? 1 : -1);
+    } else {
+      instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 100) * 0.6 + 0.1;
+      instructor.limbs[2].forearm.rotation.x = Math.sin(timeStamp / 100 - 2.1) * 0.6 - 0.6;
+      instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 100) * 0.6 + 0.1;
+      instructor.limbs[3].forearm.rotation.x = -Math.sin(timeStamp / 100 - 2.1) * 0.6 - 0.6;
+    }
   });
 
+  const studentMap = {};
   const students = [];
-  for (let x = 0; x < 21; x++) {
+  for (let x = -10; x <= 10; x++) {
     const stop = Math.random() < 0.5 ? 4 : 3;
-    for (let z = x === 10 ? 1 : 0; z < stop; z++) {
+    for (let z = x === 0 ? 1 : 0; z < stop; z++) {
       const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
-      student.person.position.set((x - 10) * (MAT_WIDTH + MAT_SPACING), -5, -450 + z * (MAT_LENGTH + MAT_SPACING));
+      student.person.position.set(x * (MAT_WIDTH + MAT_SPACING), -5, MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING));
       kneel(student.limbs[2]);
       kneel(student.limbs[3]);
       scene.add(student.person);
@@ -173,6 +179,7 @@ function loadPeople(scene, onframe) {
       student.limbs[1].limb.rotation.z = -0.1;
       student.offset = Math.random() / 2;
       students.push(student);
+      studentMap[`${x},${z}`] = true;
     }
   }
 
@@ -209,6 +216,8 @@ function loadPeople(scene, onframe) {
       animateForcefulNose(student, timeStamp);
     });
   });
+
+  return {studentMap, instructor};
 }
 
 function createPhone() {
