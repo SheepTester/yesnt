@@ -8,8 +8,16 @@ const shaders = window.location.pathname.slice(-12) === 'shaders.html';
 const params = new URL(window.location).searchParams;
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, SITTING_EYE_HEIGHT, -450);
 camera.rotation.order = 'YXZ';
+function start() {
+  camera.position.set(0, SITTING_EYE_HEIGHT, -450.7);
+  camera.rotation.set(0, 0, 0);
+  instructor.moving = true;
+  instructor.head.rotation.set(0, 0, 0);
+  scene.add(sittingPlayer.person);
+  animations.push({type: 'start', start: Date.now(), duration: 1000});
+  moving = false;
+}
 
 const listener = new THREE.AudioListener();
 camera.add(listener);
@@ -22,9 +30,7 @@ setupRoom(scene, onframe);
 loadPeople(scene, onframe);
 
 const sittingPlayer = createPlayerSittingPerson();
-sittingPlayer.person.position.set(camera.position.x, -5, camera.position.z);
-scene.add(sittingPlayer.person);
-camera.position.z -= 0.7;
+sittingPlayer.person.position.set(camera.position.x, -5, -450);
 const phone = createPhone();
 phone.phone.position.set(0.4, 2.5, 0);
 phone.phone.rotation.set(Math.PI * 4 / 5, Math.PI / 8, -Math.PI * 3 / 20);
@@ -87,7 +93,7 @@ document.addEventListener('mousemove', e => {
   if (document.pointerLockElement) {
     if (moving) {
       camera.rotation.y -= e.movementX / 700;
-    } else {
+    } else if (moving !== null) {
       // this is probably more complicated than it needs to be
       const change = -e.movementX / 700;
       yRotation += change;
@@ -104,9 +110,11 @@ document.addEventListener('mousemove', e => {
         } else yRotation = camera.rotation.y;
       }
     }
-    camera.rotation.x -= e.movementY / 700;
-    if (camera.rotation.x > Math.PI / 2) camera.rotation.x = Math.PI / 2;
-    else if (camera.rotation.x < -Math.PI / 2) camera.rotation.x = -Math.PI / 2;
+    if (moving !== null) {
+      camera.rotation.x -= e.movementY / 700;
+      if (camera.rotation.x > Math.PI / 2) camera.rotation.x = Math.PI / 2;
+      else if (camera.rotation.x < -Math.PI / 2) camera.rotation.x = -Math.PI / 2;
+    }
   }
 });
 
@@ -127,27 +135,44 @@ function easeInCubic(t) {
   return t * t * t;
 }
 
+function caught() {
+  const headPos = instructor.head.getWorldPosition(new THREE.Vector3());
+  camera.lookAt(headPos);
+  instructor.head.lookAt(camera.position);
+  instructor.head.rotation.y += Math.PI;
+  instructor.moving = false;
+  moving = null;
+  document.body.style.backgroundColor = 'red';
+  animations.push({
+    type: 'intensify',
+    start: Date.now(),
+    duration: 2000,
+    zoomIntensity: camera.position.distanceTo(headPos) / 20,
+    anchorY: camera.position.y
+  });
+}
+
 const raycaster = new THREE.Raycaster();
-let lastTime, lastSelectedMat = null, moving = false;
-let currentAnimation;
+let lastTime, moving;
+const animations = [];
 function animate(timeStamp) {
   const now = Date.now();
   const elapsedTime = now - lastTime;
 
-  if (currentAnimation) {
-    const progress = (now - currentAnimation.start) / currentAnimation.duration;
+  for (let i = 0; i < animations.length; i++) {
+    const animation = animations[i];
+    const progress = (now - animation.start) / animation.duration;
     if (progress > 1) {
-      let end = true;
-      switch (currentAnimation.type) {
-        case 'fade-in': {
+      switch (animation.type) {
+        case 'start': {
           renderer.domElement.style.opacity = null;
           camera.zoom = 1;
           camera.updateProjectionMatrix();
           break;
         }
         case 'intensify': {
-          currentAnimation = {type: 'fade-in', start: Date.now(), duration: 1000};
-          end = false;
+          start();
+          document.body.style.backgroundColor = null;
           break;
         }
         case 'get-up': {
@@ -155,10 +180,10 @@ function animate(timeStamp) {
           break;
         }
       }
-      if (end) currentAnimation = null;
+      animations.splice(i--, 1);
     } else {
-      switch (currentAnimation.type) {
-        case 'fade-in': {
+      switch (animation.type) {
+        case 'start': {
           const position = easeOutCubic(progress);
           renderer.domElement.style.opacity = position;
           camera.zoom = 2 - position;
@@ -168,10 +193,14 @@ function animate(timeStamp) {
         case 'intensify': {
           const position = easeInCubic(progress);
           camera.filmOffset = (Math.random() - 0.5) * position * 3;
-          if (!currentAnimation.anchorY) currentAnimation.anchorY = camera.position.y;
-          camera.position.y = currentAnimation.anchorY + (Math.random() - 0.5) * position * 3;
-          camera.zoom = position + 1;
+          camera.position.y = animation.anchorY + (Math.random() - 0.5) * position * 3;
+          if (progress > 0.7) {
+            camera.zoom = animation.zoomIntensity + 1;
+          } else {
+            camera.zoom = easeInCubic(progress / 0.7) * animation.zoomIntensity + 1;
+          }
           camera.updateProjectionMatrix();
+          renderer.domElement.style.opacity = 1 - position * 0.5;
           break;
         }
         case 'get-up': {
@@ -202,28 +231,21 @@ function animate(timeStamp) {
       camera.position.z -= dx * MOVEMENT_SPEED * elapsedTime;
     }
     if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
-  } else {
+  } else if (moving !== null) {
     if (keys.shift) {
       moving = true;
       scene.remove(sittingPlayer.person);
       clearInterval(codeChangeInterval);
-      currentAnimation = {type: 'get-up', start: Date.now(), duration: 200};
+      animations.push({type: 'get-up', start: Date.now(), duration: 200});
+    }
+    if (camera.rotation.x <= -0.4) {
+      const instructorDirection = instructor.head.getWorldDirection(new THREE.Vector3()).setY(0);
+      const playerDirection = instructor.person.position.clone().sub(camera.position).setY(0);
+      if (instructorDirection.angleTo(playerDirection) < Math.PI * 0.2) {
+        caught();
+      }
     }
   }
-
-  /*
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  const selectedMat = raycaster.intersectObjects(mats)[0] || null;
-  if (selectedMat !== lastSelectedMat) {
-    if (lastSelectedMat) {
-      lastSelectedMat.object.material.emissive = new THREE.Color(0x000000);
-    }
-    lastSelectedMat = selectedMat;
-    if (selectedMat) {
-      selectedMat.object.material.emissive = new THREE.Color(0xf44336);
-    }
-  }
-  */
 
   onframe.forEach(fn => fn(timeStamp, elapsedTime));
 
@@ -239,7 +261,7 @@ document.addEventListener('DOMContentLoaded', e => {
   lastTime = Date.now();
   renderer.domElement.style.opacity = 0;
   manager.onLoad = () => {
-    currentAnimation = {type: 'fade-in', start: Date.now(), duration: 1000};
+    start();
   };
   animate();
 });

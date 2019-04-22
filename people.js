@@ -60,10 +60,8 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
     faceTexture.minFilter = THREE.NearestFilter;
     const countenance = new THREE.Mesh(
       new THREE.PlaneBufferGeometry(2.5, 2.5),
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshBasicMaterial({
         map: faceTexture,
-        roughness: 0.9,
-        metalness: 0.5,
         transparent: true
       })
     );
@@ -134,10 +132,11 @@ function animateForcefulNose(student, timeStamp) {
   student.limbs[1].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
 }
 
+let instructor;
 function loadPeople(scene, onframe) {
   textureLoader = new THREE.TextureLoader(manager);
 
-  const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-sleeping.png');
+  instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-creepy.png');
   instructor.person.position.set(100, 0, -475);
   scene.add(instructor.person);
   instructor.person.rotation.y = Math.PI / 2;
@@ -148,6 +147,7 @@ function loadPeople(scene, onframe) {
   lookLight.target.position.set(0, -10, -10);
   instructor.head.add(lookLight.target);
   onframe.push(timeStamp => {
+    if (!instructor.moving) return;
     const pos = timeStamp / 200 % 600;
     instructor.person.position.x = pos > 300 ? 450 - pos : pos - 150;
     instructor.person.rotation.y = pos > 300 ? Math.PI / 2 : -Math.PI / 2;
