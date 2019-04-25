@@ -9,8 +9,8 @@ const STUDENT_BACK_SIZE = 1.75 + PLAYER_THICKNESS;
 const STUDENT_FRONT_SIZE = 2.75 + PLAYER_THICKNESS;
 const INSTRUCTOR_RUN_SPEED = 0.04;
 
-const shaders = window.location.pathname.slice(-12) === 'shaders.html';
 const params = new URL(window.location).searchParams;
+const shaders = params.get('shaders') !== 'false';
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
