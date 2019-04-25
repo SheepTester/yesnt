@@ -138,12 +138,18 @@ function loadPeople(scene, onframe) {
   const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-creepy.png');
   scene.add(instructor.person);
   instructor.person.rotation.y = Math.PI / 2;
+
   const lookLight = new THREE.SpotLight(0x990000, 0.5);
   lookLight.penumbra = 1;
   lookLight.position.set(0, 0, -1.25);
   instructor.head.add(lookLight);
   lookLight.target.position.set(0, -10, -10);
   instructor.head.add(lookLight.target);
+
+  const sound = new THREE.PositionalAudio(listener);
+  sound.setRefDistance(3); // TODO: change
+  instructor.head.add(sound);
+
   onframe.push(timeStamp => {
     if (!instructor.moving) return;
     if (instructor.moving === 'watch') {
@@ -217,7 +223,7 @@ function loadPeople(scene, onframe) {
     });
   });
 
-  return {studentMap, instructor};
+  return {studentMap, instructor, instructorVoice: sound};
 }
 
 function createPhone() {

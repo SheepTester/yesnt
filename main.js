@@ -36,7 +36,7 @@ const scene = new THREE.Scene();
 const onframe = [];
 const collisionBoxes = [];
 setupRoom(scene, onframe, collisionBoxes);
-const {studentMap, instructor} = loadPeople(scene, onframe);
+const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const sittingPlayer = createPlayerSittingPerson();
 sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
@@ -324,4 +324,11 @@ document.addEventListener('DOMContentLoaded', e => {
     start();
   };
   animate();
+
+  initSpeech().then(async () => {
+    const speak = speaking(instructorVoice);
+    await speak('line0');
+    await speak('line1');
+    await speak('line2');
+  });
 });
