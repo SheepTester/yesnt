@@ -16,6 +16,8 @@ function createMat(x, z) {
   return mat;
 }
 
+const wallMaterial = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.6, metalness: 0.1});
+
 const mats = [];
 function setupRoom(scene, onframe,collisions) {
   const floor = new THREE.Mesh(
@@ -38,10 +40,34 @@ function setupRoom(scene, onframe,collisions) {
 
   const frontWall = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, 200),
-    new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.6, metalness: 0.1})
+    wallMaterial
   );
-  frontWall.position.set(0, 50, -500);
+  frontWall.position.set(0, 100, -500);
   scene.add(frontWall);
+
+  const darkRoom = new THREE.Group();
+  const backWall = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(1000, 200),
+    wallMaterial
+  );
+  backWall.rotation.y = Math.PI;
+  backWall.position.set(0, 100, 500);
+  darkRoom.add(backWall);
+  const leftWall = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(1000, 200),
+    wallMaterial
+  );
+  leftWall.rotation.y = Math.PI / 2;
+  leftWall.position.set(-500, 100, 0);
+  darkRoom.add(leftWall);
+  const rightWall = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(1000, 200),
+    wallMaterial
+  );
+  rightWall.rotation.y = -Math.PI / 2;
+  rightWall.position.set(500, 100, 0);
+  darkRoom.add(rightWall);
+  scene.add(darkRoom);
 
   for (let x = -10; x <= 10; x++) {
     for (let z = 0; z < 6; z++) {

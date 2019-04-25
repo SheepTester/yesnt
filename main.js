@@ -4,6 +4,9 @@ const STANDING_EYE_HEIGHT = 11;
 const MOVEMENT_SPEED = 0.05;
 const PLAYER_THICKNESS = 1;
 const MIN_Z = -500 + PLAYER_THICKNESS;
+const MAX_Z = 500 - PLAYER_THICKNESS;
+const MIN_X = -500 + PLAYER_THICKNESS;
+const MAX_X = 500 - PLAYER_THICKNESS;
 const STUDENT_X_RADIUS = 2.5 + PLAYER_THICKNESS;
 const STUDENT_BACK_SIZE = 1.75 + PLAYER_THICKNESS;
 const STUDENT_FRONT_SIZE = 2.75 + PLAYER_THICKNESS;
@@ -286,6 +289,8 @@ function animate() {
     }
 
     camera.position.x += movement.x;
+    if (camera.position.x < MIN_X) camera.position.x = MIN_X;
+    if (camera.position.x > MAX_X) camera.position.x = MAX_X;
     rects.forEach(([minX, maxX, minZ, maxZ]) => {
       if (camera.position.z > minZ && camera.position.z < maxZ) {
         if (camera.position.x > minX && camera.position.x < maxX) {
@@ -297,6 +302,7 @@ function animate() {
 
     camera.position.z += movement.z;
     if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
+    if (camera.position.z > MAX_Z) camera.position.z = MAX_Z;
     rects.forEach(([minX, maxX, minZ, maxZ]) => {
       if (camera.position.x > minX && camera.position.x < maxX) {
         if (camera.position.z > minZ && camera.position.z < maxZ) {
@@ -311,8 +317,8 @@ function animate() {
       instructor.person.position.z - camera.position.z
     );
     instructor.person.rotation.y = angle;
-    // instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
-    // instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
 
     if (camera.position.distanceToSquared(instructor.person.position) < 144) {
       caught();

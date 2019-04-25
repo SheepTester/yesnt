@@ -79,8 +79,8 @@
 						"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0.2,0,1],
 						"color": 16749353,
 						"intensity": 0.16,
-						"distance": 0,
-						"decay": 0,
+						"distance": 400,
+						"decay": 1,
 						"shadow": {
 							"camera": {
 								"uuid": "A126DAD9-894D-49A0-8114-C779F6A76222",
