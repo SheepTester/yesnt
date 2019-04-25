@@ -1,5 +1,5 @@
 const lines = {
-  line0: ['Do you recall how to play? Shift to get up, WASD to move.', null],
+  line0: ['Do you recall how to play? Shift to get up, WASD to move, F to show/hide your phone.', null],
   line1: ['Alright, so eyes closed from this point on.', null],
   line2: ["Let's start with five straw breaths, breathing in through the nose.", null]
 };

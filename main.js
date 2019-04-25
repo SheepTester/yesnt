@@ -15,16 +15,18 @@ const shaders = params.get('shaders') !== 'false';
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
 function start() {
-  camera.position.set(0, SITTING_EYE_HEIGHT, MAT_FIRST_ROW_Z - 0.7);
-  camera.rotation.set(0, 0, 0);
   instructor.moving = 'watch';
+  instructor.walkOffsetTime = Date.now();
   instructor.head.rotation.set(0, 0, 0);
   instructor.person.position.z = -475;
   instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI;
   instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = 0;
+  camera.position.set(0, SITTING_EYE_HEIGHT, MAT_FIRST_ROW_Z - 0.7);
+  camera.rotation.set(0, 0, 0);
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
   moving = false;
+  if (playerState.phoneOut) setPhoneState(false);
 }
 
 const listener = new THREE.AudioListener();
@@ -38,12 +40,36 @@ const collisionBoxes = [];
 setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
+const playerState = {phoneOut: false};
+
 const sittingPlayer = createPlayerSittingPerson();
 sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
+
 const phone = createPhone();
 phone.phone.position.set(0.4, 2.5, 0);
 phone.phone.rotation.set(Math.PI * 4 / 5, Math.PI / 8, -Math.PI * 3 / 20);
-sittingPlayer.limbs[0].forearm.add(phone.phone);
+
+function setPhoneState(to) {
+  if (playerState.phoneOut === to) return;
+  playerState.phoneOut = to;
+  if (to) {
+    sittingPlayer.limbs[0].forearm.add(phone.phone);
+    sittingPlayer.limbs[0].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
+    sittingPlayer.limbs[0].forearm.rotation.set(Math.PI / 4, 0, -Math.PI * 0.2);
+    sittingPlayer.limbs[1].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
+    sittingPlayer.limbs[1].forearm.rotation.x = Math.PI / 4;
+    sittingPlayer.limbs[1].forearm.rotation.set(Math.PI / 4, 0, Math.PI * 0.2);
+  } else {
+    sittingPlayer.limbs[0].forearm.remove(phone.phone);
+
+    // TEMP: it'll be set to the proper position elsewhere in the future
+    sittingPlayer.limbs[0].limb.rotation.set(Math.PI, 0, 0.1);
+    sittingPlayer.limbs[0].forearm.rotation.set(0, 0, 0);
+    sittingPlayer.limbs[1].limb.rotation.set(Math.PI, 0, -0.1);
+    sittingPlayer.limbs[1].forearm.rotation.set(0, 0, 0);
+  }
+}
+
 const c = phone.canvas.getContext('2d');
 c.fillStyle = '#BE1E2D';
 c.fillRect(0, 0, 128, 30);
@@ -127,10 +153,13 @@ document.addEventListener('mousemove', e => {
   }
 });
 
-const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift'};
+const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f'};
 const keys = {};
 document.addEventListener('keydown', e => {
   if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = true;
+  if (keyToName[e.keyCode] === 'f') {
+    setPhoneState(!playerState.phoneOut);
+  }
 });
 document.addEventListener('keyup', e => {
   if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = false;
@@ -164,7 +193,7 @@ function caught() {
 const raycaster = new THREE.Raycaster();
 let lastTime, moving;
 const animations = [];
-function animate(timeStamp) {
+function animate() {
   const now = Date.now();
   const elapsedTime = now - lastTime;
 
@@ -297,17 +326,18 @@ function animate(timeStamp) {
       instructor.head.rotation.y = 0;
       instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
       instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
-    }
-    if (camera.rotation.x <= -0.4) {
+    } else {
       const instructorDirection = instructor.head.getWorldDirection(new THREE.Vector3()).setY(0);
       const playerDirection = instructor.person.position.clone().sub(camera.position).setY(0);
       if (instructorDirection.angleTo(playerDirection) < Math.PI * 0.2) {
-        caught();
+        if (playerState.phoneOut) {
+          caught();
+        }
       }
     }
   }
 
-  onframe.forEach(fn => fn(timeStamp, elapsedTime));
+  onframe.forEach(fn => fn(now, elapsedTime));
 
   if (shaders) composer.render();
   else renderer.render(scene, camera);

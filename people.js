@@ -153,7 +153,7 @@ function loadPeople(scene, onframe) {
   onframe.push(timeStamp => {
     if (!instructor.moving) return;
     if (instructor.moving === 'watch') {
-      const pos = timeStamp / 200 % 600;
+      const pos = (timeStamp - instructor.walkOffsetTime) / 200 % 600;
       instructor.person.position.x = pos > 300 ? 450 - pos : pos - 150;
       instructor.person.rotation.y = pos > 300 ? Math.PI / 2 : -Math.PI / 2;
       instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 200) * 0.3 + 0.1;
@@ -268,17 +268,6 @@ function createPlayerSittingPerson() {
   const person = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5);
   kneel(person.limbs[2]);
   kneel(person.limbs[3]);
-  person.offset = 0;
-  // TEMP: prepare for temporary forceful nose animation
-  // person.limbs[0].limb.rotation.z = 0.1;
-  // person.limbs[1].limb.rotation.z = -0.1;
-
-  person.limbs[0].limb.rotation.x = Math.PI * 5 / 4;
-  person.limbs[0].forearm.rotation.x = Math.PI / 4;
-  person.limbs[0].forearm.rotation.z = -Math.PI * 0.2;
-  person.limbs[1].limb.rotation.x = Math.PI * 5 / 4;
-  person.limbs[1].forearm.rotation.x = Math.PI / 4;
-  person.limbs[1].forearm.rotation.z = Math.PI * 0.2;
   person.person.remove(person.head);
   return person;
 }
