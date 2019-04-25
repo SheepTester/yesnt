@@ -2,10 +2,15 @@ const MAT_WIDTH = 10;
 const MAT_LENGTH = 20;
 const MAT_SPACING = 5;
 const MAT_FIRST_ROW_Z = -450;
+const MAT_COLOURS = [0xc98838, 0xbf4d4d, 0xbf4d4d, 0xbf4d4d, 0xbb6a78, 0x473068, 0x373e6f];
 function createMat(x, z) {
   const mat = new THREE.Mesh(
     new THREE.BoxBufferGeometry(MAT_WIDTH, 0.4, MAT_LENGTH),
-    new THREE.MeshStandardMaterial({color: 0xbf4d4d, roughness: 0.9, metalness: 0.5})
+    new THREE.MeshStandardMaterial({
+      color: MAT_COLOURS[Math.floor(Math.random() * MAT_COLOURS.length)],
+      roughness: 0.9,
+      metalness: 0.5
+    })
   );
   mat.position.set(x, 0, z);
   return mat;
