@@ -223,23 +223,24 @@ function animate(timeStamp) {
   if (moving) {
     const sin = Math.sin(camera.rotation.y);
     const cos = Math.cos(camera.rotation.y);
-    let dx = 0, dz = 0;
+    const movement = new THREE.Vector3();
     if (keys.w) {
-      dx -= sin * MOVEMENT_SPEED * elapsedTime;
-      dz -= cos * MOVEMENT_SPEED * elapsedTime;
+      movement.x -= sin;
+      movement.z -= cos;
     }
     if (keys.s) {
-      dx += sin * MOVEMENT_SPEED * elapsedTime;
-      dz += cos * MOVEMENT_SPEED * elapsedTime;
+      movement.x += sin;
+      movement.z += cos;
     }
     if (keys.a) {
-      dx -= cos * MOVEMENT_SPEED * elapsedTime;
-      dz += sin * MOVEMENT_SPEED * elapsedTime;
+      movement.x -= cos;
+      movement.z += sin;
     }
     if (keys.d) {
-      dx += cos * MOVEMENT_SPEED * elapsedTime;
-      dz -= sin * MOVEMENT_SPEED * elapsedTime;
+      movement.x += cos;
+      movement.z -= sin;
     }
+    movement.normalize().multiplyScalar(MOVEMENT_SPEED * elapsedTime);
 
     const matX = Math.round(camera.position.x / (MAT_WIDTH + MAT_SPACING));
     const matZ = Math.round((camera.position.z - MAT_FIRST_ROW_Z) / (MAT_LENGTH + MAT_SPACING));
@@ -255,22 +256,22 @@ function animate(timeStamp) {
       ]);
     }
 
-    camera.position.x += dx;
+    camera.position.x += movement.x;
     rects.forEach(([minX, maxX, minZ, maxZ]) => {
       if (camera.position.z > minZ && camera.position.z < maxZ) {
         if (camera.position.x > minX && camera.position.x < maxX) {
-          if (dx > 0) camera.position.x = minX;
+          if (movement.x > 0) camera.position.x = minX;
           else camera.position.x = maxX;
         }
       }
     });
 
-    camera.position.z += dz;
+    camera.position.z += movement.z;
     if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
     rects.forEach(([minX, maxX, minZ, maxZ]) => {
       if (camera.position.x > minX && camera.position.x < maxX) {
         if (camera.position.z > minZ && camera.position.z < maxZ) {
-          if (dz > 0) camera.position.z = minZ;
+          if (movement.z > 0) camera.position.z = minZ;
           else camera.position.z = maxZ;
         }
       }
