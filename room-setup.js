@@ -46,22 +46,30 @@ function setupRoom(scene, onframe,collisions) {
     }
   }
 
-  const LAMP_RADIUS = 1.5 + PLAYER_THICKNESS;
-  new THREE.ObjectLoader(manager).load('./models/lamp.json', lampModel => {
-    lampModel.scale.multiplyScalar(2);
-    const lampLights = [[50, -480], [-80, -480], [2, -480]].map(([x, z]) => {
-      const lamp = lampModel.clone();
-      const lampLight = lamp.getObjectByName('lamp light');
-      lamp.position.set(x, 0, z);
-      collisions.push([x - LAMP_RADIUS, x + LAMP_RADIUS, z - LAMP_RADIUS, z + LAMP_RADIUS]);
-      scene.add(lamp);
-      return lampLight;
+  const CANDLE_RADIUS = 0.1 + PLAYER_THICKNESS;
+  new THREE.ObjectLoader(manager).load('./models/candle.json', model => {
+    model.scale.multiplyScalar(0.5);
+    const lights = [[-15, -480], [-20, -480], [-25, -480]].map(([x, z]) => {
+      const candle = model.clone();
+      const light = candle.getObjectByName('flame');
+      candle.position.set(x, 0, z);
+      collisions.push([x - CANDLE_RADIUS, x + CANDLE_RADIUS, z - CANDLE_RADIUS, z + CANDLE_RADIUS]);
+      scene.add(candle);
+      return light;
     });
     onframe.push(timeStamp => {
-      lampLights[0].intensity = Math.sin(timeStamp / 513 + 1) * 0.05 + 0.3;
-      lampLights[1].intensity = Math.sin(timeStamp / 445 + 2) * 0.05 + 0.3;
-      lampLights[2].intensity = Math.sin(timeStamp / 598 + 3) * 0.05 + 0.3;
+      lights[0].intensity = Math.sin(timeStamp / 243 + 1) * 0.01 + 0.1;
+      lights[1].intensity = Math.sin(timeStamp / 305 + 2) * 0.01 + 0.1;
+      lights[2].intensity = Math.sin(timeStamp / 288 + 3) * 0.01 + 0.1;
     });
+  });
+
+  const LAMP_RADIUS = 1.5 + PLAYER_THICKNESS;
+  new THREE.ObjectLoader(manager).load('./models/better-lamp.json', lamp => {
+    const [x, z] = [15, -480];
+    lamp.position.set(x, 0, z);
+    collisions.push([x - LAMP_RADIUS, x + LAMP_RADIUS, z - LAMP_RADIUS, z + LAMP_RADIUS]);
+    scene.add(lamp);
   });
 
   const sound = new THREE.PositionalAudio(listener);

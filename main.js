@@ -281,8 +281,8 @@ function animate(timeStamp) {
       instructor.person.position.z - camera.position.z
     );
     instructor.person.rotation.y = angle;
-    instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
-    instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    // instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    // instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
 
     if (camera.position.distanceToSquared(instructor.person.position) < 144) {
       caught();
