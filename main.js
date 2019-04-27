@@ -47,6 +47,7 @@ scene.add(camera);
 const onframe = [];
 const collisionBoxes = [];
 const {swap: toggleLights} = setupRoom(scene, onframe, collisionBoxes);
+// toggleLights();
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};

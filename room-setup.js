@@ -207,16 +207,80 @@ function createLightRoom() {
   leftWall.position.set(-ROOM_WIDTH / 2, (LIGHT_ROOM_HEIGHT + SLANT_HEIGHT) / 2, -500 + ROOM_LENGTH / 2);
   lightRoom.add(leftWall);
 
-  const DOOR_TUNNEL_HEIGHT = 60;
+  const DOOR_TUNNEL_HEIGHT = 50;
   const DOOR_TUNNEL_PADDING = 30;
-  const DOOR_TUNNEL_WIDTH = 100;
+  const DOOR_TUNNEL_WIDTH = 80;
+
   const rightWall = new THREE.Mesh(
-    new THREE.PlaneBufferGeometry(ROOM_LENGTH, LIGHT_ROOM_HEIGHT + SLANT_HEIGHT),
+    new THREE.PlaneBufferGeometry(ROOM_LENGTH, LIGHT_ROOM_HEIGHT + SLANT_HEIGHT - DOOR_TUNNEL_HEIGHT),
     wallMaterial
   );
   rightWall.rotation.y = -Math.PI / 2;
-  rightWall.position.set(ROOM_WIDTH / 2, (LIGHT_ROOM_HEIGHT + SLANT_HEIGHT) / 2, -500 + ROOM_LENGTH / 2);
+  rightWall.position.set(ROOM_WIDTH / 2, (LIGHT_ROOM_HEIGHT + SLANT_HEIGHT + DOOR_TUNNEL_HEIGHT) / 2, -500 + ROOM_LENGTH / 2);
   lightRoom.add(rightWall);
+
+  const rightWallLeftPanel = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(DOOR_TUNNEL_PADDING, DOOR_TUNNEL_HEIGHT),
+    wallMaterial
+  );
+  rightWallLeftPanel.rotation.y = -Math.PI / 2;
+  rightWallLeftPanel.position.set(ROOM_WIDTH / 2, DOOR_TUNNEL_HEIGHT / 2, -500 + DOOR_TUNNEL_PADDING / 2);
+  lightRoom.add(rightWallLeftPanel);
+
+  const rightWallMidPanel = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(ROOM_LENGTH - (DOOR_TUNNEL_PADDING + DOOR_TUNNEL_WIDTH) * 2, DOOR_TUNNEL_HEIGHT),
+    wallMaterial
+  );
+  rightWallMidPanel.rotation.y = -Math.PI / 2;
+  rightWallMidPanel.position.set(ROOM_WIDTH / 2, DOOR_TUNNEL_HEIGHT / 2, -500 + ROOM_LENGTH / 2);
+  lightRoom.add(rightWallMidPanel);
+
+  const rightWallRightPanel = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(DOOR_TUNNEL_PADDING, DOOR_TUNNEL_HEIGHT),
+    wallMaterial
+  );
+  rightWallRightPanel.rotation.y = -Math.PI / 2;
+  rightWallRightPanel.position.set(ROOM_WIDTH / 2, DOOR_TUNNEL_HEIGHT / 2, -500 + ROOM_LENGTH - DOOR_TUNNEL_PADDING / 2);
+  lightRoom.add(rightWallRightPanel);
+
+  const tunnelMaterial = wallMaterial.clone();
+  tunnelMaterial.emissive.set(0x222222);
+  const TUNNEL_LENGTH = 150;
+  [
+    -500 + DOOR_TUNNEL_PADDING + DOOR_TUNNEL_WIDTH / 2,
+    -500 + ROOM_LENGTH - DOOR_TUNNEL_PADDING - DOOR_TUNNEL_WIDTH / 2
+  ].forEach(z => {
+    const leftWall = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_HEIGHT),
+      tunnelMaterial
+    );
+    leftWall.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT / 2, z - DOOR_TUNNEL_WIDTH / 2);
+    lightRoom.add(leftWall);
+
+    const rightWall = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_HEIGHT),
+      tunnelMaterial
+    );
+    rightWall.rotation.y = Math.PI;
+    rightWall.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT / 2, z + DOOR_TUNNEL_WIDTH / 2);
+    lightRoom.add(rightWall);
+
+    const roof = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_WIDTH),
+      tunnelMaterial
+    );
+    roof.rotation.x = Math.PI / 2;
+    roof.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT, z);
+    lightRoom.add(roof);
+
+    const backWall = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(DOOR_TUNNEL_WIDTH, DOOR_TUNNEL_HEIGHT),
+      tunnelMaterial
+    );
+    backWall.rotation.y = -Math.PI / 2;
+    backWall.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH, DOOR_TUNNEL_HEIGHT / 2, z);
+    lightRoom.add(backWall);
+  });
 
   objectLoader.load('./models/gym-light-on.json', model => {
     model.scale.multiplyScalar(3);

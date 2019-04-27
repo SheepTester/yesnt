@@ -103,7 +103,7 @@
 						"layers": 1,
 						"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
 						"color": 16056314,
-						"intensity": 0.05,
+						"intensity": 0.03,
 						"distance": 0,
 						"decay": 1,
 						"shadow": {
