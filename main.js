@@ -14,6 +14,7 @@ const INSTRUCTOR_RUN_SPEED = 0.04;
 
 const params = new URL(window.location).searchParams;
 const shaders = params.get('shaders') !== 'false';
+const instructorCanMove = params.get('freeze-instructor') !== 'please';
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
@@ -41,9 +42,11 @@ const objectLoader = new THREE.ObjectLoader(manager);
 const audioLoader = new THREE.AudioLoader(manager);
 
 const scene = new THREE.Scene();
+scene.add(camera);
+
 const onframe = [];
 const collisionBoxes = [];
-setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
@@ -320,8 +323,10 @@ function animate() {
       instructor.person.position.z - camera.position.z
     );
     instructor.person.rotation.y = angle;
-    instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
-    instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    if (instructorCanMove) {
+      instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+      instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    }
 
     if (camera.position.distanceToSquared(instructor.person.position) < 144) {
       caught();
