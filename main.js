@@ -17,6 +17,7 @@ const shaders = params.get('shaders') !== 'false';
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
+
 function start() {
   instructor.moving = 'watch';
   instructor.walkOffsetTime = Date.now();
@@ -29,6 +30,7 @@ function start() {
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
   moving = false;
+  walkingArms.visible = false;
   if (playerState.phoneOut) setPhoneState(false);
 }
 
@@ -41,6 +43,7 @@ const objectLoader = new THREE.ObjectLoader(manager);
 const audioLoader = new THREE.AudioLoader(manager);
 
 const scene = new THREE.Scene();
+scene.add(camera);
 const onframe = [];
 const collisionBoxes = [];
 setupRoom(scene, onframe, collisionBoxes);
@@ -48,8 +51,14 @@ const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
 
-const sittingPlayer = createPlayerSittingPerson();
+const {person: sittingPlayer, skinColour} = createPlayerSittingPerson();
 sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
+
+const walkingArms = new THREE.Group();
+const leftArm = new THREE.Group();
+walkingArms.add(leftArm);
+walkingArms.visible = false;
+camera.add(walkingArms);
 
 const phone = createPhone();
 phone.phone.position.set(0.4, 2.5, 0);
@@ -58,21 +67,27 @@ phone.phone.rotation.set(Math.PI * 4 / 5, Math.PI / 8, -Math.PI * 3 / 20);
 function setPhoneState(to) {
   if (playerState.phoneOut === to) return;
   playerState.phoneOut = to;
-  if (to) {
-    sittingPlayer.limbs[0].forearm.add(phone.phone);
-    sittingPlayer.limbs[0].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
-    sittingPlayer.limbs[0].forearm.rotation.set(Math.PI / 4, 0, -Math.PI * 0.2);
-    sittingPlayer.limbs[1].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
-    sittingPlayer.limbs[1].forearm.rotation.x = Math.PI / 4;
-    sittingPlayer.limbs[1].forearm.rotation.set(Math.PI / 4, 0, Math.PI * 0.2);
+  if (moving) {
+    if (to) {
+      //
+    }
   } else {
-    sittingPlayer.limbs[0].forearm.remove(phone.phone);
+    if (to) {
+      sittingPlayer.limbs[0].forearm.add(phone.phone);
+      sittingPlayer.limbs[0].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
+      sittingPlayer.limbs[0].forearm.rotation.set(Math.PI / 4, 0, -Math.PI * 0.2);
+      sittingPlayer.limbs[1].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
+      sittingPlayer.limbs[1].forearm.rotation.x = Math.PI / 4;
+      sittingPlayer.limbs[1].forearm.rotation.set(Math.PI / 4, 0, Math.PI * 0.2);
+    } else {
+      sittingPlayer.limbs[0].forearm.remove(phone.phone);
 
-    // TEMP: it'll be set to the proper position elsewhere in the future
-    sittingPlayer.limbs[0].limb.rotation.set(Math.PI, 0, 0.1);
-    sittingPlayer.limbs[0].forearm.rotation.set(0, 0, 0);
-    sittingPlayer.limbs[1].limb.rotation.set(Math.PI, 0, -0.1);
-    sittingPlayer.limbs[1].forearm.rotation.set(0, 0, 0);
+      // TEMP: it'll be set to the proper position elsewhere in the future
+      sittingPlayer.limbs[0].limb.rotation.set(Math.PI, 0, 0.1);
+      sittingPlayer.limbs[0].forearm.rotation.set(0, 0, 0);
+      sittingPlayer.limbs[1].limb.rotation.set(Math.PI, 0, -0.1);
+      sittingPlayer.limbs[1].forearm.rotation.set(0, 0, 0);
+    }
   }
 }
 
@@ -320,8 +335,8 @@ function animate() {
       instructor.person.position.z - camera.position.z
     );
     instructor.person.rotation.y = angle;
-    instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
-    instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    // instructor.person.position.x -= Math.sin(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
+    // instructor.person.position.z -= Math.cos(angle) * INSTRUCTOR_RUN_SPEED * elapsedTime;
 
     if (camera.position.distanceToSquared(instructor.person.position) < 144) {
       caught();
@@ -329,6 +344,7 @@ function animate() {
   } else if (moving !== null) {
     if (keys.shift) {
       moving = true;
+      walkingArms.visible = true;
       scene.remove(sittingPlayer.person);
       animations.push({type: 'get-up', start: Date.now(), duration: 200});
       instructor.moving = 'chase';

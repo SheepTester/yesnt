@@ -262,9 +262,10 @@ function createPhone() {
   };
 }
 function createPlayerSittingPerson() {
-  const person = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5);
+  const skinColour = randomSkin();
+  const person = createPerson(skinColour, randomHair(), Math.random() * 2 + 0.5);
   kneel(person.limbs[2]);
   kneel(person.limbs[3]);
   person.person.remove(person.head);
-  return person;
+  return {person, skinColour};
 }
