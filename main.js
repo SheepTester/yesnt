@@ -36,6 +36,9 @@ const listener = new THREE.AudioListener();
 camera.add(listener);
 
 const manager = new THREE.LoadingManager();
+const textureLoader = new THREE.TextureLoader(manager);
+const objectLoader = new THREE.ObjectLoader(manager);
+const audioLoader = new THREE.AudioLoader(manager);
 
 const scene = new THREE.Scene();
 const onframe = [];

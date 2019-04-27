@@ -78,7 +78,7 @@ function setupRoom(scene, onframe,collisions) {
   }
 
   const CANDLE_RADIUS = 0.1 + PLAYER_THICKNESS;
-  new THREE.ObjectLoader(manager).load('./models/candle.json', model => {
+  objectLoader.load('./models/candle.json', model => {
     model.scale.multiplyScalar(0.5);
     const lights = [[-15, -480], [-20, -480], [-25, -480]].map(([x, z]) => {
       const candle = model.clone();
@@ -96,7 +96,7 @@ function setupRoom(scene, onframe,collisions) {
   });
 
   const LAMP_RADIUS = 1.5 + PLAYER_THICKNESS;
-  new THREE.ObjectLoader(manager).load('./models/better-lamp.json', lamp => {
+  objectLoader.load('./models/better-lamp.json', lamp => {
     const [x, z] = [15, -480];
     lamp.position.set(x, 0, z);
     collisions.push([x - LAMP_RADIUS, x + LAMP_RADIUS, z - LAMP_RADIUS, z + LAMP_RADIUS]);
@@ -104,12 +104,12 @@ function setupRoom(scene, onframe,collisions) {
   });
 
   const sound = new THREE.PositionalAudio(listener);
-  new THREE.AudioLoader(manager).load('sounds/sohum.mp3', buffer => {
+  audioLoader.load('sounds/sohum.mp3', buffer => {
     sound.setBuffer(buffer);
   	sound.setRefDistance(5);
   	if (!params.get('shut-up')) userInteraction.then(() => sound.play());
   });
-  new THREE.ObjectLoader(manager).load('./models/cassette-player.json', cassettePlayer => {
+  objectLoader.load('./models/cassette-player.json', cassettePlayer => {
     cassettePlayer.position.set(5, 0, -495);
     cassettePlayer.scale.multiplyScalar(3);
     scene.add(cassettePlayer);

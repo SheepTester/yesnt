@@ -9,11 +9,10 @@ let subtitles;
 function initSpeech() {
   subtitles = document.getElementById('subtitles');
 
-  const loader = new THREE.AudioLoader(manager);
   return Promise.all(Object.values(lines).map(line => {
     if (!line[1]) return;
     return new Promise((res, rej) => {
-      loader.load(line[1], buffer => {
+      audioLoader.load(line[1], buffer => {
         line[1] = buffer;
         res();
       }, null, rej);
