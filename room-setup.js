@@ -168,8 +168,8 @@ function createDarkRoom() {
 
 function createLightRoom() {
   const LIGHT_ROOM_HEIGHT = 100;
-  const ROOM_LENGTH = 400;
-  const ROOM_WIDTH = 500;
+  const ROOM_LENGTH = 600;
+  const ROOM_WIDTH = 700;
   const SLANT_HEIGHT = 20;
   const ROOF_ANGLE = Math.atan(SLANT_HEIGHT / (ROOM_LENGTH / 2));
   const ROOF_LENGTH = Math.hypot(SLANT_HEIGHT, ROOM_LENGTH / 2);
@@ -220,19 +220,24 @@ function createLightRoom() {
 
   objectLoader.load('./models/gym-light-on.json', model => {
     model.scale.multiplyScalar(3);
-    for (let x = -200; x <= 200; x += 50) {
-      for (let z = 75; x <= 125; x += 50) {
-        //
+    for (let x = -300; x <= 300; x += 100) {
+      for (let z = 50; z <= 250; z += 100) {
+        const light = model.clone();
+        light.position.set(x, LIGHT_ROOM_HEIGHT + SLANT_HEIGHT * (1 - z / (ROOM_LENGTH / 2)), -500 + ROOM_LENGTH / 2 + z);
+        lightRoom.add(light);
       }
     }
-    // [[-15, -480], [-20, -480], [-25, -480]].forEach(([x, z]) => {
-    //   const light = model.clone();
-    //   light.position.set(0, LIGHT_ROOM_HEIGHT + SLANT_HEIGHT, -500 + ROOM_LENGTH / 2);
-    //   lightRoom.add(light);
-    // });
-    const light = model.clone();
-    light.position.set(0, LIGHT_ROOM_HEIGHT + SLANT_HEIGHT, -500 + ROOM_LENGTH / 2);
-    lightRoom.add(light);
+  });
+
+  objectLoader.load('./models/gym-light-off.json', model => {
+    model.scale.multiplyScalar(3);
+    for (let x = -300; x <= 300; x += 100) {
+      for (let z = 50; z <= 250; z += 100) {
+        const light = model.clone();
+        light.position.set(x, LIGHT_ROOM_HEIGHT + SLANT_HEIGHT * (1 - z / (ROOM_LENGTH / 2)), -500 + ROOM_LENGTH / 2 - z);
+        lightRoom.add(light);
+      }
+    }
   });
 
   return lightRoom;

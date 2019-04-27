@@ -54,10 +54,12 @@
 			"uuid": "0CDB2FB9-ECB4-4B89-A2FD-09C10A96F54D",
 			"type": "MeshStandardMaterial",
 			"name": "bulb",
-			"color": 16777215,
-			"roughness": 0.5,
-			"metalness": 0.5,
-			"emissive": 16056314,
+			"color": 16056314,
+			"roughness": 0.1,
+			"metalness": 0.9,
+			"emissive": 8028029,
+			"opacity": 0.5,
+			"transparent": true,
 			"depthFunc": 3,
 			"depthTest": true,
 			"depthWrite": true
@@ -65,7 +67,7 @@
 	"object": {
 		"uuid": "58C1151E-26C8-47B1-B4AF-0B155FEBAB0B",
 		"type": "Group",
-		"name": "gym light on",
+		"name": "gym light off",
 		"layers": 1,
 		"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
 		"children": [
@@ -94,34 +96,7 @@
 				"layers": 1,
 				"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,-4,0,1],
 				"geometry": "3EE98CCF-6EB4-453E-ACC6-2BC716754472",
-				"material": "0CDB2FB9-ECB4-4B89-A2FD-09C10A96F54D",
-				"children": [
-					{
-						"uuid": "66A16004-8F9C-46DF-9E75-57340E3643EC",
-						"type": "PointLight",
-						"name": "light",
-						"layers": 1,
-						"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-						"color": 16056314,
-						"intensity": 0.05,
-						"distance": 0,
-						"decay": 1,
-						"shadow": {
-							"camera": {
-								"uuid": "37FE11C4-59D3-4F85-B310-F2586F97436A",
-								"type": "PerspectiveCamera",
-								"layers": 1,
-								"fov": 90,
-								"zoom": 1,
-								"near": 0.5,
-								"far": 500,
-								"focus": 10,
-								"aspect": 1,
-								"filmGauge": 35,
-								"filmOffset": 0
-							}
-						}
-					}]
+				"material": "0CDB2FB9-ECB4-4B89-A2FD-09C10A96F54D"
 			}]
 	}
 }
