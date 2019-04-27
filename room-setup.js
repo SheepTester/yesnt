@@ -16,7 +16,7 @@ function createMat(x, z) {
   return mat;
 }
 
-function createExitSign(url = './textures/exit.png') {
+function createExitSign(url) {
   const sign = new THREE.Group();
   const base = new THREE.Mesh(
     new THREE.BoxBufferGeometry(8.5, 4.5, 1),
@@ -26,13 +26,44 @@ function createExitSign(url = './textures/exit.png') {
   const text = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(8, 4),
     new THREE.MeshBasicMaterial({
-      map: loadTexture(url),
+      map: loadTexture(url || './textures/exit.png'),
       transparent: true
     })
   );
   text.position.z = 0.55;
   sign.add(text);
   return sign;
+}
+
+function createDoor() {
+  const door = new THREE.Group();
+  const panel = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(14, 24, 1),
+    new THREE.MeshStandardMaterial({color: 0x807c79, roughness: 0.3, metalness: 0.9})
+  );
+  panel.position.set(7, 12, 0);
+  door.add(panel);
+  const bar = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(12, 1, 1),
+    new THREE.MeshStandardMaterial({color: 0xc5c1bf, roughness: 0.3, metalness: 0.9})
+  );
+  bar.position.set(7, 12, 0);
+  door.add(bar);
+  return door;
+}
+function createDoubleDoors(exitSignURL) {
+  const door = new THREE.Group();
+  const exitSign = createExitSign(exitSignURL);
+  exitSign.position.y = 30;
+  door.add(exitSign);
+  const leftDoor = createDoor();
+  leftDoor.position.x = -14;
+  door.add(leftDoor);
+  const rightDoor = createDoor();
+  rightDoor.rotation.y = Math.PI;
+  rightDoor.position.x = 14;
+  door.add(rightDoor);
+  return door;
 }
 
 const wallMaterial = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.9, metalness: 0.1});
@@ -235,6 +266,23 @@ function createDarkRoom() {
     exitSign.rotation.y = -Math.PI / 2;
     exitSign.position.set(500 - 0.1, DOOR_TUNNEL_HEIGHT + 5, z);
     darkRoom.add(exitSign);
+
+    const doors = createDoubleDoors();
+    doors.rotation.y = -Math.PI / 2;
+    doors.position.set(500 + TUNNEL_LENGTH, 0, z);
+    darkRoom.add(doors);
+  });
+
+  [
+    -280,
+    -250,
+    250,
+    280
+  ].forEach((z, i) => {
+    const doors = createDoubleDoors(i === 0 && './textures/exit-green.png');
+    doors.rotation.y = Math.PI / 2;
+    doors.position.set(-500, 0, z);
+    darkRoom.add(doors);
   });
 
   return darkRoom;
@@ -359,6 +407,11 @@ function createLightRoom() {
     exitSign.rotation.y = -Math.PI / 2;
     exitSign.position.set(ROOM_WIDTH / 2 - 0.1, DOOR_TUNNEL_HEIGHT + 5, z);
     lightRoom.add(exitSign);
+
+    const doors = createDoubleDoors();
+    doors.rotation.y = -Math.PI / 2;
+    doors.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH, 0, z);
+    lightRoom.add(doors);
   });
 
   objectLoader.load('./models/gym-light-on.json', model => {
@@ -381,6 +434,18 @@ function createLightRoom() {
         lightRoom.add(light);
       }
     }
+  });
+
+  [
+    -130,
+    -100,
+    100,
+    130
+  ].forEach((z, i) => {
+    const doors = createDoubleDoors(i === 0 && './textures/exit-green.png');
+    doors.rotation.y = Math.PI / 2;
+    doors.position.set(-ROOM_WIDTH / 2, 0, -500 + ROOM_LENGTH / 2 + z);
+    lightRoom.add(doors);
   });
 
   return lightRoom;
