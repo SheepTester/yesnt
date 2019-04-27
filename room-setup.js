@@ -126,6 +126,10 @@ function setupRoom(scene, onframe,collisions) {
   };
 }
 
+const DARK_DOOR_TUNNEL_PADDING = 30;
+const DARK_DOOR_TUNNEL_WIDTH = 100;
+const DARK_TUNNEL_LENGTH = 500;
+
 function createDarkRoom() {
   const DARK_WALLS_HEIGHT = 200;
   const darkRoom = new THREE.Group();
@@ -147,8 +151,8 @@ function createDarkRoom() {
   darkRoom.add(leftWall);
 
   const DOOR_TUNNEL_HEIGHT = 60;
-  const DOOR_TUNNEL_PADDING = 30;
-  const DOOR_TUNNEL_WIDTH = 100;
+  const DOOR_TUNNEL_PADDING = DARK_DOOR_TUNNEL_PADDING;
+  const DOOR_TUNNEL_WIDTH = DARK_DOOR_TUNNEL_WIDTH;
 
   const rightWall = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, DARK_WALLS_HEIGHT - DOOR_TUNNEL_HEIGHT),
@@ -181,6 +185,57 @@ function createDarkRoom() {
   rightWallRightPanel.rotation.y = -Math.PI / 2;
   rightWallRightPanel.position.set(500, DOOR_TUNNEL_HEIGHT / 2, 500 - DOOR_TUNNEL_PADDING / 2);
   darkRoom.add(rightWallRightPanel);
+
+  const tunnelMaterial = new THREE.MeshStandardMaterial({color: 0x6C3011, roughness: 0.9, metalness: 0.1});
+  const TUNNEL_LENGTH = DARK_TUNNEL_LENGTH;
+  [
+    -500 + DOOR_TUNNEL_PADDING + DOOR_TUNNEL_WIDTH / 2,
+    500 - DOOR_TUNNEL_PADDING - DOOR_TUNNEL_WIDTH / 2
+  ].forEach(z => {
+    const leftWall = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_HEIGHT),
+      tunnelMaterial
+    );
+    leftWall.position.set(500 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT / 2, z - DOOR_TUNNEL_WIDTH / 2);
+    darkRoom.add(leftWall);
+
+    const rightWall = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_HEIGHT),
+      tunnelMaterial
+    );
+    rightWall.rotation.y = Math.PI;
+    rightWall.position.set(500 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT / 2, z + DOOR_TUNNEL_WIDTH / 2);
+    darkRoom.add(rightWall);
+
+    const roof = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_WIDTH),
+      wallMaterial
+    );
+    roof.rotation.x = Math.PI / 2;
+    roof.position.set(500 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT, z);
+    darkRoom.add(roof);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_WIDTH),
+      new THREE.MeshStandardMaterial({color: 0x717276, roughness: 0.9, metalness: 0.1})
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(500 + TUNNEL_LENGTH / 2, 0, z);
+    darkRoom.add(floor);
+
+    const backWall = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(DOOR_TUNNEL_WIDTH, DOOR_TUNNEL_HEIGHT),
+      tunnelMaterial
+    );
+    backWall.rotation.y = -Math.PI / 2;
+    backWall.position.set(500 + TUNNEL_LENGTH, DOOR_TUNNEL_HEIGHT / 2, z);
+    darkRoom.add(backWall);
+
+    const exitSign = createExitSign();
+    exitSign.rotation.y = -Math.PI / 2;
+    exitSign.position.set(500 - 0.1, DOOR_TUNNEL_HEIGHT + 5, z);
+    darkRoom.add(exitSign);
+  });
 
   return darkRoom;
 }

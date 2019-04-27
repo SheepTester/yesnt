@@ -12,6 +12,18 @@ const STUDENT_BACK_SIZE = 1.75 + PLAYER_THICKNESS;
 const STUDENT_FRONT_SIZE = 2.75 + PLAYER_THICKNESS;
 const INSTRUCTOR_RUN_SPEED = 0.04;
 
+const tunnelXBounds = {
+  left: [
+    -500 + DARK_DOOR_TUNNEL_PADDING + PLAYER_THICKNESS,
+    -500 + DARK_DOOR_TUNNEL_PADDING + DARK_DOOR_TUNNEL_WIDTH - PLAYER_THICKNESS
+  ],
+  right: [
+    500 - DARK_DOOR_TUNNEL_PADDING - DARK_DOOR_TUNNEL_WIDTH + PLAYER_THICKNESS,
+    500 - DARK_DOOR_TUNNEL_PADDING - PLAYER_THICKNESS
+  ]
+};
+const tunnelZBound = MAX_X + DARK_TUNNEL_LENGTH - PLAYER_THICKNESS;
+
 const params = new URL(window.location).searchParams;
 const shaders = params.get('shaders') !== 'false';
 const instructorCanMove = params.get('freeze-instructor') !== 'please';
@@ -54,7 +66,7 @@ scene.add(camera);
 const onframe = [];
 const collisionBoxes = [];
 const {swap: toggleLights} = setupRoom(scene, onframe, collisionBoxes);
-// toggleLights();
+if (!params.get('testing-light-room')) toggleLights();
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
@@ -304,7 +316,17 @@ function animate() {
 
     camera.position.x += movement.x;
     if (camera.position.x < MIN_X) camera.position.x = MIN_X;
-    if (camera.position.x > MAX_X) camera.position.x = MAX_X;
+    if (camera.position.x > MAX_X) {
+      if (
+        camera.position.z >= tunnelXBounds.left[0] && camera.position.z <= tunnelXBounds.left[1]
+        || camera.position.z >= tunnelXBounds.right[0] && camera.position.z <= tunnelXBounds.right[1]
+      ) {
+        if (camera.position.x > tunnelZBound)
+          camera.position.x = tunnelZBound;
+      } else {
+        camera.position.x = MAX_X;
+      }
+    }
     rects.forEach(([minX, maxX, minZ, maxZ]) => {
       if (camera.position.z > minZ && camera.position.z < maxZ) {
         if (camera.position.x > minX && camera.position.x < maxX) {
@@ -317,6 +339,15 @@ function animate() {
     camera.position.z += movement.z;
     if (camera.position.z < MIN_Z) camera.position.z = MIN_Z;
     if (camera.position.z > MAX_Z) camera.position.z = MAX_Z;
+    if (camera.position.x > MAX_X) {
+      if (camera.position.z < 0) {
+        if (camera.position.z < tunnelXBounds.left[0]) camera.position.z = tunnelXBounds.left[0];
+        if (camera.position.z > tunnelXBounds.left[1]) camera.position.z = tunnelXBounds.left[1];
+      } else {
+        if (camera.position.z < tunnelXBounds.right[0]) camera.position.z = tunnelXBounds.right[0];
+        if (camera.position.z > tunnelXBounds.right[1]) camera.position.z = tunnelXBounds.right[1];
+      }
+    }
     rects.forEach(([minX, maxX, minZ, maxZ]) => {
       if (camera.position.x > minX && camera.position.x < maxX) {
         if (camera.position.z > minZ && camera.position.z < maxZ) {
