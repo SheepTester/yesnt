@@ -16,6 +16,25 @@ function createMat(x, z) {
   return mat;
 }
 
+function createExitSign(url = './textures/exit.png') {
+  const sign = new THREE.Group();
+  const base = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(8.5, 4.5, 1),
+    new THREE.MeshStandardMaterial({color: 0xcccccc, roughness: 0.1, metalness: 0.1})
+  );
+  sign.add(base);
+  const text = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(8, 4),
+    new THREE.MeshBasicMaterial({
+      map: loadTexture(url),
+      transparent: true
+    })
+  );
+  text.position.z = 0.55;
+  sign.add(text);
+  return sign;
+}
+
 const wallMaterial = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.9, metalness: 0.1});
 
 const mats = [];
@@ -61,7 +80,7 @@ function setupRoom(scene, onframe,collisions) {
   const CANDLE_RADIUS = 0.1 + PLAYER_THICKNESS;
   objectLoader.load('./models/candle.json', model => {
     model.scale.multiplyScalar(0.5);
-    const lights = [[-15, -480], [-20, -480], [-25, -480]].map(([x, z]) => {
+    const lights = [[-15, -490], [-20, -490], [-25, -490]].map(([x, z]) => {
       const candle = model.clone();
       const light = candle.getObjectByName('flame');
       candle.position.set(x, 0, z);
@@ -78,7 +97,7 @@ function setupRoom(scene, onframe,collisions) {
 
   const LAMP_RADIUS = 1.5 + PLAYER_THICKNESS;
   objectLoader.load('./models/better-lamp.json', lamp => {
-    const [x, z] = [15, -480];
+    const [x, z] = [15, -490];
     lamp.position.set(x, 0, z);
     collisions.push([x - LAMP_RADIUS, x + LAMP_RADIUS, z - LAMP_RADIUS, z + LAMP_RADIUS]);
     scene.add(lamp);
@@ -280,6 +299,11 @@ function createLightRoom() {
     backWall.rotation.y = -Math.PI / 2;
     backWall.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH, DOOR_TUNNEL_HEIGHT / 2, z);
     lightRoom.add(backWall);
+
+    const exitSign = createExitSign();
+    exitSign.rotation.y = -Math.PI / 2;
+    exitSign.position.set(ROOM_WIDTH / 2 - 0.1, DOOR_TUNNEL_HEIGHT + 5, z);
+    lightRoom.add(exitSign);
   });
 
   objectLoader.load('./models/gym-light-on.json', model => {

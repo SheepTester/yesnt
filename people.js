@@ -54,13 +54,10 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
   hair.position.set(0, 1.35 - hairHeight / 2, 0.1);
   head.add(hair);
   if (faceExpression) {
-    const faceTexture = textureLoader.load(faceExpression);
-    faceTexture.magFilter = THREE.NearestFilter;
-    faceTexture.minFilter = THREE.NearestFilter;
     const countenance = new THREE.Mesh(
       new THREE.PlaneBufferGeometry(2.5, 2.5),
       new THREE.MeshBasicMaterial({
-        map: faceTexture,
+        map: loadTexture(faceExpression),
         transparent: true
       })
     );

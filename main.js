@@ -36,10 +36,17 @@ function start() {
 const listener = new THREE.AudioListener();
 camera.add(listener);
 
+THREE.Cache.enabled = true;
 const manager = new THREE.LoadingManager();
 const textureLoader = new THREE.TextureLoader(manager);
 const objectLoader = new THREE.ObjectLoader(manager);
 const audioLoader = new THREE.AudioLoader(manager);
+function loadTexture(url) {
+  const texture = textureLoader.load(url);
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  return texture;
+}
 
 const scene = new THREE.Scene();
 scene.add(camera);
