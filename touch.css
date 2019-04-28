@@ -34,3 +34,21 @@
   left: var(--x);
   top: var(--y);
 }
+
+.button-wrapper {
+  padding: 10px;
+  overflow: auto;
+  width: 100%;
+  white-space: nowrap;
+}
+.touch-button {
+  border: 3px solid rgba(0, 162, 198, 0.3);
+  color: white;
+  background-color: rgba(0, 162, 198, 0.3);
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}

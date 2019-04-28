@@ -187,10 +187,25 @@ document.addEventListener('mousemove', e => {
 
 const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f'};
 const keys = {};
-document.addEventListener('keydown', e => {
-  if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = true;
-  if (keyToName[e.keyCode] === 'f') {
+const onKeyPress = {
+  f() {
     setPhoneState(!playerState.phoneOut);
+  },
+  shift() {
+    moving = true;
+    scene.remove(sittingPlayer.person);
+    animations.push({type: 'get-up', start: Date.now(), duration: 200});
+    instructor.moving = 'chase';
+    instructor.head.rotation.y = 0;
+    instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
+    instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
+  }
+};
+document.addEventListener('keydown', e => {
+  const key = keyToName[e.keyCode];
+  if (key) {
+    keys[key] = true;
+    if (onKeyPress[key]) onKeyPress[key]();
   }
 });
 document.addEventListener('keyup', e => {
@@ -379,21 +394,11 @@ function animate() {
       caught();
     }
   } else if (moving !== null) {
-    if (keys.shift) {
-      moving = true;
-      scene.remove(sittingPlayer.person);
-      animations.push({type: 'get-up', start: Date.now(), duration: 200});
-      instructor.moving = 'chase';
-      instructor.head.rotation.y = 0;
-      instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
-      instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
-    } else {
-      const instructorDirection = instructor.head.getWorldDirection(new THREE.Vector3()).setY(0);
-      const playerDirection = instructor.person.position.clone().sub(camera.position).setY(0);
-      if (instructorDirection.angleTo(playerDirection) < Math.PI * 0.2) {
-        if (playerState.phoneOut) {
-          caught();
-        }
+    const instructorDirection = instructor.head.getWorldDirection(new THREE.Vector3()).setY(0);
+    const playerDirection = instructor.person.position.clone().sub(camera.position).setY(0);
+    if (instructorDirection.angleTo(playerDirection) < Math.PI * 0.2) {
+      if (playerState.phoneOut) {
+        caught();
       }
     }
   }

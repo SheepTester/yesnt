@@ -29,6 +29,10 @@ function initTouch() {
           };
           touchCircle.classList.add('moving');
           calcMovementFromTouch(touch);
+        } else if (touch.target.dataset.simKey) {
+          const key = touch.target.dataset.simKey;
+          keys[key] = true;
+          if (onKeyPress[key]) onKeyPress[key]();
         }
       } else if (!cameraRotator) {
         cameraRotator = {
@@ -60,6 +64,8 @@ function initTouch() {
         touchMovement = null;
         movement = null;
         touchCircle.classList.remove('moving');
+      } else if (touch.target.dataset.simKey) {
+        keys[touch.target.dataset.simKey] = false;
       }
     }
     e.preventDefault();
