@@ -153,32 +153,35 @@ document.addEventListener('click', e => {
 });
 const MAX_ROTATION = Math.PI / 2;
 let yRotation = camera.rotation.y;
+function rotateCamera(deltaX, deltaY) {
+  if (moving) {
+    camera.rotation.y -= deltaX;
+  } else if (moving !== null) {
+    // this is probably more complicated than it needs to be
+    const change = -deltaX;
+    yRotation += change;
+    if (yRotation > MAX_ROTATION && change > 0) {
+      camera.rotation.y = MAX_ROTATION + 1 - 1 / (1 + yRotation - MAX_ROTATION);
+    } else if (yRotation < -MAX_ROTATION && change < 0) {
+      camera.rotation.y = -MAX_ROTATION - 1 + 1 / (1 - yRotation - MAX_ROTATION);
+    } else {
+      camera.rotation.y += change;
+      if (camera.rotation.y > MAX_ROTATION) {
+        yRotation = MAX_ROTATION + 1 / (1 - camera.rotation.y + MAX_ROTATION) - 1;
+      } else if (camera.rotation.y < -MAX_ROTATION) {
+        yRotation = -MAX_ROTATION + 1 - 1 / (1 + camera.rotation.y + MAX_ROTATION);
+      } else yRotation = camera.rotation.y;
+    }
+  }
+  if (moving !== null) {
+    camera.rotation.x -= deltaY;
+    if (camera.rotation.x > Math.PI / 2) camera.rotation.x = Math.PI / 2;
+    else if (camera.rotation.x < -Math.PI / 2) camera.rotation.x = -Math.PI / 2;
+  }
+}
 document.addEventListener('mousemove', e => {
   if (document.pointerLockElement) {
-    if (moving) {
-      camera.rotation.y -= e.movementX / 700;
-    } else if (moving !== null) {
-      // this is probably more complicated than it needs to be
-      const change = -e.movementX / 700;
-      yRotation += change;
-      if (yRotation > MAX_ROTATION && change > 0) {
-        camera.rotation.y = MAX_ROTATION + 1 - 1 / (1 + yRotation - MAX_ROTATION);
-      } else if (yRotation < -MAX_ROTATION && change < 0) {
-        camera.rotation.y = -MAX_ROTATION - 1 + 1 / (1 - yRotation - MAX_ROTATION);
-      } else {
-        camera.rotation.y += change;
-        if (camera.rotation.y > MAX_ROTATION) {
-          yRotation = MAX_ROTATION + 1 / (1 - camera.rotation.y + MAX_ROTATION) - 1;
-        } else if (camera.rotation.y < -MAX_ROTATION) {
-          yRotation = -MAX_ROTATION + 1 - 1 / (1 + camera.rotation.y + MAX_ROTATION);
-        } else yRotation = camera.rotation.y;
-      }
-    }
-    if (moving !== null) {
-      camera.rotation.x -= e.movementY / 700;
-      if (camera.rotation.x > Math.PI / 2) camera.rotation.x = Math.PI / 2;
-      else if (camera.rotation.x < -Math.PI / 2) camera.rotation.x = -Math.PI / 2;
-    }
+    rotateCamera(e.movementX / 700, e.movementY / 700);
   }
 });
 
@@ -282,6 +285,10 @@ function animate() {
     const sin = Math.sin(camera.rotation.y);
     const cos = Math.cos(camera.rotation.y);
     const movement = new THREE.Vector3();
+    if (touchMovement) {
+      movement.x = touchMovement.x * cos + touchMovement.y * sin;
+      movement.z = -touchMovement.x * sin + touchMovement.y * cos;
+    }
     if (keys.w) {
       movement.x -= sin;
       movement.z -= cos;
@@ -298,7 +305,8 @@ function animate() {
       movement.x += cos;
       movement.z -= sin;
     }
-    movement.normalize().multiplyScalar(MOVEMENT_SPEED * elapsedTime);
+    if (movement.lengthSq() > 1) movement.normalize();
+    movement.multiplyScalar(MOVEMENT_SPEED * elapsedTime);
 
     const matX = Math.round(camera.position.x / (MAT_WIDTH + MAT_SPACING));
     const matZ = Math.round((camera.position.z - MAT_FIRST_ROW_Z) / (MAT_LENGTH + MAT_SPACING));
@@ -401,6 +409,8 @@ function animate() {
 
 document.addEventListener('DOMContentLoaded', e => {
   document.body.appendChild(renderer.domElement);
+  initTouch();
+
   lastTime = Date.now();
   renderer.domElement.style.opacity = 0;
   manager.onLoad = () => {

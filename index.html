@@ -5,7 +5,10 @@
     <meta charset="UTF-8">
     <meta name="description" content="Your school is pushing their psuedoscientific agendas on you; you must escape before things get worse."/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
     <link rel="stylesheet" href="./main.css">
+    <link rel="stylesheet" href="./touch.css">
+
     <script src="./three.min.js" charset="utf-8"></script>
     <script src="./bloom-pass/EffectComposer.js"></script>
 		<script src="./bloom-pass/RenderPass.js"></script>
@@ -17,9 +20,13 @@
     <script src="./speech.js" charset="utf-8"></script>
     <script src="./room-setup.js" charset="utf-8"></script>
     <script src="./people.js" charset="utf-8"></script>
+    <script src="./touch.js" charset="utf-8"></script>
     <script src="./main.js" charset="utf-8"></script>
   </head>
   <body>
     <p id="subtitles"></p>
+    <div id="touch-ui">
+      <div id="touch-circle" class="touch-target"></div>
+    </div>
   </body>
 </html>

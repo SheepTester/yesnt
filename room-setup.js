@@ -44,7 +44,7 @@ function createDoor() {
   panel.position.set(7, 12, 0);
   door.add(panel);
   const bar = new THREE.Mesh(
-    new THREE.BoxBufferGeometry(12, 1, 1),
+    new THREE.BoxBufferGeometry(12, 1, 2),
     new THREE.MeshStandardMaterial({color: 0xc5c1bf, roughness: 0.3, metalness: 0.9})
   );
   bar.position.set(7, 12, 0);
