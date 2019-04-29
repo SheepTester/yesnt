@@ -106,19 +106,18 @@ function randomHair() {
 }
 
 function resetLimbRotations(student) {
-  student.limbs[0].limb.rotation.set(0, 0, 0);
-  student.limbs[0].forearm.rotation.set(0, 0, 0);
-  student.limbs[1].limb.rotation.set(0, 0, 0);
-  student.limbs[1].forearm.rotation.set(0, 0, 0);
+  student.limbs[0].limb.rotation.set(Math.PI, 0, 0);
+  student.limbs[0].forearm.rotation.set(0, 0, 0.1);
+  student.limbs[1].limb.rotation.set(Math.PI, 0, 0);
+  student.limbs[1].forearm.rotation.set(0, 0, -0.1);
+  student.mode = 'rest';
 }
-function animateStrawBreath(student, timestamp) {
+function animateExpansionBreath(student, timeStamp) {
   if (student.mode !== 'expansion') {
     resetLimbRotations(student);
-    student.limbs[0].forearm.rotation.z = 0.1;
-    student.limbs[1].forearm.rotation.z = -0.1;
     student.mode = 'expansion';
   }
-  const stage = (timeStamp / 500 + student.offset) % 18;
+  const stage = (timeStamp / 1000 + student.offset) % 18;
   if (stage < 6) {
     student.limbs[0].limb.rotation.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
     student.limbs[1].limb.rotation.z = -easeOutSine(stage / 6) * (Math.PI - 0.2) - 0.1;
@@ -133,14 +132,12 @@ function animateStrawBreath(student, timestamp) {
     student.limbs[1].limb.rotation.z = -0.1;
   }
 }
-function animateForcefulNose(student, timeStamp) {
+function animatePowerBreath(student, timeStamp) {
   if (student.mode !== 'power') {
     resetLimbRotations(student);
-    student.limbs[0].limb.rotation.z = 0.1;
-    student.limbs[1].limb.rotation.z = -0.1;
     student.mode = 'power';
   }
-  const pos = Math.sin(timeStamp / 250 + student.offset);
+  const pos = Math.sin((timeStamp / 800 - 0.5) * Math.PI + student.offset);
   student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
   student.limbs[0].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
   student.limbs[1].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
@@ -150,6 +147,7 @@ function animateForcefulNose(student, timeStamp) {
 function loadPeople(scene, onframe) {
   const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-creepy.png');
   scene.add(instructor.person);
+  instructor.offset = 0;
   instructor.person.rotation.y = Math.PI / 2;
 
   const lookLight = new THREE.SpotLight(0x990000, 0.5);
@@ -193,19 +191,20 @@ function loadPeople(scene, onframe) {
         -5,
         MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING) + (x % 2 === 0 ? STAGGER_DISTANCE : -STAGGER_DISTANCE)
       );
+      student.offset = Math.random() / 2;
       kneel(student.limbs[2]);
       kneel(student.limbs[3]);
+      resetLimbRotations(student);
       scene.add(student.person);
-      student.offset = Math.random() / 2;
       students.push(student);
       studentMap[`${x},${z}`] = true;
     }
   }
 
   // onframe.push(timeStamp => {
-  //   if (!moving) animateForcefulNose(sittingPlayer, timeStamp);
+  //   if (!moving) animatePowerBreath(sittingPlayer, timeStamp);
   //   students.forEach(student => {
-  //     animateForcefulNose(student, timeStamp);
+  //     animatePowerBreath(student, timeStamp);
   //   });
   // });
 

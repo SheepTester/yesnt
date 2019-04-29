@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Timing thing</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Measures the time between key presses"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../sheep3.css">
+    <script src="../sheep3.js" charset="utf-8"></script>
+    <style>
+      /**/
+    </style>
+  </head>
+  <body>
+    <!-- <p>average bpm: <span id="bpm">PRESS SPACE TO START</span></p> -->
+    <p>average time: <span id="time">PRESS SPACE TWICE TO START</span> seconds</p>
+    <table id="results">
+      <tr>
+        <th>#</th>
+        <th>time since last (seconds)</th>
+      </tr>
+    </table>
+    <script>
+const bpm = document.getElementById('bpm');
+const time = document.getElementById('time');
+const results = document.getElementById('results');
+let i = -1, lastPress, firstPress;
+document.addEventListener('keydown', e => {
+  if (e.keyCode === 32) {
+    const now = Date.now();
+    i++;
+    if (i > 0) {
+      // bpm.textContent =
+      time.textContent = (now - firstPress) / i / 1000;
+      results.innerHTML += `<tr><td>${i}</td><td>${(now - lastPress) / 1000}</td></tr>`;
+    } else if (i === 0) {
+      firstPress = now;
+    }
+    lastPress = now;
+  }
+});
+    </script>
+  </body>
+</html>

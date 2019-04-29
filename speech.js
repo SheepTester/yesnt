@@ -52,10 +52,12 @@ const lines = { // [subtitles, pathToAudio]
 
   omOpening: ['Let’s take a deep breath in for the OM sound.', null],
   om: ['Ommm...', null],
-  omBreathe: ['Breathe in.', null]
+  omBreathe: ['Breathe in.', null],
+
+  stopRunning: ['Stop! Your vagus nerve is not fully activated!', null]
 };
 
-const usingTTS = params.get('use-tts');
+const usingTTS = params.get('use-tts') === 'false';
 
 let subtitles, ttsSpeak, ttsPromise;
 

@@ -70,6 +70,12 @@ async function startGame() {
     await speak(line);
     if (haltYES) break;
   }
+  if (!haltYES) {
+    //
+  }
+  if (!haltForever) {
+    await speak('stopRunning');
+  }
 }
 
 const listener = new THREE.AudioListener();
@@ -313,6 +319,12 @@ function animate() {
           hintText.style.opacity = 0;
           break;
         }
+        case 'show-expansion':
+        case 'show-power': {
+          resetLimbRotations(instructor);
+          animation.onDone();
+          break;
+        }
       }
       animations.splice(i--, 1);
     } else {
@@ -343,6 +355,14 @@ function animate() {
         }
         case 'flash-hint': {
           hintText.style.opacity = easeOutCubic(1 - progress);
+          break;
+        }
+        case 'show-expansion': {
+          animateExpansionBreath(instructor, progress * 18000);
+          break;
+        }
+        case 'show-power': {
+          animatePowerBreath(instructor, progress * 3200);
           break;
         }
       }
@@ -503,9 +523,19 @@ document.addEventListener('DOMContentLoaded', e => {
     };
     for (const line of intro) {
       if (line === 'introExpansion1') {
-        //
+        await Promise.all([
+          speak('introExpansion1'),
+          new Promise(res => {
+            animations.push({type: 'show-expansion', start: Date.now(), duration: 5000, onDone: res});
+          })
+        ]);
       } else if (line === 'introPower1') {
-        //
+        await Promise.all([
+          speak('introPower1'),
+          new Promise(res => {
+            animations.push({type: 'show-power', start: Date.now(), duration: 2000, onDone: res});
+          })
+        ]);
       } else {
         await speak(line);
       }
