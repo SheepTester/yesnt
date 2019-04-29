@@ -18,7 +18,7 @@ const lines = { // [subtitles, pathToAudio]
 
   eyesClosed: ['Alright, so eyes closed from this point on.', null],
   straw1: ['Let’s start with five straw breaths,', null],
-  straw2: ['Let’s do that, four more times,', null],
+  straw2: ['Let’s do that four more times,', null],
   straw: ['breathing in through the nose, out through the pretend straw in your mouth.', null],
   strawUseless: ['Keep your attention inward, don’t distract your mind.', null],
   straw3: ['Deep breath in, and exhale through the pretend straw.', null],

@@ -60,10 +60,12 @@ async function startGame() {
     else if (reason === 'caught') haltYES = haltForever = true;
   };
   await speak('eyesClosed');
-  toggleLights();
   const sound = new THREE.Audio(listener);
   sound.setBuffer(sounds.lights);
   sound.play();
+  toggleLights();
+  hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
+  animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   for (const line of breathing) {
     await speak(line);
     if (haltYES) break;
@@ -75,6 +77,10 @@ camera.add(listener);
 
 THREE.Cache.enabled = true;
 const manager = new THREE.LoadingManager();
+let loadingBar;
+manager.onProgress = (url, loaded, total) => {
+  if (loadingBar) loadingBar.style.width = (loaded / total * 100) + '%';
+};
 const textureLoader = new THREE.TextureLoader(manager);
 const objectLoader = new THREE.ObjectLoader(manager);
 const audioLoader = new THREE.AudioLoader(manager);
@@ -231,6 +237,8 @@ const onKeyPress = {
     instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
     instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
     if (interruptInstructor) interruptInstructor('getting up');
+    hintText.textContent = 'Use WASD to move around.';
+    animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   },
   enter() {
     if (skipIntro) skipIntro();
@@ -468,6 +476,7 @@ let skipIntro = null;
 
 document.addEventListener('DOMContentLoaded', e => {
   hintText = document.getElementById('hint');
+  loadingBar = document.getElementById('progress-bar');
 
   document.body.appendChild(renderer.domElement);
   initTouch();
@@ -475,7 +484,9 @@ document.addEventListener('DOMContentLoaded', e => {
   lastTime = Date.now();
   renderer.domElement.style.opacity = 0;
   Promise.all([
-    new Promise(res => manager.onLoad = res),
+    new Promise(res => manager.onLoad = res).then(() => {
+      loadingBar.classList.add('hide-bar');
+    }),
     initSpeech()
   ]).then(async () => {
     document.body.classList.add('hide-note');

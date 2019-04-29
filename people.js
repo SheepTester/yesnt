@@ -116,6 +116,7 @@ function animateStrawBreath(student, timestamp) {
     resetLimbRotations(student);
     student.limbs[0].forearm.rotation.z = 0.1;
     student.limbs[1].forearm.rotation.z = -0.1;
+    student.mode = 'expansion';
   }
   const stage = (timeStamp / 500 + student.offset) % 18;
   if (stage < 6) {
@@ -137,6 +138,7 @@ function animateForcefulNose(student, timeStamp) {
     resetLimbRotations(student);
     student.limbs[0].limb.rotation.z = 0.1;
     student.limbs[1].limb.rotation.z = -0.1;
+    student.mode = 'power';
   }
   const pos = Math.sin(timeStamp / 250 + student.offset);
   student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
@@ -194,10 +196,6 @@ function loadPeople(scene, onframe) {
       kneel(student.limbs[2]);
       kneel(student.limbs[3]);
       scene.add(student.person);
-
-      // forceful nose breath prep
-      student.limbs[0].limb.rotation.z = 0.1;
-      student.limbs[1].limb.rotation.z = -0.1;
       student.offset = Math.random() / 2;
       students.push(student);
       studentMap[`${x},${z}`] = true;
