@@ -18,8 +18,8 @@ const lines = { // [subtitles, pathToAudio]
 
   eyesClosed: ['Alright, so eyes closed from this point on.', null],
   straw1: ['Let’s start with five straw breaths,', null],
-  straw2: ['Let’s do that, four more times', null],
-  straw: ['breathing in through the nose, out through the pretend straw in your mouth', null],
+  straw2: ['Let’s do that, four more times,', null],
+  straw: ['breathing in through the nose, out through the pretend straw in your mouth.', null],
   strawUseless: ['Keep your attention inward, don’t distract your mind.', null],
   straw3: ['Deep breath in, and exhale through the pretend straw.', null],
   straw4: ['One more time.', null],
@@ -97,13 +97,12 @@ function initSpeech() {
 }
 
 function speaking(instructorVoice) {
-  let onEnd = null, dontPlay = false, cancelEarly = null;
+  let onEnd = null, cancelEarly = null;
   instructorVoice.onEnded(() => {
     if (onEnd) onEnd();
   });
   return {
     speak: (lineID, length = null) => new Promise((res, rej) => {
-      if (dontPlay) return res();
       const line = lines[lineID];
       if (!line) return rej("Line doesn't exist.");
       if (line[1]) {
@@ -138,9 +137,8 @@ function speaking(instructorVoice) {
       onEnd = null;
       cancelEarly = null;
     }),
-    silence: () => {
-      cancelEarly();
-      dontPlay = true;
+    interrupt: () => {
+      if (cancelEarly) cancelEarly();
     }
   };
 }

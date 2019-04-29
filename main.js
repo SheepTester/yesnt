@@ -30,9 +30,9 @@ const instructorCanMove = params.get('freeze-instructor') !== 'please';
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
 function start() {
-  instructor.moving = 'watch';
-  instructor.walkOffsetTime = Date.now();
+  if (isDark()) toggleLights();
   instructor.head.rotation.set(0, 0, 0);
+  instructor.person.rotation.y = Math.PI;
   instructor.person.position.z = -475;
   instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI;
   instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = 0;
@@ -42,6 +42,32 @@ function start() {
   animations.push({type: 'start', start: Date.now(), duration: 1000});
   moving = false;
   if (playerState.phoneOut) setPhoneState(false);
+}
+let interruptInstructor = null;
+const breathing = [
+  'straw1', 'straw', 'straw2', 'straw', 'strawUseless', 'straw3', 'straw4',
+  'strawClosing',
+  'expansionOpening', 'normalBreath', 'expansionInstruct'
+];
+async function startGame() {
+  instructor.moving = 'watch';
+  instructor.walkOffsetTime = Date.now();
+  const {speak, interrupt} = speaking(instructorVoice);
+  let haltForever = false, haltYES = false;
+  interruptInstructor = reason => {
+    interrupt();
+    if (reason === 'getting up') haltYES = true;
+    else if (reason === 'caught') haltYES = haltForever = true;
+  };
+  await speak('eyesClosed');
+  toggleLights();
+  const sound = new THREE.Audio(listener);
+  sound.setBuffer(sounds.lights);
+  sound.play();
+  for (const line of breathing) {
+    await speak(line);
+    if (haltYES) break;
+  }
 }
 
 const listener = new THREE.AudioListener();
@@ -59,12 +85,15 @@ function loadTexture(url) {
   return texture;
 }
 
+const sounds = {};
+audioLoader.load('./sounds/lights-sound.mp3', buffer => sounds.lights = buffer);
+
 const scene = new THREE.Scene();
 scene.add(camera);
 
 const onframe = [];
 const collisionBoxes = [];
-const {swap: toggleLights} = setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights, isDark} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
@@ -189,10 +218,11 @@ const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f', 13:
 const keys = {};
 const onKeyPress = {
   f() {
+    if (skipIntro) return;
     setPhoneState(!playerState.phoneOut);
   },
   shift() {
-    if (moving) return;
+    if (moving || !isDark()) return;
     moving = true;
     scene.remove(sittingPlayer.person);
     animations.push({type: 'get-up', start: Date.now(), duration: 200});
@@ -200,6 +230,7 @@ const onKeyPress = {
     instructor.head.rotation.y = 0;
     instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
     instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
+    if (interruptInstructor) interruptInstructor('getting up');
   },
   enter() {
     if (skipIntro) skipIntro();
@@ -239,6 +270,7 @@ function caught() {
     zoomIntensity: camera.position.distanceTo(headPos) / 20,
     anchorY: camera.position.y
   });
+  if (interruptInstructor) interruptInstructor('caught');
 }
 
 let hintText;
@@ -261,6 +293,7 @@ function animate() {
         }
         case 'intensify': {
           start();
+          startGame();
           document.body.style.backgroundColor = null;
           break;
         }
@@ -339,13 +372,14 @@ function animate() {
     const matZ = Math.round((camera.position.z - MAT_FIRST_ROW_Z) / (MAT_LENGTH + MAT_SPACING));
     const studentX = matX * (MAT_WIDTH + MAT_SPACING);
     const studentZ = matZ * (MAT_LENGTH + MAT_SPACING) + MAT_FIRST_ROW_Z;
+    const stagger = matX % 2 === 0 ? STAGGER_DISTANCE : -STAGGER_DISTANCE;
     const rects = [...collisionBoxes];
     if (studentMap[`${matX},${matZ}`]) {
       rects.push([
         studentX - STUDENT_X_RADIUS,
         studentX + STUDENT_X_RADIUS,
-        studentZ - STUDENT_FRONT_SIZE,
-        studentZ + STUDENT_BACK_SIZE
+        studentZ - STUDENT_FRONT_SIZE + stagger,
+        studentZ + STUDENT_BACK_SIZE + stagger
       ]);
     }
 
@@ -444,13 +478,18 @@ document.addEventListener('DOMContentLoaded', e => {
     new Promise(res => manager.onLoad = res),
     initSpeech()
   ]).then(async () => {
+    document.body.classList.add('hide-note');
     start();
     animate();
 
     hintText.textContent = 'Press enter to skip the intro.';
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
-    const {speak, silence} = speaking(instructorVoice);
-    skipIntro = silence;
+    const {speak, interrupt} = speaking(instructorVoice);
+    let dontContinue = false;
+    skipIntro = () => {
+      interrupt();
+      dontContinue = true;
+    };
     for (const line of intro) {
       if (line === 'introExpansion1') {
         //
@@ -459,7 +498,9 @@ document.addEventListener('DOMContentLoaded', e => {
       } else {
         await speak(line);
       }
+      if (dontContinue) break;
     }
     skipIntro = null;
+    startGame();
   });
 });

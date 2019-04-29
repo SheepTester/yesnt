@@ -153,6 +153,9 @@ function setupRoom(scene, onframe,collisions) {
       scene.remove(dark ? darkRoom : lightRoom);
       dark = !dark;
       scene.add(dark ? darkRoom : lightRoom);
+    },
+    isDark() {
+      return dark;
     }
   };
 }

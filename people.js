@@ -1,6 +1,7 @@
 const LIMB_WIDTH = 0.5;
 const SLEEVE_OFFSET = 0.1;
 const SLEEVE_WIDTH = 0.7;
+const STAGGER_DISTANCE = 2;
 function createLimb(limbLength, skinColour, sleeveLength = 0, sleeveColour = 0xffffff) {
   const limb = new THREE.Group();
   if (sleeveLength) {
@@ -104,7 +105,18 @@ function randomHair() {
        + Math.floor(96.7 + 26.3 * k);
 }
 
+function resetLimbRotations(student) {
+  student.limbs[0].limb.rotation.set(0, 0, 0);
+  student.limbs[0].forearm.rotation.set(0, 0, 0);
+  student.limbs[1].limb.rotation.set(0, 0, 0);
+  student.limbs[1].forearm.rotation.set(0, 0, 0);
+}
 function animateStrawBreath(student, timestamp) {
+  if (student.mode !== 'expansion') {
+    resetLimbRotations(student);
+    student.limbs[0].forearm.rotation.z = 0.1;
+    student.limbs[1].forearm.rotation.z = -0.1;
+  }
   const stage = (timeStamp / 500 + student.offset) % 18;
   if (stage < 6) {
     student.limbs[0].limb.rotation.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
@@ -121,6 +133,11 @@ function animateStrawBreath(student, timestamp) {
   }
 }
 function animateForcefulNose(student, timeStamp) {
+  if (student.mode !== 'power') {
+    resetLimbRotations(student);
+    student.limbs[0].limb.rotation.z = 0.1;
+    student.limbs[1].limb.rotation.z = -0.1;
+  }
   const pos = Math.sin(timeStamp / 250 + student.offset);
   student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
   student.limbs[0].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
@@ -147,7 +164,7 @@ function loadPeople(scene, onframe) {
   onframe.push(timeStamp => {
     if (!instructor.moving) return;
     if (instructor.moving === 'watch') {
-      const pos = (timeStamp - instructor.walkOffsetTime) / 200 % 600;
+      const pos = ((timeStamp - instructor.walkOffsetTime) / 200 + 150) % 600;
       instructor.person.position.x = pos > 300 ? 450 - pos : pos - 150;
       instructor.person.rotation.y = pos > 300 ? Math.PI / 2 : -Math.PI / 2;
       instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 200) * 0.3 + 0.1;
@@ -169,7 +186,11 @@ function loadPeople(scene, onframe) {
     const stop = Math.random() < 0.5 ? 4 : 3;
     for (let z = x === 0 ? 1 : 0; z < stop; z++) {
       const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
-      student.person.position.set(x * (MAT_WIDTH + MAT_SPACING), -5, MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING));
+      student.person.position.set(
+        x * (MAT_WIDTH + MAT_SPACING),
+        -5,
+        MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING) + (x % 2 === 0 ? STAGGER_DISTANCE : -STAGGER_DISTANCE)
+      );
       kneel(student.limbs[2]);
       kneel(student.limbs[3]);
       scene.add(student.person);
@@ -183,41 +204,14 @@ function loadPeople(scene, onframe) {
     }
   }
 
-  // up 2 3 4 5 6
-  // hold 2 3 4
-  // down 2 3 4 5 6
-  // rest 2
+  // onframe.push(timeStamp => {
+  //   if (!moving) animateForcefulNose(sittingPlayer, timeStamp);
+  //   students.forEach(student => {
+  //     animateForcefulNose(student, timeStamp);
+  //   });
+  // });
 
-  /*
-  // straw breath prep
-  strawBreather.limbs[0].forearm.rotation.z = 0.1;
-  strawBreather.limbs[1].forearm.rotation.z = -0.1;
-  onframe.push(timeStamp => {
-    const stage = timeStamp / 500 % 18;
-    if (stage < 6) {
-      strawBreather.limbs[0].limb.rotation.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
-      strawBreather.limbs[1].limb.rotation.z = -easeOutSine(stage / 6) * (Math.PI - 0.2) - 0.1;
-    } else if (stage < 10) {
-      strawBreather.limbs[0].limb.rotation.z = Math.PI - 0.1;
-      strawBreather.limbs[1].limb.rotation.z = -Math.PI + 0.1;
-    } else if (stage < 16) {
-      strawBreather.limbs[0].limb.rotation.z = (1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) + 0.1;
-      strawBreather.limbs[1].limb.rotation.z = -(1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) - 0.1;
-    } else {
-      strawBreather.limbs[0].limb.rotation.z = 0.1;
-      strawBreather.limbs[1].limb.rotation.z = -0.1;
-    }
-  });
-  */
-
-  onframe.push(timeStamp => {
-    // if (!moving) animateForcefulNose(sittingPlayer, timeStamp);
-    students.forEach(student => {
-      animateForcefulNose(student, timeStamp);
-    });
-  });
-
-  return {studentMap, instructor, instructorVoice: sound};
+  return {studentMap, students, instructor, instructorVoice: sound};
 }
 
 function createPhone() {
