@@ -17,6 +17,7 @@ function initTouch() {
     if (!usingTouch) {
       usingTouch = true;
       touchUI.classList.add('using-touch');
+      userInteracted();
     }
     for (const touch of e.changedTouches) {
       if (touch.target.classList.contains('touch-target')) {

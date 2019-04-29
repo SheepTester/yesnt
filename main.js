@@ -24,7 +24,6 @@ const tunnelXBounds = {
 };
 const tunnelZBound = MAX_X + DARK_TUNNEL_LENGTH - PLAYER_THICKNESS;
 
-const params = new URL(window.location).searchParams;
 const shaders = params.get('shaders') !== 'false';
 const instructorCanMove = params.get('freeze-instructor') !== 'please';
 
@@ -66,7 +65,6 @@ scene.add(camera);
 const onframe = [];
 const collisionBoxes = [];
 const {swap: toggleLights} = setupRoom(scene, onframe, collisionBoxes);
-if (!params.get('testing-light-room')) toggleLights();
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
@@ -136,12 +134,14 @@ if (shaders) {
 }
 
 window.addEventListener('resize', e => {
+  document.body.style.display = 'none';
   const width = window.innerWidth;
   const height = window.innerHeight;
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
   if (shaders) composer.setSize(width, height);
+  document.body.style.display = null;
 });
 
 let userInteracted;
@@ -185,13 +185,14 @@ document.addEventListener('mousemove', e => {
   }
 });
 
-const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f'};
+const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f', 13: 'enter'};
 const keys = {};
 const onKeyPress = {
   f() {
     setPhoneState(!playerState.phoneOut);
   },
   shift() {
+    if (moving) return;
     moving = true;
     scene.remove(sittingPlayer.person);
     animations.push({type: 'get-up', start: Date.now(), duration: 200});
@@ -199,6 +200,9 @@ const onKeyPress = {
     instructor.head.rotation.y = 0;
     instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
     instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
+  },
+  enter() {
+    if (skipIntro) skipIntro();
   }
 };
 document.addEventListener('keydown', e => {
@@ -237,7 +241,7 @@ function caught() {
   });
 }
 
-const raycaster = new THREE.Raycaster();
+let hintText;
 let lastTime, moving;
 const animations = [];
 function animate() {
@@ -262,6 +266,10 @@ function animate() {
         }
         case 'get-up': {
           camera.position.y = STANDING_EYE_HEIGHT;
+          break;
+        }
+        case 'flash-hint': {
+          hintText.style.opacity = 0;
           break;
         }
       }
@@ -290,6 +298,10 @@ function animate() {
         }
         case 'get-up': {
           camera.position.y = easeOutCubic(progress) * (STANDING_EYE_HEIGHT - SITTING_EYE_HEIGHT) + SITTING_EYE_HEIGHT;
+          break;
+        }
+        case 'flash-hint': {
+          hintText.style.opacity = easeOutCubic(1 - progress);
           break;
         }
       }
@@ -412,21 +424,42 @@ function animate() {
   lastTime = now;
 }
 
+const intro = [
+  'intro', 'introStraw', 'introExpansion1', 'introExpansion2', 'introExpansion3',
+  'introExpansion4', 'introPower1', 'introPower2', 'introOm', 'introSohum1',
+  'introSohum2', 'introSohum3', 'introSohum4', 'introStagger', 'introThreat1',
+  'introThreat2'
+];
+let skipIntro = null;
+
 document.addEventListener('DOMContentLoaded', e => {
+  hintText = document.getElementById('hint');
+
   document.body.appendChild(renderer.domElement);
   initTouch();
 
   lastTime = Date.now();
   renderer.domElement.style.opacity = 0;
-  manager.onLoad = () => {
+  Promise.all([
+    new Promise(res => manager.onLoad = res),
+    initSpeech()
+  ]).then(async () => {
     start();
-  };
-  animate();
+    animate();
 
-  initSpeech().then(async () => {
-    const speak = speaking(instructorVoice);
-    await speak('line0');
-    await speak('line1');
-    await speak('line2');
+    hintText.textContent = 'Press enter to skip the intro.';
+    animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+    const {speak, silence} = speaking(instructorVoice);
+    skipIntro = silence;
+    for (const line of intro) {
+      if (line === 'introExpansion1') {
+        //
+      } else if (line === 'introPower1') {
+        //
+      } else {
+        await speak(line);
+      }
+    }
+    skipIntro = null;
   });
 });

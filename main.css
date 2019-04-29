@@ -22,3 +22,36 @@ canvas {
   max-width: 500px;
   z-index: 1;
 }
+#hint {
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+  font-size: 18px;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  height: 1em;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  max-width: 500px;
+  z-index: 1;
+}
+.note {
+  position: fixed;
+  display: flex;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+  flex-direction: column;
+}
+.note p {
+  max-width: 500px;
+  font-size: 12px;
+}

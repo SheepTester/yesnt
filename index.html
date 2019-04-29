@@ -17,6 +17,9 @@
 		<script src="./bloom-pass/LuminosityHighPassShader.js"></script>
 		<script src="./bloom-pass/UnrealBloomPass.js"></script>
 
+    <script type="text/javascript">
+      const params = new URL(window.location).searchParams;
+    </script>
     <script src="./speech.js" charset="utf-8"></script>
     <script src="./room-setup.js" charset="utf-8"></script>
     <script src="./people.js" charset="utf-8"></script>
@@ -25,9 +28,15 @@
   </head>
   <body>
     <p id="subtitles"></p>
+    <p id="hint"></p>
+    <div class="note">
+      <p>This is a work of fiction. Names, characters, businesses, places, events and incidents are either the products of the author's imagination or used in a fictitious manner. Any resemblance to actual persons, living or dead, or actual events is purely coincidental.</p>
+      <p>Click/tap the screen if you believe this.</p>
+    </div>
     <div id="touch-ui">
       <div id="touch-circle" class="touch-target"></div>
       <div class="button-wrapper">
+        <button class="touch-target touch-button" data-sim-key="enter">skip intro</button>
         <button class="touch-target touch-button" data-sim-key="shift">get up</button>
         <button class="touch-target touch-button" data-sim-key="f">phone out/away</button>
       </div>
