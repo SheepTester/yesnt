@@ -49,6 +49,7 @@ function createDoor() {
 }
 function createDoubleDoors(exitSignURL) {
   const door = new THREE.Group();
+  door.isDoors = true;
   const exitSign = createExitSign(exitSignURL);
   exitSign.position.y = 30;
   door.add(exitSign);
@@ -93,7 +94,7 @@ function setupRoom(scene, onframe,collisions) {
   scene.add(frontWall);
 
   let dark = false;
-  const darkRoom = createDarkRoom();
+  const {darkRoom, doors} = createDarkRoom();
   const lightRoom = createLightRoom();
   scene.add(lightRoom);
 
@@ -156,7 +157,8 @@ function setupRoom(scene, onframe,collisions) {
     isDark() {
       return dark;
     },
-    darkPhongFloor
+    darkPhongFloor,
+    doors
   };
 }
 
@@ -165,6 +167,8 @@ const DARK_DOOR_TUNNEL_WIDTH = 100;
 const DARK_TUNNEL_LENGTH = 500;
 
 function createDarkRoom() {
+  const doorList = [];
+
   const DARK_WALLS_HEIGHT = 200;
   const darkRoom = new THREE.Group();
 
@@ -276,6 +280,7 @@ function createDarkRoom() {
     doors.rotation.y = -Math.PI / 2;
     doors.position.set(500 + TUNNEL_LENGTH, 0, z);
     darkRoom.add(doors);
+    doorList.push(doors);
   });
 
   [
@@ -288,9 +293,10 @@ function createDarkRoom() {
     doors.rotation.y = Math.PI / 2;
     doors.position.set(-500, 0, z);
     darkRoom.add(doors);
+    doorList.push(doors);
   });
 
-  return darkRoom;
+  return {darkRoom, doors: doorList};
 }
 
 function createLightRoom() {

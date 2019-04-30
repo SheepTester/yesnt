@@ -112,7 +112,7 @@ scene.add(camera);
 
 const onframe = [];
 const collisionBoxes = [];
-const {swap: toggleLights, isDark, darkPhongFloor} = setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights, isDark, darkPhongFloor, doors} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
@@ -164,6 +164,51 @@ const codeChangeInterval = setInterval(() => { // don't clear! that way it can c
   c.fillText(code[char], 20 + Math.random() * 40, 150 - Math.random() * 40);
   phone.update();
 }, 3000);
+
+const doorPopupCanvas = document.createElement('canvas');
+doorPopupCanvas.width = 256;
+doorPopupCanvas.height = 128;
+const dc = doorPopupCanvas.getContext('2d');
+dc.textAlign = 'center';
+dc.textBaseline = 'top';
+const doorPopupTexture = new THREE.CanvasTexture(doorPopupCanvas);
+doorPopupTexture.magFilter = THREE.NearestFilter;
+doorPopupTexture.minFilter = THREE.NearestFilter;
+const doorPopup = new THREE.Mesh(
+  new THREE.PlaneBufferGeometry(28, 14),
+  new THREE.MeshBasicMaterial({
+    map: doorPopupTexture,
+    transparent: true
+  })
+);
+doorPopup.position.set(0, 7, 1.5);
+let selectedDoor = null, typeProgress, typingState, typingTimeout = null;
+function renderDoorPopup(internalCall = false) {
+  dc.clearRect(0, 0, 256, 128);
+  if (internalCall && typeProgress.length >= 6) {
+    // TODO: check if it's right
+    dc.fillStyle = '#ff0000';
+    typingTimeout = setTimeout(() => {
+      typeProgress = '';
+      typingState = true;
+      typingTimeout = null;
+      renderDoorPopup();
+    }, 500);
+  } else {
+    dc.fillStyle = '#00ffff';
+  }
+  dc.font = '20px sans-serif';
+  dc.fillText('Press 0-9 to enter keycode:', 128, 5);
+  dc.font = '30px sans-serif';
+  dc.fillText(typeProgress, 128, 30);
+  doorPopupTexture.needsUpdate = true;
+  if (!internalCall && typeProgress.length >= 6) {
+    typingState = false;
+    typingTimeout = setTimeout(() => {
+      renderDoorPopup(true);
+    }, 500);
+  }
+}
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -233,7 +278,7 @@ document.addEventListener('mousemove', e => {
   }
 });
 
-const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f', 13: 'enter'};
+const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f', 13: 'enter', 8: 'backspace'};
 const keys = {};
 const onKeyPress = {
   f() {
@@ -255,6 +300,12 @@ const onKeyPress = {
   },
   enter() {
     if (skipIntro) skipIntro();
+  },
+  backspace() {
+    if (selectedDoor && typingState) {
+      typeProgress = typeProgress.slice(0, -1);
+      renderDoorPopup();
+    }
   }
 };
 document.addEventListener('keydown', e => {
@@ -267,6 +318,15 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => {
   if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = false;
 });
+for (let i = 0; i < 10; i++) {
+  keyToName[i + 48] = i + '';
+  onKeyPress[i] = () => {
+    if (selectedDoor && typingState) {
+      typeProgress += i;
+      renderDoorPopup();
+    }
+  };
+}
 
 function easeOutCubic(t) {
   t--;
@@ -297,6 +357,7 @@ function caught() {
 let hintText;
 let lastTime, moving;
 const animations = [];
+const raycaster = new THREE.Raycaster();
 function animate() {
   const now = Date.now();
   const elapsedTime = now - lastTime;
@@ -460,6 +521,31 @@ function animate() {
         }
       }
     });
+
+    raycaster.setFromCamera(new THREE.Vector2(), camera);
+    const intersection = raycaster.intersectObjects(doors, true)[0];
+    if (intersection && intersection.distance < 40) {
+      let object = intersection.object;
+      while (object && !object.isDoors) {
+        object = object.parent;
+      }
+      if (!object) {
+        console.log('oof', intersection.object);
+        return;
+      }
+      if (selectedDoor !== object) {
+        if (typingTimeout) clearTimeout(typingTimeout);
+        selectedDoor = object;
+        object.add(doorPopup);
+        typeProgress = '';
+        typingState = true;
+        renderDoorPopup();
+      }
+    } else if (selectedDoor) {
+      if (typingTimeout) clearTimeout(typingTimeout);
+      selectedDoor.remove(doorPopup);
+      selectedDoor = null;
+    }
 
     const angle = Math.atan2(
       instructor.person.position.x - camera.position.x,
