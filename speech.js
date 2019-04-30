@@ -57,7 +57,7 @@ const lines = { // [subtitles, pathToAudio]
   stopRunning: ['Stop! Your vagus nerve is not fully activated!', null]
 };
 
-const usingTTS = params.get('use-tts') === 'false';
+const usingTTS = params.get('use-tts') !== 'false';
 
 let subtitles, ttsSpeak, ttsPromise;
 

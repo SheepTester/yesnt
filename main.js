@@ -100,12 +100,19 @@ function loadTexture(url) {
 const sounds = {};
 audioLoader.load('./sounds/lights-sound.mp3', buffer => sounds.lights = buffer);
 
+const usingLambert = params.get('lambert') === 'true';
+const gameMaterial = usingLambert ? (colour, emissive) => {
+  return new THREE.MeshLambertMaterial({color: colour, emissive});
+} : (colour, emissive, roughness, metalness) => {
+  return new THREE.MeshStandardMaterial({color: colour, emissive, roughness, metalness});
+};
+
 const scene = new THREE.Scene();
 scene.add(camera);
 
 const onframe = [];
 const collisionBoxes = [];
-const {swap: toggleLights, isDark} = setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights, isDark, darkPhongFloor} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
@@ -475,6 +482,10 @@ function animate() {
         caught();
       }
     }
+  }
+
+  if (darkPhongFloor) {
+    darkPhongFloor.position.set(camera.position.x, 0, camera.position.z);
   }
 
   onframe.forEach(fn => fn(now, elapsedTime));

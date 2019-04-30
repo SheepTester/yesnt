@@ -6,11 +6,7 @@ const MAT_COLOURS = [0xc98838, 0xbf4d4d, 0xbf4d4d, 0xbf4d4d, 0xbb6a78, 0x473068,
 function createMat(x, z) {
   const mat = new THREE.Mesh(
     new THREE.BoxBufferGeometry(MAT_WIDTH, 0.4, MAT_LENGTH),
-    new THREE.MeshStandardMaterial({
-      color: MAT_COLOURS[Math.floor(Math.random() * MAT_COLOURS.length)],
-      roughness: 0.9,
-      metalness: 0.5
-    })
+    gameMaterial(MAT_COLOURS[Math.floor(Math.random() * MAT_COLOURS.length)], 0, 0.9, 0.5)
   );
   mat.position.set(x, 0, z);
   return mat;
@@ -20,7 +16,7 @@ function createExitSign(url) {
   const sign = new THREE.Group();
   const base = new THREE.Mesh(
     new THREE.BoxBufferGeometry(8.5, 4.5, 1),
-    new THREE.MeshStandardMaterial({color: 0xcccccc, roughness: 0.1, metalness: 0.1})
+    gameMaterial(0xcccccc, 0, 0.1, 0.1)
   );
   sign.add(base);
   const text = new THREE.Mesh(
@@ -39,13 +35,13 @@ function createDoor() {
   const door = new THREE.Group();
   const panel = new THREE.Mesh(
     new THREE.BoxBufferGeometry(14, 24, 1),
-    new THREE.MeshStandardMaterial({color: 0x807c79, roughness: 0.3, metalness: 0.9})
+    gameMaterial(0x807c79, 0, 0.3, 0.9)
   );
   panel.position.set(7, 12, 0);
   door.add(panel);
   const bar = new THREE.Mesh(
     new THREE.BoxBufferGeometry(12, 1, 2),
-    new THREE.MeshStandardMaterial({color: 0xc5c1bf, roughness: 0.3, metalness: 0.9})
+    gameMaterial(0xc5c1bf, 0, 0.3, 0.9)
   );
   bar.position.set(7, 12, 0);
   door.add(bar);
@@ -66,27 +62,28 @@ function createDoubleDoors(exitSignURL) {
   return door;
 }
 
-const wallMaterial = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.9, metalness: 0.1});
+let wallMaterial;
 
 const mats = [];
 function setupRoom(scene, onframe,collisions) {
+  wallMaterial = gameMaterial(0xffffff, 0, 0.9, 0.1);
+
   const floor = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, 1000),
-    new THREE.MeshStandardMaterial({color: 0xF1C38E, roughness: 0.6, metalness: 0.2})
+    gameMaterial(0xF1C38E, 0, 0.6, 0.2)
   );
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  // const lampSphere = new THREE.Mesh(
-  //   new THREE.SphereBufferGeometry(3),
-  //   new THREE.MeshStandardMaterial({emissive: 0xffd6aa, roughness: 0.6, metalness: 0.2})
-  // );
-  // lampSphere.position.set(0, 10, -450);
-  // scene.add(lampSphere);
-  //
-  // const lamp = new THREE.PointLight(0xffd6aa, 0.8);
-  // lamp.position.set(0, 10, -450);
-  // scene.add(lamp);
+  let darkPhongFloor;
+  if (usingLambert) {
+    // separate floor so the red light shows
+    darkPhongFloor = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(100, 100),
+      new THREE.MeshPhongMaterial({color: 0xF1C38E, shininess: 50})
+    );
+    darkPhongFloor.rotation.x = -Math.PI / 2;
+  }
 
   const frontWall = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, 200),
@@ -151,12 +148,15 @@ function setupRoom(scene, onframe,collisions) {
   return {
     swap() {
       scene.remove(dark ? darkRoom : lightRoom);
+      if (darkPhongFloor) scene.remove(dark ? darkPhongFloor : floor);
       dark = !dark;
       scene.add(dark ? darkRoom : lightRoom);
+      if (darkPhongFloor) scene.add(dark ? darkPhongFloor : floor);
     },
     isDark() {
       return dark;
-    }
+    },
+    darkPhongFloor
   };
 }
 
@@ -220,7 +220,7 @@ function createDarkRoom() {
   rightWallRightPanel.position.set(500, DOOR_TUNNEL_HEIGHT / 2, 500 - DOOR_TUNNEL_PADDING / 2);
   darkRoom.add(rightWallRightPanel);
 
-  const tunnelMaterial = new THREE.MeshStandardMaterial({color: 0x6C3011, roughness: 0.9, metalness: 0.1});
+  const tunnelMaterial = gameMaterial(0x6C3011, 0, 0.9, 0.1);
   const TUNNEL_LENGTH = DARK_TUNNEL_LENGTH;
   [
     -500 + DOOR_TUNNEL_PADDING + DOOR_TUNNEL_WIDTH / 2,
@@ -249,13 +249,15 @@ function createDarkRoom() {
     roof.position.set(500 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT, z);
     darkRoom.add(roof);
 
-    const floor = new THREE.Mesh(
-      new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_WIDTH),
-      new THREE.MeshStandardMaterial({color: 0x717276, roughness: 0.9, metalness: 0.1})
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set(500 + TUNNEL_LENGTH / 2, 0, z);
-    darkRoom.add(floor);
+    if (usingLambert) {
+      const floor = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_WIDTH),
+        gameMaterial(0x717276, 0, 0.9, 0.1)
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(500 + TUNNEL_LENGTH / 2, 0, z);
+      darkRoom.add(floor);
+    }
 
     const backWall = new THREE.Mesh(
       new THREE.PlaneBufferGeometry(DOOR_TUNNEL_WIDTH, DOOR_TUNNEL_HEIGHT),

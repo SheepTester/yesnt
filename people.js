@@ -7,14 +7,14 @@ function createLimb(limbLength, skinColour, sleeveLength = 0, sleeveColour = 0xf
   if (sleeveLength) {
     const sleeve = new THREE.Mesh(
       new THREE.BoxBufferGeometry(SLEEVE_WIDTH, sleeveLength, SLEEVE_WIDTH),
-      new THREE.MeshStandardMaterial({color: sleeveColour, roughness: 0.9, metalness: 0.5})
+      gameMaterial(sleeveColour, 0, 0.9, 0.5)
     );
     sleeve.position.set(0, sleeveLength / 2 - SLEEVE_OFFSET, 0);
     limb.add(sleeve);
   }
   const upperArm = new THREE.Mesh(
     new THREE.BoxBufferGeometry(LIMB_WIDTH, limbLength, LIMB_WIDTH),
-    new THREE.MeshStandardMaterial({color: skinColour, roughness: 0.9, metalness: 0.5})
+    gameMaterial(skinColour, 0, 0.9, 0.5)
   );
   upperArm.position.set(0, limbLength / 2, 0);
   limb.add(upperArm);
@@ -22,7 +22,7 @@ function createLimb(limbLength, skinColour, sleeveLength = 0, sleeveColour = 0xf
   forearmGeo.applyMatrix(new THREE.Matrix4().makeTranslation(0, limbLength / 2, 0));
   const forearm = new THREE.Mesh(
     forearmGeo,
-    new THREE.MeshStandardMaterial({color: skinColour, roughness: 0.9, metalness: 0.5})
+    gameMaterial(skinColour, 0, 0.9, 0.5)
   );
   forearm.position.set(0, limbLength - LIMB_WIDTH / 2, 0);
   limb.add(forearm);
@@ -45,12 +45,12 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
   const head = new THREE.Group();
   const face = new THREE.Mesh(
     new THREE.BoxBufferGeometry(2.5, 2.5, 2.5),
-    new THREE.MeshStandardMaterial({color: skinColour, roughness: 0.9, metalness: 0.5})
+    gameMaterial(skinColour, 0, 0.9, 0.5)
   );
   head.add(face);
   const hair = new THREE.Mesh(
     new THREE.BoxBufferGeometry(2.7, hairHeight, 2.6),
-    new THREE.MeshStandardMaterial({color: hairColour, roughness: 0.9, metalness: 0.5})
+    gameMaterial(hairColour, 0, 0.9, 0.5)
   );
   hair.position.set(0, 1.35 - hairHeight / 2, 0.1);
   head.add(hair);
@@ -70,7 +70,7 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
   person.add(head);
   const body = new THREE.Mesh(
     new THREE.BoxBufferGeometry(3, 4, 1),
-    new THREE.MeshStandardMaterial({color: shirtColour, roughness: 0.9, metalness: 0.5})
+    gameMaterial(shirtColour, 0, 0.9, 0.5)
   );
   body.position.set(0, 8, 0);
   person.add(body);
@@ -84,6 +84,7 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
     limb.limb.rotation.x = Math.PI;
     person.add(limb.limb);
   });
+  person.isPerson = true;
   return {person, limbs, head};
 }
 
@@ -182,21 +183,41 @@ function loadPeople(scene, onframe) {
 
   const studentMap = {};
   const students = [];
+  const boxStudents = params.get('box-students') === 'true';
+  const makeStudent = boxStudents ? (x, z) => {
+    const box = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(5, 6, 4.5),
+      gameMaterial(randomSkin(), 0, 0.9, 0.5)
+    );
+    const countenance = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(4, 4),
+      new THREE.MeshBasicMaterial({
+        map: loadTexture('./textures/face-sleeping.png'),
+        transparent: true
+      })
+    );
+    countenance.position.set(0, 0, -2.25);
+    countenance.rotation.y = Math.PI;
+    box.add(countenance);
+    box.position.set(x, 3, z - 0.5);
+    scene.add(box);
+  } : (x, z) => {
+    const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
+    student.person.position.set(x, -5, z);
+    student.offset = Math.random() / 2;
+    kneel(student.limbs[2]);
+    kneel(student.limbs[3]);
+    resetLimbRotations(student);
+    scene.add(student.person);
+    return student;
+  };
   for (let x = -10; x <= 10; x++) {
     const stop = Math.random() < 0.5 ? 4 : 3;
     for (let z = x === 0 ? 1 : 0; z < stop; z++) {
-      const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
-      student.person.position.set(
+      students.push(makeStudent(
         x * (MAT_WIDTH + MAT_SPACING),
-        -5,
         MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING) + (x % 2 === 0 ? STAGGER_DISTANCE : -STAGGER_DISTANCE)
-      );
-      student.offset = Math.random() / 2;
-      kneel(student.limbs[2]);
-      kneel(student.limbs[3]);
-      resetLimbRotations(student);
-      scene.add(student.person);
-      students.push(student);
+      ));
       studentMap[`${x},${z}`] = true;
     }
   }
@@ -215,12 +236,12 @@ function createPhone() {
   const phone = new THREE.Group();
   const body = new THREE.Mesh(
     new THREE.BoxBufferGeometry(0.7, 0.1, 1.3),
-    new THREE.MeshStandardMaterial({color: 0x343539, roughness: 0.9, metalness: 0.8})
+    gameMaterial(0x343539, 0, 0.9, 0.8)
   );
   phone.add(body);
   const screen = new THREE.Mesh(
     new THREE.BoxBufferGeometry(0.6, 0.01, 1.2),
-    new THREE.MeshStandardMaterial({emissive: 0xffffff, roughness: 0.9, metalness: 0.8})
+    gameMaterial(0, 0xffffff, 0.9, 0.8)
   );
   screen.position.y = 0.1;
   phone.add(screen);
