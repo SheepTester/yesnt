@@ -28,10 +28,11 @@ const lines = { // [subtitles, pathToAudio]
   expansionOpening: ['Hands by your side for the expansion breath.', null],
   normalBreath: ['Let’s take a normal breath in, and breathe out.', null],
   expansionInstruct: ['Using victory breath from the back of the throat,', null],
-  expansionArmsUp: ['arms come up slowly, activate your vagus nerve,', null],
-  expansionArmsDown: ['using victory, arms come down slowly', null],
+  expansionArmsUp: ['breathe in, arms come up slowly, activate your vagus nerve,', null],
+  expansionArmsDown: ['breathe out using victory, arms come down slowly', null],
   breatheIn: ['breathe in,', null],
   breatheOut: ['breathe out,', null],
+  holdBreath: ['hold your breath,', null],
   hold: ['hold,', null],
   two: ['two,', null],
   three: ['three,', null],
@@ -47,7 +48,8 @@ const lines = { // [subtitles, pathToAudio]
   powerLastRound: ['Last round of power breath, hands in position.', null],
   powerOpening: ['And loose fists by your shoulders, elbows by your body.', null],
   powerStart: ['Take a normal breath in, and breathe out, and together:', null],
-  upDown: ['up, down,', null],
+  up: ['up,', null],
+  down: ['down,', null],
   powerClosing: ['Let’s take a deep breath in, as we breathe out let’s relax our breath, relax our whole body.', null],
 
   omOpening: ['Let’s take a deep breath in for the OM sound.', null],
@@ -126,18 +128,19 @@ function speaking(instructorVoice) {
         cancelEarly = () => {
           if (tempFn) tempFn();
           clearTimeout(id);
-          res();
+          res(true);
         };
       } else {
         cancelEarly = () => {
           if (tempFn) tempFn();
-          res();
+          res(true);
         };
       }
-    }).then(() => {
+    }).then(wasInterrupted => {
       subtitles.textContent = '';
       onEnd = null;
       cancelEarly = null;
+      return !wasInterrupted;
     }),
     interrupt: () => {
       if (cancelEarly) cancelEarly();

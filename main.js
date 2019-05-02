@@ -53,11 +53,17 @@ async function startGame() {
   instructor.moving = 'watch';
   instructor.walkOffsetTime = Date.now();
   const {speak, interrupt} = speaking(instructorVoice);
-  let haltForever = false, haltYES = false;
+  let haltForever = false, haltYES = false, doneWithYES = true;
   interruptInstructor = reason => {
     interrupt();
-    if (reason === 'getting up') haltYES = true;
-    else if (reason === 'caught') haltYES = haltForever = true;
+    if (reason === 'getting up') {
+      haltYES = true;
+      if (doneWithYES) {
+        speak('stopRunning');
+      }
+    } else if (reason === 'caught') {
+      haltYES = haltForever = true;
+    }
   };
   await speak('eyesClosed');
   const sound = new THREE.Audio(listener);
@@ -70,11 +76,94 @@ async function startGame() {
     await speak(line);
     if (haltYES) break;
   }
+  // activate expansion animation here
   if (!haltYES) {
-    //
+    await speak('expansionArmsUp', 4000)
+      && await speak('five', 1000)
+      && await speak('six', 1000)
+      && await speak('holdBreath', 2000)
+      && await speak('three', 1000)
+      && await speak('four', 1000)
+      && await speak('expansionArmsDown', 4000)
+      && await speak('five', 1000)
+      && await speak('six', 1000)
+      && await speak('holdBreath', 2000);
+  }
+  for (let i = 0; i < 3 && !haltYES; i++) {
+    await speak('breatheIn', 1000)
+      && await speak('two', 1000)
+      && await speak('three', 1000)
+      && await speak('four', 1000)
+      && await speak('five', 1000)
+      && await speak('six', 1000)
+      && await speak('hold', 1000)
+      && await speak('two', 1000)
+      && await speak('three', 1000)
+      && await speak('four', 1000)
+      && await speak('breatheOut', 1000)
+      && await speak('two', 1000)
+      && await speak('three', 1000)
+      && await speak('four', 1000)
+      && await speak('five', 1000)
+      && await speak('six', 1000)
+      && await speak('hold', 1000)
+      && await speak('two', 1000);
+  }
+  for (let i = 0; i < 3 && !haltYES; i++) {
+    await speak('breatheIn', 6000)
+      && await speak('hold', 4000)
+      && await speak('breatheOut', 6000)
+      && await speak('hold', 2000);
+  }
+  // deactivate expansion animation here
+  if (!haltYES) {
+    await speak('relaxLong')
+      && await speak('powerKleenex1')
+      && await speak('powerOpening')
+      && await speak('powerStart');
+  }
+  // activate power animation here
+  for (let i = 0; i < 15 && !haltYES; i++) {
+    await speak('up') && await speak('down');
+  }
+  // deactivate power animation here
+  if (!haltYES) {
+    await speak('relaxShort')
+      && await speak('powerKleenex2')
+      && await speak('powerStart');
+  }
+  // activate power animation here
+  for (let i = 0; i < 15 && !haltYES; i++) {
+    await speak('up') && await speak('down');
+  }
+  // deactivate power animation here
+  if (!haltYES) {
+    await speak('relaxShort')
+      && await speak('powerLastRound')
+      && await speak('powerStart');
+  }
+  // activate power animation here
+  for (let i = 0; i < 15 && !haltYES; i++) {
+    await speak('up') && await speak('down');
+  }
+  // deactivate power animation here
+  if (!haltYES) {
+    await speak('relaxShort')
+      && await speak('powerClosing')
+      && await speak('powerKleenex3')
+      && await speak('omOpening');
+  }
+  for (let i = 0; i < 3 && !haltYES; i++) {
+    if (i > 0) await speak('omBreathe');
+    if (!haltYES) await speak('om');
+  }
+  if (!haltYES) {
+    // play YES audio here
   }
   if (!haltForever) {
     await speak('stopRunning');
+  } else {
+    doneWithYES = true;
   }
 }
 
