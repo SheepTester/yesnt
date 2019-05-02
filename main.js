@@ -613,26 +613,29 @@ document.addEventListener('DOMContentLoaded', e => {
     hintText.textContent = 'Press enter to skip the intro.';
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
     const {speak, interrupt} = speaking(instructorVoice);
-    let dontContinue = false;
+    let dontContinue = false, currentAnimation = null;
     skipIntro = () => {
       interrupt();
       dontContinue = true;
+      if (currentAnimation) currentAnimation.duration = 0;
     };
     for (const line of intro) {
       if (line === 'introExpansion1') {
         await Promise.all([
           speak('introExpansion1'),
           new Promise(res => {
-            animations.push({type: 'show-expansion', start: Date.now(), duration: 5000, onDone: res});
+            animations.push(currentAnimation = {type: 'show-expansion', start: Date.now(), duration: 5000, onDone: res});
           })
         ]);
+        currentAnimation = null;
       } else if (line === 'introPower1') {
         await Promise.all([
           speak('introPower1'),
           new Promise(res => {
-            animations.push({type: 'show-power', start: Date.now(), duration: 2000, onDone: res});
+            animations.push(currentAnimation = {type: 'show-power', start: Date.now(), duration: 2000, onDone: res});
           })
         ]);
+        currentAnimation = null;
       } else {
         await speak(line);
       }
