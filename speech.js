@@ -60,6 +60,7 @@ const lines = { // [subtitles, pathToAudio]
 };
 
 const usingTTS = params.get('use-tts') !== 'false';
+const MS_PER_CHAR = params.get('fast-guess') ? 5 : 100; // guesstimate
 
 let subtitles, ttsSpeak, ttsPromise;
 
@@ -119,7 +120,7 @@ function speaking(instructorVoice) {
         if (!length) speech.onend = res;
         cancelEarly = () => window.speechSynthesis.cancel();
       } else {
-        if (!length) length = line[0].length * 100; // guesstimate
+        if (!length) length = line[0].length * MS_PER_CHAR;
       }
       subtitles.textContent = line[0];
       const tempFn = cancelEarly;

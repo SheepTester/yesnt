@@ -49,6 +49,7 @@ const breathing = [
   'strawClosing',
   'expansionOpening', 'normalBreath', 'expansionInstruct'
 ];
+let yesState = null;
 async function startGame() {
   instructor.moving = 'watch';
   instructor.walkOffsetTime = Date.now();
@@ -76,7 +77,7 @@ async function startGame() {
     await speak(line);
     if (haltYES) break;
   }
-  // activate expansion animation here
+  yesState = {type: 'expansion', start: Date.now()};
   if (!haltYES) {
     await speak('expansionArmsUp', 4000)
       && await speak('five', 1000)
@@ -115,38 +116,38 @@ async function startGame() {
       && await speak('breatheOut', 6000)
       && await speak('hold', 2000);
   }
-  // deactivate expansion animation here
+  yesState = null;
   if (!haltYES) {
     await speak('relaxLong')
       && await speak('powerKleenex1')
       && await speak('powerOpening')
       && await speak('powerStart');
   }
-  // activate power animation here
+  yesState = {type: 'power', start: Date.now()};
   for (let i = 0; i < 15 && !haltYES; i++) {
-    await speak('up') && await speak('down');
+    await speak('up', 800) && await speak('down', 800);
   }
-  // deactivate power animation here
+  yesState = null;
   if (!haltYES) {
     await speak('relaxShort')
       && await speak('powerKleenex2')
       && await speak('powerStart');
   }
-  // activate power animation here
+  yesState = {type: 'power', start: Date.now()};
   for (let i = 0; i < 15 && !haltYES; i++) {
-    await speak('up') && await speak('down');
+    await speak('up', 800) && await speak('down', 800);
   }
-  // deactivate power animation here
+  yesState = null;
   if (!haltYES) {
     await speak('relaxShort')
       && await speak('powerLastRound')
       && await speak('powerStart');
   }
-  // activate power animation here
+  yesState = {type: 'power', start: Date.now()};
   for (let i = 0; i < 15 && !haltYES; i++) {
-    await speak('up') && await speak('down');
+    await speak('up', 800) && await speak('down', 800);
   }
-  // deactivate power animation here
+  yesState = null;
   if (!haltYES) {
     await speak('relaxShort')
       && await speak('powerClosing')
@@ -155,7 +156,11 @@ async function startGame() {
   }
   for (let i = 0; i < 3 && !haltYES; i++) {
     if (i > 0) await speak('omBreathe');
-    if (!haltYES) await speak('om');
+    if (!haltYES) {
+      // TODO: adjust timings
+      animations.push({type: 'intense-om', start: Date.now(), duration: 8000});
+      await speak('om', 8000);
+    }
   }
   if (!haltYES) {
     // play YES audio here

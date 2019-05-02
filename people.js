@@ -262,13 +262,36 @@ function loadPeople(scene, onframe) {
     }
   }
 
-  // onframe.push(timeStamp => {
-  //   if (!moving) animatePowerBreath(sittingPlayer, timeStamp);
-  //   students.forEach(student => {
-  //     animatePowerBreath(student, timeStamp);
-  //     processLimbs(student);
-  //   });
-  // });
+  let lastState = null;
+  onframe.push(timeStamp => {
+    const now = Date.now();
+    let choice = 0;
+    if (yesState) {
+      if (yesState.type === 'expansion') {
+        choice = 1;
+      } else if (yesState.type === 'power') {
+        choice = 2;
+      }
+      lastState = yesState.type;
+    } else if (lastState) {
+      choice = 3;
+      lastState = null;
+    }
+    students.forEach(student => {
+      switch (choice) {
+        case 1:
+          animateExpansionBreath(student, now + student.offset - yesState.start);
+          break;
+        case 2:
+          animatePowerBreath(student, now + student.offset - yesState.start);
+          break;
+        case 3:
+          resetLimbRotations(student);
+          break;
+      }
+      processLimbs(student);
+    });
+  });
 
   return {studentMap, students, instructor, instructorVoice: sound};
 }

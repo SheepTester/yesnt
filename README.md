@@ -59,3 +59,7 @@ Lights off sound by [Cyberkineticfilms](https://freesound.org/people/Cyberkineti
     - option to restart
 
   - betterify instructor's player model
+
+  - Kleenex(r)
+
+  - PE teacher sitting at the back
