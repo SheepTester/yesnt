@@ -26,6 +26,8 @@ function createLimb(limbLength, skinColour, sleeveLength = 0, sleeveColour = 0xf
   );
   forearm.position.set(0, limbLength - LIMB_WIDTH / 2, 0);
   limb.add(forearm);
+  limb.idealRot = new THREE.Euler();
+  forearm.idealRot = new THREE.Euler();
   const obj = {
     limb,
     forearm,
@@ -106,12 +108,47 @@ function randomHair() {
        + Math.floor(96.7 + 26.3 * k);
 }
 
-function resetLimbRotations(student) {
-  student.limbs[0].limb.rotation.set(Math.PI, 0, 0);
-  student.limbs[0].forearm.rotation.set(0, 0, 0.1);
-  student.limbs[1].limb.rotation.set(Math.PI, 0, 0);
-  student.limbs[1].forearm.rotation.set(0, 0, -0.1);
-  student.mode = 'rest';
+const LIMB_ANIMATION_LENGTH = 500;
+function forEachArmPart(student, fn) {
+  fn(student.limbs[0].limb, 0);
+  fn(student.limbs[0].forearm, 1);
+  fn(student.limbs[1].limb, 2);
+  fn(student.limbs[1].forearm, 3);
+}
+const defaultRotations = [
+  [Math.PI, 0, 0],
+  [0, 0, 0.1],
+  [Math.PI, 0, 0],
+  [0, 0, -0.1]
+];
+function resetLimbRotations(student, animate = true, target = defaultRotations) {
+  forEachArmPart(student, (part, i) => {
+    if (animate) {
+      part.origRot = part.rotation.clone();
+    }
+    part.idealRot.set(...target[i]);
+  });
+  if (target === defaultRotations) student.mode = 'rest';
+  if (animate) student.rotationTransition = Date.now();
+}
+function processLimbs(student) {
+  if (student.rotationTransition) {
+    const progress = (Date.now() - student.rotationTransition) / LIMB_ANIMATION_LENGTH;
+    if (progress < 1) {
+      const position = easeOutCubic(progress);
+      forEachArmPart(student, part => {
+        part.rotation.x = position * (part.idealRot.x - part.origRot.x) + part.origRot.x;
+        part.rotation.y = position * (part.idealRot.y - part.origRot.y) + part.origRot.y;
+        part.rotation.z = position * (part.idealRot.z - part.origRot.z) + part.origRot.z;
+      });
+    } else {
+      student.rotationTransition = null;
+    }
+  } else {
+    forEachArmPart(student, part => {
+      part.rotation.copy(part.idealRot);
+    });
+  }
 }
 function animateExpansionBreath(student, timeStamp) {
   if (student.mode !== 'expansion') {
@@ -120,17 +157,17 @@ function animateExpansionBreath(student, timeStamp) {
   }
   const stage = (timeStamp / 1000 + student.offset) % 18;
   if (stage < 6) {
-    student.limbs[0].limb.rotation.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
-    student.limbs[1].limb.rotation.z = -easeOutSine(stage / 6) * (Math.PI - 0.2) - 0.1;
+    student.limbs[0].limb.idealRot.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
+    student.limbs[1].limb.idealRot.z = -easeOutSine(stage / 6) * (Math.PI - 0.2) - 0.1;
   } else if (stage < 10) {
-    student.limbs[0].limb.rotation.z = Math.PI - 0.1;
-    student.limbs[1].limb.rotation.z = -Math.PI + 0.1;
+    student.limbs[0].limb.idealRot.z = Math.PI - 0.1;
+    student.limbs[1].limb.idealRot.z = -Math.PI + 0.1;
   } else if (stage < 16) {
-    student.limbs[0].limb.rotation.z = (1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) + 0.1;
-    student.limbs[1].limb.rotation.z = -(1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) - 0.1;
+    student.limbs[0].limb.idealRot.z = (1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) + 0.1;
+    student.limbs[1].limb.idealRot.z = -(1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) - 0.1;
   } else {
-    student.limbs[0].limb.rotation.z = 0.1;
-    student.limbs[1].limb.rotation.z = -0.1;
+    student.limbs[0].limb.idealRot.z = 0.1;
+    student.limbs[1].limb.idealRot.z = -0.1;
   }
 }
 function animatePowerBreath(student, timeStamp) {
@@ -139,10 +176,10 @@ function animatePowerBreath(student, timeStamp) {
     student.mode = 'power';
   }
   const pos = Math.sin((timeStamp / 800 - 0.5) * Math.PI + student.offset);
-  student.limbs[0].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
-  student.limbs[0].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
-  student.limbs[1].limb.rotation.x = pos * (Math.PI / 2 - 0.2) - (Math.PI / 2 - 0.2);
-  student.limbs[1].forearm.rotation.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+  student.limbs[0].limb.idealRot.x = pos * (Math.PI / 2 - 0.2) + (Math.PI * 1.5 - 0.2);
+  student.limbs[0].forearm.idealRot.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
+  student.limbs[1].limb.idealRot.x = pos * (Math.PI / 2 - 0.2) + (Math.PI * 1.5 - 0.2);
+  student.limbs[1].forearm.idealRot.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
 }
 
 function loadPeople(scene, onframe) {
@@ -150,6 +187,8 @@ function loadPeople(scene, onframe) {
   scene.add(instructor.person);
   instructor.offset = 0;
   instructor.person.rotation.y = Math.PI / 2;
+  resetLimbRotations(instructor, false);
+  processLimbs(instructor);
 
   const lookLight = new THREE.SpotLight(0x990000, 0.5);
   lookLight.penumbra = 1;
@@ -207,7 +246,8 @@ function loadPeople(scene, onframe) {
     student.offset = Math.random() / 2;
     kneel(student.limbs[2]);
     kneel(student.limbs[3]);
-    resetLimbRotations(student);
+    resetLimbRotations(student, false);
+    processLimbs(student);
     scene.add(student.person);
     return student;
   };
@@ -226,6 +266,7 @@ function loadPeople(scene, onframe) {
   //   if (!moving) animatePowerBreath(sittingPlayer, timeStamp);
   //   students.forEach(student => {
   //     animatePowerBreath(student, timeStamp);
+  //     processLimbs(student);
   //   });
   // });
 
@@ -275,5 +316,7 @@ function createPlayerSittingPerson() {
   kneel(person.limbs[2]);
   kneel(person.limbs[3]);
   person.person.remove(person.head);
+  resetLimbRotations(person, false);
+  processLimbs(person);
   return person;
 }

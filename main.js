@@ -129,19 +129,15 @@ function setPhoneState(to) {
   playerState.phoneOut = to;
   if (to) {
     sittingPlayer.limbs[0].forearm.add(phone.phone);
-    sittingPlayer.limbs[0].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
-    sittingPlayer.limbs[0].forearm.rotation.set(Math.PI / 4, 0, -Math.PI * 0.2);
-    sittingPlayer.limbs[1].limb.rotation.set(Math.PI * 5 / 4, 0, 0);
-    sittingPlayer.limbs[1].forearm.rotation.x = Math.PI / 4;
-    sittingPlayer.limbs[1].forearm.rotation.set(Math.PI / 4, 0, Math.PI * 0.2);
+    resetLimbRotations(sittingPlayer, true, [
+      [Math.PI * 5 / 4, 0, 0],
+      [Math.PI / 4, 0, -Math.PI * 0.2],
+      [Math.PI * 5 / 4, 0, 0],
+      [Math.PI / 4, 0, Math.PI * 0.2]
+    ]);
   } else {
     sittingPlayer.limbs[0].forearm.remove(phone.phone);
-
-    // TEMP: it'll be set to the proper position elsewhere in the future
-    sittingPlayer.limbs[0].limb.rotation.set(Math.PI, 0, 0.1);
-    sittingPlayer.limbs[0].forearm.rotation.set(0, 0, 0);
-    sittingPlayer.limbs[1].limb.rotation.set(Math.PI, 0, -0.1);
-    sittingPlayer.limbs[1].forearm.rotation.set(0, 0, 0);
+    resetLimbRotations(sittingPlayer, true);
   }
 }
 
@@ -575,6 +571,8 @@ function animate() {
   }
 
   onframe.forEach(fn => fn(now, elapsedTime));
+  processLimbs(instructor);
+  processLimbs(sittingPlayer);
 
   if (shaders) composer.render();
   else renderer.render(scene, camera);
