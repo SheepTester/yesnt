@@ -132,17 +132,16 @@ function setupRoom(scene, onframe, collisions) {
     scene.add(lamp);
   });
 
-  // const sound = new THREE.PositionalAudio(listener);
-  // audioLoader.load('sounds/sohum.mp3', buffer => {
-  //   sound.setBuffer(buffer);
-  // 	sound.setRefDistance(5);
-  // 	if (!params.get('shut-up')) userInteraction.then(() => sound.play());
-  // });
+  const sound = new THREE.PositionalAudio(listener);
+  audioLoader.load('sounds/sohum.mp3', buffer => {
+    sound.setBuffer(buffer);
+  	sound.setRefDistance(5);
+  });
   objectLoader.load('./models/cassette-player.json', cassettePlayer => {
     cassettePlayer.position.set(5, 0, -495);
     cassettePlayer.scale.multiplyScalar(3);
     scene.add(cassettePlayer);
-    // cassettePlayer.add(sound);
+    cassettePlayer.add(sound);
     collisions.push([5 - 4.5 - PLAYER_THICKNESS, 5 + 4.5 + PLAYER_THICKNESS, -495 - 1.5 - PLAYER_THICKNESS, -495 + 1.5 + PLAYER_THICKNESS]);
   });
 
@@ -158,7 +157,8 @@ function setupRoom(scene, onframe, collisions) {
       return dark;
     },
     darkPhongFloor,
-    doors
+    doors,
+    cassette: sound
   };
 }
 

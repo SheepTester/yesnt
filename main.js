@@ -30,6 +30,7 @@ const instructorCanMove = params.get('freeze-instructor') !== 'please';
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
 function start() {
+  if (cassette.isPlaying) cassette.stop();
   if (isDark()) toggleLights();
   instructor.head.rotation.set(0, 0, 0);
   instructor.person.rotation.y = Math.PI;
@@ -73,12 +74,10 @@ async function startGame() {
   toggleLights();
   hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
-  /*
   for (const line of breathing) {
     await speak(line);
     if (haltYES) break;
   }
-  */
   if (!haltYES) {
     yesState = {type: 'expansion', mode: 'up', start: Date.now()};
     await speak('expansionArmsUp', 4000)
@@ -161,16 +160,14 @@ async function startGame() {
     if (i > 0) await speak('omBreathe');
     if (!haltYES) {
       // TODO: adjust timings
-      animations.push({type: 'intense-om', start: Date.now(), duration: 8000});
+      animations.push({type: 'intense-om', start: Date.now(), duration: 8000, anchorY: camera.position.y});
       await speak('om', 8000);
     }
-  }
-  if (!haltYES) {
-    // play YES audio here
   }
   if (haltYES) {
     if (!haltForever) await speak('stopRunning');
   } else {
+    cassette.play();
     doneWithYES = true;
   }
 }
@@ -209,7 +206,7 @@ scene.add(camera);
 
 const onframe = [];
 const collisionBoxes = [];
-const {swap: toggleLights, isDark, darkPhongFloor, doors} = setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
@@ -467,9 +464,16 @@ function animate() {
           break;
         }
         case 'intensify': {
+          camera.filmOffset = 0;
+          camera.updateProjectionMatrix();
           start();
           startGame();
           document.body.style.backgroundColor = null;
+          break;
+        }
+        case 'intense-om': {
+          camera.filmOffset = 0;
+          camera.updateProjectionMatrix();
           break;
         }
         case 'get-up': {
@@ -510,6 +514,13 @@ function animate() {
           renderer.domElement.style.opacity = 1 - position * 0.5;
           break;
         }
+        case 'intense-om': {
+          const position = 1 - easeOutCubic(progress);
+          camera.filmOffset = (Math.random() - 0.5) * position * 3;
+          camera.position.y = animation.anchorY + (Math.random() - 0.5) * position * 3;
+          camera.updateProjectionMatrix();
+          break;
+        }
         case 'get-up': {
           camera.position.y = easeOutCubic(progress) * (STANDING_EYE_HEIGHT - SITTING_EYE_HEIGHT) + SITTING_EYE_HEIGHT;
           break;
@@ -519,11 +530,35 @@ function animate() {
           break;
         }
         case 'show-expansion': {
-          animateExpansionBreath(instructor, progress * 18000);
+          if (progress < 0.5) {
+            animateExpansionBreathUp(instructor, progress * 18000);
+          } else {
+            animateExpansionBreathDown(instructor, (progress - 0.5) * 18000);
+          }
           break;
         }
         case 'show-power': {
-          animatePowerBreath(instructor, progress * 3200);
+          if (progress < 0.25) {
+            if (animation.step !== 1) {
+              resetLimbRotations(instructor, true, powerBreathDown);
+              animation.step = 1;
+            }
+          } else if (progress < 0.5) {
+            if (animation.step !== 2) {
+              resetLimbRotations(instructor, true, powerBreathUp);
+              animation.step = 2;
+            }
+          } else if (progress < 0.75) {
+            if (animation.step !== 3) {
+              resetLimbRotations(instructor, true, powerBreathDown);
+              animation.step = 3;
+            }
+          } else {
+            if (animation.step !== 4) {
+              resetLimbRotations(instructor, true, powerBreathUp);
+              animation.step = 4;
+            }
+          }
           break;
         }
       }
@@ -719,6 +754,7 @@ document.addEventListener('DOMContentLoaded', e => {
         await Promise.all([
           speak('introExpansion1'),
           new Promise(res => {
+            resetLimbRotations(instructor);
             animations.push(currentAnimation = {type: 'show-expansion', start: Date.now(), duration: 5000, onDone: res});
           })
         ]);

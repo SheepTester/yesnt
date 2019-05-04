@@ -121,6 +121,18 @@ const defaultRotations = [
   [Math.PI, 0, 0],
   [0, 0, -0.1]
 ];
+const powerBreathDown = [
+  [Math.PI + 0.2, 0, 0],
+  [Math.PI - 0.4, 0, 0],
+  [Math.PI + 0.2, 0, 0],
+  [Math.PI - 0.4, 0, 0]
+];
+const powerBreathUp = [
+  [Math.PI * 2 - 0.4, 0, 0],
+  [0, 0, 0],
+  [Math.PI * 2 - 0.4, 0, 0],
+  [0, 0, 0]
+];
 function resetLimbRotations(student, animate = true, target = defaultRotations) {
   forEachArmPart(student, (part, i) => {
     if (animate) {
@@ -265,6 +277,10 @@ function loadPeople(scene, onframe) {
     students.forEach(student => {
       switch (choice) {
         case 'expansion':
+          if (student.mode !== 'expansion') {
+            resetLimbRotations(student);
+            student.mode = 'expansion';
+          }
           if (yesState.mode === 'up') {
             animateExpansionBreathUp(student, now - yesState.start);
           } else {
@@ -274,23 +290,13 @@ function loadPeople(scene, onframe) {
         case 'power-down':
           if (now - yesState.start > student.delay && student.mode !== 'power-down') {
             student.mode = 'power-down';
-            resetLimbRotations(student, true, [
-              [Math.PI + 0.2, 0, 0],
-              [Math.PI - 0.4, 0, 0],
-              [Math.PI + 0.2, 0, 0],
-              [Math.PI - 0.4, 0, 0]
-            ]);
+            resetLimbRotations(student, true, powerBreathDown);
           }
           break;
         case 'power-up':
           if (now - yesState.start > student.delay && student.mode !== 'power-up') {
             student.mode = 'power-up';
-            resetLimbRotations(student, true, [
-              [Math.PI * 2 - 0.4, 0, 0],
-              [0, 0, 0],
-              [Math.PI * 2 - 0.4, 0, 0],
-              [0, 0, 0]
-            ]);
+            resetLimbRotations(student, true, powerBreathUp);
           }
           break;
         case 'rest':
