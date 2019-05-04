@@ -66,7 +66,7 @@ function createDoubleDoors(exitSignURL) {
 let wallMaterial;
 
 const mats = [];
-function setupRoom(scene, onframe,collisions) {
+function setupRoom(scene, onframe, collisions) {
   wallMaterial = gameMaterial(0xffffff, 0, 0.9, 0.1);
 
   const floor = new THREE.Mesh(
@@ -253,7 +253,7 @@ function createDarkRoom() {
     roof.position.set(500 + TUNNEL_LENGTH / 2, DOOR_TUNNEL_HEIGHT, z);
     darkRoom.add(roof);
 
-    if (usingLambert) {
+    if (!usingLambert) {
       const floor = new THREE.Mesh(
         new THREE.PlaneBufferGeometry(TUNNEL_LENGTH, DOOR_TUNNEL_WIDTH),
         gameMaterial(0x717276, 0, 0.9, 0.1)
