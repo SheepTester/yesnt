@@ -40,7 +40,7 @@ function start() {
   camera.rotation.set(0, 0, 0);
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
-  moving = false;
+  moving = 'sitting';
   if (playerState.phoneOut) setPhoneState(false);
 }
 let interruptInstructor = null;
@@ -54,9 +54,8 @@ async function startGame() {
   instructor.moving = 'watch';
   instructor.walkOffsetTime = Date.now();
   const {speak, interrupt} = speaking(instructorVoice);
-  let haltForever = false, haltYES = false, doneWithYES = true;
+  let haltForever = false, haltYES = false, doneWithYES = false;
   interruptInstructor = reason => {
-    interrupt();
     if (reason === 'getting up') {
       haltYES = true;
       if (doneWithYES) {
@@ -65,6 +64,7 @@ async function startGame() {
     } else if (reason === 'caught') {
       haltYES = haltForever = true;
     }
+    interrupt();
   };
   await speak('eyesClosed');
   const sound = new THREE.Audio(listener);
@@ -165,8 +165,8 @@ async function startGame() {
   if (!haltYES) {
     // play YES audio here
   }
-  if (!haltForever) {
-    await speak('stopRunning');
+  if (haltYES) {
+    if (!haltForever) await speak('stopRunning');
   } else {
     doneWithYES = true;
   }
@@ -337,9 +337,9 @@ document.addEventListener('click', e => {
 const MAX_ROTATION = Math.PI / 2;
 let yRotation = camera.rotation.y;
 function rotateCamera(deltaX, deltaY) {
-  if (moving) {
+  if (moving === 'chase') {
     camera.rotation.y -= deltaX;
-  } else if (moving !== null) {
+  } else if (moving === 'sitting') {
     // this is probably more complicated than it needs to be
     const change = -deltaX;
     yRotation += change;
@@ -356,7 +356,7 @@ function rotateCamera(deltaX, deltaY) {
       } else yRotation = camera.rotation.y;
     }
   }
-  if (moving !== null) {
+  if (moving !== 'caught') {
     camera.rotation.x -= deltaY;
     if (camera.rotation.x > Math.PI / 2) camera.rotation.x = Math.PI / 2;
     else if (camera.rotation.x < -Math.PI / 2) camera.rotation.x = -Math.PI / 2;
@@ -372,12 +372,12 @@ const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f', 13:
 const keys = {};
 const onKeyPress = {
   f() {
-    if (skipIntro) return;
+    if (skipIntro || !isDark()) return;
     setPhoneState(!playerState.phoneOut);
   },
   shift() {
-    if (moving || !isDark()) return;
-    moving = true;
+    if (moving !== 'sitting' || !isDark()) return;
+    moving = 'chase';
     scene.remove(sittingPlayer.person);
     animations.push({type: 'get-up', start: Date.now(), duration: 200});
     instructor.moving = 'chase';
@@ -432,7 +432,7 @@ function caught() {
   instructor.head.lookAt(camera.position);
   instructor.head.rotation.y += Math.PI;
   instructor.moving = false;
-  moving = null;
+  moving = 'caught';
   document.body.style.backgroundColor = 'red';
   animations.push({
     type: 'intensify',
@@ -527,7 +527,7 @@ function animate() {
     }
   }
 
-  if (moving) {
+  if (moving === 'chase') {
     const sin = Math.sin(camera.rotation.y);
     const cos = Math.cos(camera.rotation.y);
     const movement = new THREE.Vector3();
@@ -650,7 +650,7 @@ function animate() {
     if (camera.position.distanceToSquared(instructor.person.position) < 144) {
       caught();
     }
-  } else if (moving !== null) {
+  } else if (moving === 'sitting') {
     const instructorDirection = instructor.head.getWorldDirection(new THREE.Vector3()).setY(0);
     const playerDirection = instructor.person.position.clone().sub(camera.position).setY(0);
     if (instructorDirection.angleTo(playerDirection) < Math.PI * 0.2) {
