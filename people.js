@@ -150,42 +150,31 @@ function processLimbs(student) {
     });
   }
 }
-function animateExpansionBreath(student, timeStamp) {
-  if (student.mode !== 'expansion') {
-    resetLimbRotations(student);
-    student.mode = 'expansion';
-  }
-  const stage = (timeStamp / 1000 + student.offset) % 18;
+function animateExpansionBreathUp(student, timeStamp) {
+  const stage = Math.max((timeStamp - student.delay) / 1000, 0);
   if (stage < 6) {
     student.limbs[0].limb.idealRot.z = easeOutSine(stage / 6) * (Math.PI - 0.2) + 0.1;
     student.limbs[1].limb.idealRot.z = -easeOutSine(stage / 6) * (Math.PI - 0.2) - 0.1;
-  } else if (stage < 10) {
+  } else {
     student.limbs[0].limb.idealRot.z = Math.PI - 0.1;
     student.limbs[1].limb.idealRot.z = -Math.PI + 0.1;
-  } else if (stage < 16) {
-    student.limbs[0].limb.idealRot.z = (1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) + 0.1;
-    student.limbs[1].limb.idealRot.z = -(1 - easeOutSine((stage - 10) / 6)) * (Math.PI - 0.2) - 0.1;
+  }
+}
+function animateExpansionBreathDown(student, timeStamp) {
+  const stage = Math.max((timeStamp - student.delay) / 1000, 0);
+  if (stage < 6) {
+    student.limbs[0].limb.idealRot.z = (1 - easeOutSine(stage / 6)) * (Math.PI - 0.2) + 0.1;
+    student.limbs[1].limb.idealRot.z = -(1 - easeOutSine(stage / 6)) * (Math.PI - 0.2) - 0.1;
   } else {
     student.limbs[0].limb.idealRot.z = 0.1;
     student.limbs[1].limb.idealRot.z = -0.1;
   }
 }
-function animatePowerBreath(student, timeStamp) {
-  if (student.mode !== 'power') {
-    resetLimbRotations(student);
-    student.mode = 'power';
-  }
-  const pos = Math.sin((timeStamp / 800 - 0.5) * Math.PI + student.offset);
-  student.limbs[0].limb.idealRot.x = pos * (Math.PI / 2 - 0.2) + (Math.PI * 1.5 - 0.2);
-  student.limbs[0].forearm.idealRot.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
-  student.limbs[1].limb.idealRot.x = pos * (Math.PI / 2 - 0.2) + (Math.PI * 1.5 - 0.2);
-  student.limbs[1].forearm.idealRot.x = -pos * (Math.PI / 2 - 0.2) + (Math.PI / 2 - 0.2);
-}
 
 function loadPeople(scene, onframe) {
   const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-creepy.png');
   scene.add(instructor.person);
-  instructor.offset = 0;
+  instructor.delay = 0;
   instructor.person.rotation.y = Math.PI / 2;
   resetLimbRotations(instructor, false);
   processLimbs(instructor);
@@ -243,7 +232,7 @@ function loadPeople(scene, onframe) {
   } : (x, z) => {
     const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
     student.person.position.set(x, -5, z);
-    student.offset = Math.random() / 2;
+    student.delay = Math.random() * 200;
     kneel(student.limbs[2]);
     kneel(student.limbs[3]);
     resetLimbRotations(student, false);
@@ -265,27 +254,46 @@ function loadPeople(scene, onframe) {
   let lastState = null;
   onframe.push(timeStamp => {
     const now = Date.now();
-    let choice = 0;
+    let choice;
     if (yesState) {
-      if (yesState.type === 'expansion') {
-        choice = 1;
-      } else if (yesState.type === 'power') {
-        choice = 2;
-      }
-      lastState = yesState.type;
+      choice = yesState.type;
+      if (!lastState) lastState = yesState.type;
     } else if (lastState) {
-      choice = 3;
+      choice = 'rest';
       lastState = null;
     }
     students.forEach(student => {
       switch (choice) {
-        case 1:
-          animateExpansionBreath(student, now + student.offset - yesState.start);
+        case 'expansion':
+          if (yesState.mode === 'up') {
+            animateExpansionBreathUp(student, now - yesState.start);
+          } else {
+            animateExpansionBreathDown(student, now - yesState.start);
+          }
           break;
-        case 2:
-          animatePowerBreath(student, now + student.offset - yesState.start);
+        case 'power-down':
+          if (now - yesState.start > student.delay && student.mode !== 'power-down') {
+            student.mode = 'power-down';
+            resetLimbRotations(student, true, [
+              [Math.PI + 0.2, 0, 0],
+              [Math.PI - 0.4, 0, 0],
+              [Math.PI + 0.2, 0, 0],
+              [Math.PI - 0.4, 0, 0]
+            ]);
+          }
           break;
-        case 3:
+        case 'power-up':
+          if (now - yesState.start > student.delay && student.mode !== 'power-up') {
+            student.mode = 'power-up';
+            resetLimbRotations(student, true, [
+              [Math.PI * 2 - 0.4, 0, 0],
+              [0, 0, 0],
+              [Math.PI * 2 - 0.4, 0, 0],
+              [0, 0, 0]
+            ]);
+          }
+          break;
+        case 'rest':
           resetLimbRotations(student);
           break;
       }

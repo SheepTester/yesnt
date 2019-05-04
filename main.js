@@ -73,24 +73,28 @@ async function startGame() {
   toggleLights();
   hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+  /*
   for (const line of breathing) {
     await speak(line);
     if (haltYES) break;
   }
-  yesState = {type: 'expansion', start: Date.now()};
+  */
   if (!haltYES) {
+    yesState = {type: 'expansion', mode: 'up', start: Date.now()};
     await speak('expansionArmsUp', 4000)
       && await speak('five', 1000)
       && await speak('six', 1000)
       && await speak('holdBreath', 2000)
       && await speak('three', 1000)
       && await speak('four', 1000)
+      && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
       && await speak('expansionArmsDown', 4000)
       && await speak('five', 1000)
       && await speak('six', 1000)
       && await speak('holdBreath', 2000);
   }
   for (let i = 0; i < 3 && !haltYES; i++) {
+    yesState = {type: 'expansion', mode: 'up', start: Date.now()};
     await speak('breatheIn', 1000)
       && await speak('two', 1000)
       && await speak('three', 1000)
@@ -101,6 +105,7 @@ async function startGame() {
       && await speak('two', 1000)
       && await speak('three', 1000)
       && await speak('four', 1000)
+      && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
       && await speak('breatheOut', 1000)
       && await speak('two', 1000)
       && await speak('three', 1000)
@@ -111,8 +116,10 @@ async function startGame() {
       && await speak('two', 1000);
   }
   for (let i = 0; i < 3 && !haltYES; i++) {
+    yesState = {type: 'expansion', mode: 'up', start: Date.now()};
     await speak('breatheIn', 6000)
       && await speak('hold', 4000)
+      && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
       && await speak('breatheOut', 6000)
       && await speak('hold', 2000);
   }
@@ -120,34 +127,30 @@ async function startGame() {
   if (!haltYES) {
     await speak('relaxLong')
       && await speak('powerKleenex1')
-      && await speak('powerOpening')
-      && await speak('powerStart');
+      && await speak('powerOpening');
   }
-  yesState = {type: 'power', start: Date.now()};
-  for (let i = 0; i < 15 && !haltYES; i++) {
-    await speak('up', 800) && await speak('down', 800);
+  async function doPower() {
+    yesState = {type: 'power-down', start: Date.now()};
+    if (!haltYES) await speak('powerStart');
+    for (let i = 0; i < 15 && !haltYES; i++) {
+      yesState = {type: 'power-up', start: Date.now()};
+      await speak('up', 800)
+        && (yesState = {type: 'power-down', start: Date.now()})
+        && await speak('down', 800);
+    }
+    yesState = null;
   }
-  yesState = null;
+  await doPower();
   if (!haltYES) {
     await speak('relaxShort')
-      && await speak('powerKleenex2')
-      && await speak('powerStart');
+      && await speak('powerKleenex2');
   }
-  yesState = {type: 'power', start: Date.now()};
-  for (let i = 0; i < 15 && !haltYES; i++) {
-    await speak('up', 800) && await speak('down', 800);
-  }
-  yesState = null;
+  await doPower();
   if (!haltYES) {
     await speak('relaxShort')
-      && await speak('powerLastRound')
-      && await speak('powerStart');
+      && await speak('powerLastRound');
   }
-  yesState = {type: 'power', start: Date.now()};
-  for (let i = 0; i < 15 && !haltYES; i++) {
-    await speak('up', 800) && await speak('down', 800);
-  }
-  yesState = null;
+  await doPower();
   if (!haltYES) {
     await speak('relaxShort')
       && await speak('powerClosing')
