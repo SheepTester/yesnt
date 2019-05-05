@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>reverb test</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="testing simple-reverb"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="../sheep3.css">
+    <script src="../sheep3.js" charset="utf-8"></script>
+    <script src="./three.min.js" charset="utf-8"></script>
+    <script src="./simple-reverb.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <p>click the document for some USER INTERACTION so sound can be played</p>
+    <script>
+const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+const listener = new THREE.AudioListener();
+camera.add(listener);
+const sound = new THREE.Audio(listener);
+const verb = new SimpleReverb(sound.context);
+new THREE.AudioLoader().load('./sounds/sohum.mp3', buffer => {
+  sound.setBuffer(buffer);
+  sound.setFilter(verb.input);
+  verb.connect(sound.context.destination);
+  userGesture.then(() => {
+    sound.play();
+  });
+});
+const userGesture = new Promise(res => {
+  document.addEventListener('click', res);
+});
+    </script>
+  </body>
+</html>
