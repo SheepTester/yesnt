@@ -1,17 +1,23 @@
+// tju = three.js unit
 const FOV = 75;
 const SITTING_EYE_HEIGHT = 6;
 const STANDING_EYE_HEIGHT = 11;
-const MOVEMENT_SPEED = 0.05;
-const PLAYER_THICKNESS = 1;
-const MIN_Z = -500 + PLAYER_THICKNESS;
+const MOVEMENT_SPEED = 0.05; // speed of player (tju/ms)
+const PLAYER_THICKNESS = 1; // padding around collision boxes to account for player thickness (tju)
+const MIN_Z = -500 + PLAYER_THICKNESS; // dark gym walls bounding boxes (tju)
 const MAX_Z = 500 - PLAYER_THICKNESS;
 const MIN_X = -500 + PLAYER_THICKNESS;
 const MAX_X = 500 - PLAYER_THICKNESS;
-const STUDENT_X_RADIUS = 2.5 + PLAYER_THICKNESS;
+const STUDENT_X_RADIUS = 2.5 + PLAYER_THICKNESS; // collision boxes of students sitting on mats (tju)
 const STUDENT_BACK_SIZE = 1.75 + PLAYER_THICKNESS;
 const STUDENT_FRONT_SIZE = 2.75 + PLAYER_THICKNESS;
-const INSTRUCTOR_RUN_SPEED = 0.04;
-const EXPANSION_SPEED = 0.0005;
+const INSTRUCTOR_RUN_SPEED = 0.04; // speed of instructor in chase mode (tju/ms)
+const EXPANSION_SPEED = 0.0005; // speed of expansion breath arm progress (100%/ms)
+const EXPANSION_PREP_TIME = +params.get('expPrep') || 1200; // time instructor allows you to enter expansion breath pose (ms)
+const EXPANSION_REACTION_TIME = +params.get('expReact') || 3250; // time instructor allows you to bring your arms up/down (ms)
+const POWER_PREP_TIME = +params.get('pwrPrep') || Infinity; // same as above two, but for power breath
+const POWER_REACTION_TIME = +params.get('pwrReact') || 450;
+const POWER_EARLY_TIME = +params.get('pwrEarly') || 300; // time in which instructor allows you to bring your arms back early (ms)
 
 const tunnelXBounds = {
   left: [
@@ -27,6 +33,8 @@ const tunnelZBound = MAX_X + DARK_TUNNEL_LENGTH - PLAYER_THICKNESS;
 
 const shaders = params.get('shaders') !== 'false';
 const instructorCanMove = params.get('freeze-instructor') !== 'please';
+const checkPlayer = !params.get('override-player-check');
+const alwaysCheckPlayer = params.get('override-player-check') === 'omniscient';
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
@@ -91,7 +99,7 @@ async function startGame() {
     if (haltYES) break;
   }
   if (!haltYES) {
-    yesState = {type: 'expansion', mode: 'up', start: Date.now()};
+    yesState = {type: 'expansion', mode: 'up', start: Date.now(), first: true};
     await speak('expansionArmsUp', 4000)
       && await speak('five', 1000)
       && await speak('six', 1000)
@@ -140,8 +148,8 @@ async function startGame() {
       && await speak('powerKleenex1')
       && await speak('powerOpening');
   }
-  async function doPower() {
-    yesState = {type: 'power-down', start: Date.now()};
+  async function doPower(first) {
+    yesState = {type: 'power-down', start: Date.now(), first};
     if (!haltYES) await speak('powerStart');
     for (let i = 0; i < 15 && !haltYES; i++) {
       yesState = {type: 'power-up', start: Date.now()};
@@ -151,7 +159,7 @@ async function startGame() {
     }
     yesState = null;
   }
-  await doPower();
+  await doPower(true);
   if (!haltYES) {
     await speak('relaxShort')
       && await speak('powerKleenex2');
@@ -222,6 +230,44 @@ const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette} = setupRoom(
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false, pose: 'rest', canDie: false};
+function isPlayerCatchworthy() {
+  if (playerState.phoneOut) return 'phone out';
+  const now = Date.now();
+  if (yesState) {
+    const time = now - yesState.start;
+    switch (yesState.type) {
+      case 'expansion':
+        if (!(yesState.first && time < EXPANSION_PREP_TIME)) {
+          if (playerState.pose !== 'expansion') {
+            return 'not in expansion breath pose';
+          } else if (time > EXPANSION_REACTION_TIME) {
+            if (playerState.position < 0.5 && yesState.mode === 'up') return 'arms are not up';
+            if (playerState.position > 0.5 && yesState.mode === 'down') return 'arms are not down';
+          }
+        }
+        break;
+      case 'power-down':
+        if (!(yesState.first && time < POWER_PREP_TIME)) {
+          if (playerState.pose !== 'power') {
+             return 'not in power breath pose';
+          } else if (playerState.up) {
+            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'arms up when they should be down';
+          }
+        }
+        break;
+      case 'power-up':
+        if (!(yesState.first && time < POWER_PREP_TIME)) {
+          if (playerState.pose !== 'power') {
+             return 'not in power breath pose';
+          } else if (!playerState.up) {
+            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'arms down when they should be up';
+          }
+        }
+        break;
+    }
+  }
+  return false;
+}
 
 const sittingPlayer = createPlayerSittingPerson();
 sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
@@ -435,11 +481,13 @@ const onKeyPress = {
   'power-down'() {
     if (playerState.phoneOut) setPhoneState(false);
     playerState.pose = 'power';
+    playerState.up = false;
     resetLimbRotations(sittingPlayer, true, powerBreathDown);
   },
   'power-up'() {
     if (playerState.phoneOut) setPhoneState(false);
     playerState.pose = 'power';
+    playerState.up = true;
     resetLimbRotations(sittingPlayer, true, powerBreathUp);
   }
 };
@@ -736,11 +784,6 @@ function animate() {
   } else if (moving === 'sitting') {
     const instructorDirection = instructor.head.getWorldDirection(new THREE.Vector3()).setY(0);
     const playerDirection = instructor.person.position.clone().sub(camera.position).setY(0);
-    if (instructorDirection.angleTo(playerDirection) < Math.PI * 0.2) {
-      if (playerState.phoneOut) {
-        caught();
-      }
-    }
     if (keys['exp-down'] || keys['exp-up']) {
       if (playerState.pose !== 'expansion') {
         if (playerState.phoneOut) setPhoneState(false);
@@ -754,6 +797,13 @@ function animate() {
       else if (playerState.position > 1) playerState.position = 1;
       sittingPlayer.limbs[0].limb.idealRot.z = playerState.position * (Math.PI - 0.2) + 0.1;
       sittingPlayer.limbs[1].limb.idealRot.z = -playerState.position * (Math.PI - 0.2) - 0.1;
+    }
+    if (checkPlayer ? instructorDirection.angleTo(playerDirection) < Math.PI * 0.2 : alwaysCheckPlayer) {
+      const reason = isPlayerCatchworthy();
+      if (reason) {
+        console.log('DEATH BY MEANS OF: ' + reason);
+        caught();
+      }
     }
   }
 

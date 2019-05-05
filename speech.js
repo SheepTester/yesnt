@@ -113,11 +113,11 @@ function speaking(instructorVoice) {
       if (line[1]) {
         instructorVoice.setBuffer(line[1]);
         instructorVoice.play();
-        if (!length) onEnd = res;
+        if (!length) onEnd = () => res();
         cancelEarly = () => instructorVoice.stop();
       } else if (usingTTS) {
         const speech = ttsSpeak(line[0]);
-        if (!length) speech.onend = res;
+        if (!length) speech.onend = () => res();
         cancelEarly = () => window.speechSynthesis.cancel();
       } else {
         if (!length) length = line[0].length * MS_PER_CHAR;
@@ -125,7 +125,7 @@ function speaking(instructorVoice) {
       subtitles.textContent = line[0];
       const tempFn = cancelEarly;
       if (length) {
-        const id = setTimeout(res, length);
+        const id = setTimeout(() => res(), length);
         cancelEarly = () => {
           if (tempFn) tempFn();
           clearTimeout(id);
