@@ -31,7 +31,11 @@ const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.inner
 camera.rotation.order = 'YXZ';
 function start() {
   if (cassette.isPlaying) cassette.stop();
-  if (isDark()) toggleLights();
+  if (isDark()) {
+    toggleLights();
+    setFaces(awakeFace);
+    instructor.face.map = awakeFace;
+  }
   instructor.head.rotation.set(0, 0, 0);
   instructor.person.rotation.y = Math.PI;
   instructor.person.position.z = -475;
@@ -46,9 +50,9 @@ function start() {
 }
 let interruptInstructor = null;
 const breathing = [
-  // 'straw1', 'straw', 'straw2', 'straw', 'strawUseless', 'straw3', 'straw4',
-  // 'strawClosing',
-  'expansionOpening', //'normalBreath', 'expansionInstruct'
+  'straw1', 'straw', 'straw2', 'straw', 'strawUseless', 'straw3', 'straw4',
+  'strawClosing',
+  'expansionOpening', 'normalBreath', 'expansionInstruct'
 ];
 let yesState = null;
 async function startGame() {
@@ -72,6 +76,8 @@ async function startGame() {
   sound.setBuffer(sounds.lights);
   sound.play();
   toggleLights();
+  setFaces(sleepyFace);
+  instructor.face.map = creepyFace;
   hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   for (const line of breathing) {
@@ -208,7 +214,7 @@ scene.add(camera);
 const onframe = [];
 const collisionBoxes = [];
 const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette} = setupRoom(scene, onframe, collisionBoxes);
-const {studentMap, instructor, instructorVoice} = loadPeople(scene, onframe);
+const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false};
 

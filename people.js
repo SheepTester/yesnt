@@ -42,7 +42,7 @@ function kneel(leg) {
   leg.limb.rotation.x = -Math.PI / 2 - 0.3;
   leg.forearm.rotation.x = Math.PI + 0.3;
 }
-function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression = null, shirtColour = 0xeeeeee, shortsColour = 0x333333) {
+function createPerson(skinColour, hairColour, hairHeight = 2.5, hasFace = true, shirtColour = 0xeeeeee, shortsColour = 0x333333) {
   const person = new THREE.Group();
   const head = new THREE.Group();
   const face = new THREE.Mesh(
@@ -56,13 +56,12 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
   );
   hair.position.set(0, 1.35 - hairHeight / 2, 0.1);
   head.add(hair);
-  if (faceExpression) {
+  let faceMaterial = null;
+  if (hasFace) {
+    faceMaterial = new THREE.MeshBasicMaterial({transparent: true});
     const countenance = new THREE.Mesh(
       new THREE.PlaneBufferGeometry(2.5, 2.5),
-      new THREE.MeshBasicMaterial({
-        map: loadTexture(faceExpression),
-        transparent: true
-      })
+      faceMaterial
     );
     countenance.position.set(0, 0, -1.26);
     countenance.rotation.y = Math.PI;
@@ -87,7 +86,7 @@ function createPerson(skinColour, hairColour, hairHeight = 2.5, faceExpression =
     person.add(limb.limb);
   });
   person.isPerson = true;
-  return {person, limbs, head};
+  return {person, limbs, head, face: faceMaterial};
 }
 
 function easeOutSine(t) {
@@ -207,8 +206,14 @@ function animateExpansionBreathDown(student, timeStamp) {
   }
 }
 
+let awakeFace, sleepyFace, creepyFace;
 function loadPeople(scene, onframe) {
-  const instructor = createPerson(0x7B5542, 0x0f0705, 2.5, './textures/face-creepy.png');
+  awakeFace = loadTexture('./textures/face-awake.png');
+  sleepyFace = loadTexture('./textures/face-sleeping.png');
+  creepyFace = loadTexture('./textures/face-creepy.png');
+
+  const instructor = createPerson(0x7B5542, 0x0f0705, 2.5);
+  instructor.face.map = awakeFace;
   scene.add(instructor.person);
   instructor.delay = 0;
   instructor.person.rotation.y = Math.PI / 2;
@@ -253,20 +258,23 @@ function loadPeople(scene, onframe) {
       new THREE.BoxBufferGeometry(5, 6, 4.5),
       gameMaterial(randomSkin(), 0, 0.9, 0.5)
     );
+    const faceTexture = new THREE.MeshBasicMaterial({
+      map: awakeFace,
+      transparent: true
+    });
     const countenance = new THREE.Mesh(
       new THREE.PlaneBufferGeometry(4, 4),
-      new THREE.MeshBasicMaterial({
-        map: loadTexture('./textures/face-sleeping.png'),
-        transparent: true
-      })
+      faceTexture
     );
     countenance.position.set(0, 0, -2.25);
     countenance.rotation.y = Math.PI;
     box.add(countenance);
     box.position.set(x, 3, z - 0.5);
     scene.add(box);
+    return {face: faceTexture};
   } : (x, z) => {
-    const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5, './textures/face-sleeping.png');
+    const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5);
+    student.face.map = awakeFace;
     student.person.position.set(x, -5, z);
     student.delay = Math.random() * 200;
     kneel(student.limbs[2]);
@@ -287,53 +295,65 @@ function loadPeople(scene, onframe) {
     }
   }
 
-  let lastState = null;
-  onframe.push(timeStamp => {
-    const now = Date.now();
-    let choice;
-    if (yesState) {
-      choice = yesState.type;
-      if (!lastState) lastState = yesState.type;
-    } else if (lastState) {
-      choice = 'rest';
-      lastState = null;
-    }
-    students.forEach(student => {
-      switch (choice) {
-        case 'expansion-ready':
-          if (student.mode !== 'expansion') {
-            resetLimbRotations(student, true, defaultExpansionRotations);
-            student.mode = 'expansion';
-          }
-          break;
-        case 'expansion':
-          if (yesState.mode === 'up') {
-            animateExpansionBreathUp(student, now - yesState.start);
-          } else {
-            animateExpansionBreathDown(student, now - yesState.start);
-          }
-          break;
-        case 'power-down':
-          if (now - yesState.start > student.delay && student.mode !== 'power-down') {
-            student.mode = 'power-down';
-            resetLimbRotations(student, true, powerBreathDown);
-          }
-          break;
-        case 'power-up':
-          if (now - yesState.start > student.delay && student.mode !== 'power-up') {
-            student.mode = 'power-up';
-            resetLimbRotations(student, true, powerBreathUp);
-          }
-          break;
-        case 'rest':
-          resetLimbRotations(student, true, restRotations);
-          break;
+  if (!boxStudents) {
+    let lastState = null;
+    onframe.push(timeStamp => {
+      const now = Date.now();
+      let choice;
+      if (yesState) {
+        choice = yesState.type;
+        if (!lastState) lastState = yesState.type;
+      } else if (lastState) {
+        choice = 'rest';
+        lastState = null;
       }
-      processLimbs(student);
+      students.forEach(student => {
+        switch (choice) {
+          case 'expansion-ready':
+            if (student.mode !== 'expansion') {
+              resetLimbRotations(student, true, defaultExpansionRotations);
+              student.mode = 'expansion';
+            }
+            break;
+          case 'expansion':
+            if (yesState.mode === 'up') {
+              animateExpansionBreathUp(student, now - yesState.start);
+            } else {
+              animateExpansionBreathDown(student, now - yesState.start);
+            }
+            break;
+          case 'power-down':
+            if (now - yesState.start > student.delay && student.mode !== 'power-down') {
+              student.mode = 'power-down';
+              resetLimbRotations(student, true, powerBreathDown);
+            }
+            break;
+          case 'power-up':
+            if (now - yesState.start > student.delay && student.mode !== 'power-up') {
+              student.mode = 'power-up';
+              resetLimbRotations(student, true, powerBreathUp);
+            }
+            break;
+          case 'rest':
+            resetLimbRotations(student, true, restRotations);
+            break;
+        }
+        processLimbs(student);
+      });
     });
-  });
+  }
 
-  return {studentMap, students, instructor, instructorVoice: sound};
+  return {
+    studentMap,
+    students,
+    instructor,
+    instructorVoice: sound,
+    setFaces(texture) {
+      students.forEach(({face}) => {
+        face.map = texture;
+      });
+    }
+  };
 }
 
 function createPhone() {
@@ -375,7 +395,7 @@ function createPhone() {
   };
 }
 function createPlayerSittingPerson() {
-  const person = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5);
+  const person = createPerson(randomSkin(), 0, 0, false);
   kneel(person.limbs[2]);
   kneel(person.limbs[3]);
   person.person.remove(person.head);
