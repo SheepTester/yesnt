@@ -121,6 +121,30 @@ const defaultRotations = [
   [Math.PI, 0, 0],
   [0, 0, -0.1]
 ];
+const defaultExpansionRotations = [
+  [Math.PI, 0, 0.1],
+  [0, 0, 0.1],
+  [Math.PI, 0, -0.1],
+  [0, 0, -0.1]
+];
+const restRotations = [
+  [Math.PI + 0.3, 0, 0],
+  [Math.PI / 9, 0, -Math.PI / 10],
+  [Math.PI + 0.3, 0, 0],
+  [Math.PI / 9, 0, Math.PI / 10]
+];
+const instructorRotations = [
+  [0, 0, Math.PI * 2 / 3],
+  [0, 0, Math.PI * 2 / 3],
+  [0, 0, -Math.PI * 2 / 3],
+  [0, 0, -Math.PI * 2 / 3]
+];
+const phoneRotations = [
+  [Math.PI * 5 / 4, 0, 0],
+  [Math.PI / 4, 0, -Math.PI * 0.2],
+  [Math.PI * 5 / 4, 0, 0],
+  [Math.PI / 4, 0, Math.PI * 0.2]
+];
 const powerBreathDown = [
   [Math.PI + 0.2, 0, 0],
   [Math.PI - 0.4, 0, 0],
@@ -140,7 +164,7 @@ function resetLimbRotations(student, animate = true, target = defaultRotations) 
     }
     part.idealRot.set(...target[i]);
   });
-  if (target === defaultRotations) student.mode = 'rest';
+  if (target === restRotations) student.mode = 'rest';
   if (animate) student.rotationTransition = Date.now();
 }
 function processLimbs(student) {
@@ -188,7 +212,7 @@ function loadPeople(scene, onframe) {
   scene.add(instructor.person);
   instructor.delay = 0;
   instructor.person.rotation.y = Math.PI / 2;
-  resetLimbRotations(instructor, false);
+  resetLimbRotations(instructor, false, instructorRotations);
   processLimbs(instructor);
 
   const lookLight = new THREE.SpotLight(0x990000, 0.5);
@@ -247,7 +271,7 @@ function loadPeople(scene, onframe) {
     student.delay = Math.random() * 200;
     kneel(student.limbs[2]);
     kneel(student.limbs[3]);
-    resetLimbRotations(student, false);
+    resetLimbRotations(student, false, restRotations);
     processLimbs(student);
     scene.add(student.person);
     return student;
@@ -276,11 +300,13 @@ function loadPeople(scene, onframe) {
     }
     students.forEach(student => {
       switch (choice) {
-        case 'expansion':
+        case 'expansion-ready':
           if (student.mode !== 'expansion') {
-            resetLimbRotations(student);
+            resetLimbRotations(student, true, defaultExpansionRotations);
             student.mode = 'expansion';
           }
+          break;
+        case 'expansion':
           if (yesState.mode === 'up') {
             animateExpansionBreathUp(student, now - yesState.start);
           } else {
@@ -300,7 +326,7 @@ function loadPeople(scene, onframe) {
           }
           break;
         case 'rest':
-          resetLimbRotations(student);
+          resetLimbRotations(student, true, restRotations);
           break;
       }
       processLimbs(student);
@@ -353,7 +379,7 @@ function createPlayerSittingPerson() {
   kneel(person.limbs[2]);
   kneel(person.limbs[3]);
   person.person.remove(person.head);
-  resetLimbRotations(person, false);
+  resetLimbRotations(person, false, restRotations);
   processLimbs(person);
   return person;
 }

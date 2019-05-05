@@ -46,9 +46,9 @@ function start() {
 }
 let interruptInstructor = null;
 const breathing = [
-  'straw1', 'straw', 'straw2', 'straw', 'strawUseless', 'straw3', 'straw4',
-  'strawClosing',
-  'expansionOpening', 'normalBreath', 'expansionInstruct'
+  // 'straw1', 'straw', 'straw2', 'straw', 'strawUseless', 'straw3', 'straw4',
+  // 'strawClosing',
+  'expansionOpening', //'normalBreath', 'expansionInstruct'
 ];
 let yesState = null;
 async function startGame() {
@@ -75,6 +75,7 @@ async function startGame() {
   hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   for (const line of breathing) {
+    if (line === 'expansionOpening') yesState = {type: 'expansion-ready'};
     await speak(line);
     if (haltYES) break;
   }
@@ -223,15 +224,10 @@ function setPhoneState(to) {
   playerState.phoneOut = to;
   if (to) {
     sittingPlayer.limbs[0].forearm.add(phone.phone);
-    resetLimbRotations(sittingPlayer, true, [
-      [Math.PI * 5 / 4, 0, 0],
-      [Math.PI / 4, 0, -Math.PI * 0.2],
-      [Math.PI * 5 / 4, 0, 0],
-      [Math.PI / 4, 0, Math.PI * 0.2]
-    ]);
+    resetLimbRotations(sittingPlayer, true, phoneRotations);
   } else {
     sittingPlayer.limbs[0].forearm.remove(phone.phone);
-    resetLimbRotations(sittingPlayer, true);
+    resetLimbRotations(sittingPlayer, true, restRotations);
   }
 }
 
@@ -486,7 +482,7 @@ function animate() {
         }
         case 'show-expansion':
         case 'show-power': {
-          resetLimbRotations(instructor);
+          resetLimbRotations(instructor, true, instructorRotations);
           animation.onDone();
           break;
         }
@@ -754,7 +750,7 @@ document.addEventListener('DOMContentLoaded', e => {
         await Promise.all([
           speak('introExpansion1'),
           new Promise(res => {
-            resetLimbRotations(instructor);
+            resetLimbRotations(instructor, true, defaultExpansionRotations);
             animations.push(currentAnimation = {type: 'show-expansion', start: Date.now(), duration: 5000, onDone: res});
           })
         ]);

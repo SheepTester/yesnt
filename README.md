@@ -58,7 +58,7 @@ Lights off sound by [Cyberkineticfilms](https://freesound.org/people/Cyberkineti
 
     - option to restart
 
-  - betterify instructor's player model
+  - betterify instructor's player model (hair)
 
   - Kleenex(r)
 
