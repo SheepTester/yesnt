@@ -61,11 +61,13 @@ function start() {
   playerState.pose = 'rest';
 }
 let interruptInstructor = null;
-const breathing = [
+const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] : [
   'straw1', 'straw', 'straw2', 'straw', 'strawUseless', 'straw3', 'straw4',
   'strawClosing',
   'expansionOpening', 'normalBreath', 'expansionInstruct'
 ];
+const skipExpansion = params.get('skip-to') === 'power' || params.get('skip-to') === 'om';
+const skipPower = params.get('skip-to') === 'om';
 let yesState = null;
 async function startGame() {
   instructor.moving = 'watch';
@@ -93,88 +95,92 @@ async function startGame() {
   playerState.canDie = true;
   hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
-  for (const line of breathing) {
-    if (line === 'expansionOpening') yesState = {type: 'expansion-ready'};
-    await speak(line);
-    if (haltYES) break;
-  }
-  if (!haltYES) {
-    yesState = {type: 'expansion', mode: 'up', start: Date.now(), first: true};
-    await speak('expansionArmsUp', 4000)
-      && await speak('five', 1000)
-      && await speak('six', 1000)
-      && await speak('holdBreath', 2000)
-      && await speak('three', 1000)
-      && await speak('four', 1000)
-      && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
-      && await speak('expansionArmsDown', 4000)
-      && await speak('five', 1000)
-      && await speak('six', 1000)
-      && await speak('holdBreath', 2000);
-  }
-  for (let i = 0; i < 3 && !haltYES; i++) {
-    yesState = {type: 'expansion', mode: 'up', start: Date.now()};
-    await speak('breatheIn', 1000)
-      && await speak('two', 1000)
-      && await speak('three', 1000)
-      && await speak('four', 1000)
-      && await speak('five', 1000)
-      && await speak('six', 1000)
-      && await speak('hold', 1000)
-      && await speak('two', 1000)
-      && await speak('three', 1000)
-      && await speak('four', 1000)
-      && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
-      && await speak('breatheOut', 1000)
-      && await speak('two', 1000)
-      && await speak('three', 1000)
-      && await speak('four', 1000)
-      && await speak('five', 1000)
-      && await speak('six', 1000)
-      && await speak('hold', 1000)
-      && await speak('two', 1000);
-  }
-  for (let i = 0; i < 3 && !haltYES; i++) {
-    yesState = {type: 'expansion', mode: 'up', start: Date.now()};
-    await speak('breatheIn', 6000)
-      && await speak('hold', 4000)
-      && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
-      && await speak('breatheOut', 6000)
-      && await speak('hold', 2000);
-  }
-  yesState = null;
-  if (!haltYES) {
-    await speak('relaxLong')
-      && await speak('powerKleenex1')
-      && await speak('powerOpening');
-  }
-  async function doPower(first) {
-    yesState = {type: 'power-down', start: Date.now(), first};
-    if (!haltYES) await speak('powerStart');
-    for (let i = 0; i < 15 && !haltYES; i++) {
-      yesState = {type: 'power-up', start: Date.now()};
-      await speak('up', 800)
-        && (yesState = {type: 'power-down', start: Date.now()})
-        && await speak('down', 800);
+  if (!skipExpansion) {
+    for (const line of breathing) {
+      if (line === 'expansionOpening') yesState = {type: 'expansion-ready'};
+      await speak(line);
+      if (haltYES) break;
+    }
+    if (!haltYES) {
+      yesState = {type: 'expansion', mode: 'up', start: Date.now(), first: true};
+      await speak('expansionArmsUp', 4000)
+        && await speak('five', 1000)
+        && await speak('six', 1000)
+        && await speak('holdBreath', 2000)
+        && await speak('three', 1000)
+        && await speak('four', 1000)
+        && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
+        && await speak('expansionArmsDown', 4000)
+        && await speak('five', 1000)
+        && await speak('six', 1000)
+        && await speak('holdBreath', 2000);
+    }
+    for (let i = 0; i < 3 && !haltYES; i++) {
+      yesState = {type: 'expansion', mode: 'up', start: Date.now()};
+      await speak('breatheIn', 1000)
+        && await speak('two', 1000)
+        && await speak('three', 1000)
+        && await speak('four', 1000)
+        && await speak('five', 1000)
+        && await speak('six', 1000)
+        && await speak('hold', 1000)
+        && await speak('two', 1000)
+        && await speak('three', 1000)
+        && await speak('four', 1000)
+        && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
+        && await speak('breatheOut', 1000)
+        && await speak('two', 1000)
+        && await speak('three', 1000)
+        && await speak('four', 1000)
+        && await speak('five', 1000)
+        && await speak('six', 1000)
+        && await speak('hold', 1000)
+        && await speak('two', 1000);
+    }
+    for (let i = 0; i < 3 && !haltYES; i++) {
+      yesState = {type: 'expansion', mode: 'up', start: Date.now()};
+      await speak('breatheIn', 6000)
+        && await speak('hold', 4000)
+        && (yesState = {type: 'expansion', mode: 'down', start: Date.now()})
+        && await speak('breatheOut', 6000)
+        && await speak('hold', 2000);
     }
     yesState = null;
   }
-  await doPower(true);
-  if (!haltYES) {
-    await speak('relaxShort')
-      && await speak('powerKleenex2');
-  }
-  await doPower();
-  if (!haltYES) {
-    await speak('relaxShort')
-      && await speak('powerLastRound');
-  }
-  await doPower();
-  if (!haltYES) {
-    await speak('relaxShort')
-      && await speak('powerClosing')
-      && await speak('powerKleenex3')
-      && await speak('omOpening');
+  if (!skipPower) {
+    if (!haltYES) {
+      await speak('relaxLong')
+        && await speak('powerKleenex1')
+        && await speak('powerOpening');
+    }
+    async function doPower(first) {
+      yesState = {type: 'power-down', start: Date.now(), first};
+      if (!haltYES) await speak('powerStart');
+      for (let i = 0; i < 15 && !haltYES; i++) {
+        yesState = {type: 'power-up', start: Date.now()};
+        await speak('up', 800)
+          && (yesState = {type: 'power-down', start: Date.now()})
+          && await speak('down', 800);
+      }
+      yesState = null;
+    }
+    await doPower(true);
+    if (!haltYES) {
+      await speak('relaxShort')
+        && await speak('powerKleenex2');
+    }
+    await doPower();
+    if (!haltYES) {
+      await speak('relaxShort')
+        && await speak('powerLastRound');
+    }
+    await doPower();
+    if (!haltYES) {
+      await speak('relaxShort')
+        && await speak('powerClosing')
+        && await speak('powerKleenex3')
+        && await speak('omOpening');
+    }
   }
   for (let i = 0; i < 3 && !haltYES; i++) {
     if (i > 0) await speak('omBreathe');
@@ -469,6 +475,9 @@ const onKeyPress = {
     }
     moving = 'chase';
     scene.remove(sittingPlayer.person);
+    for (let i = animations.length - 1; i >= 0; i--) {
+      if (animations[i].type === 'intense-om') animations.splice(i, 1);
+    }
     animations.push({type: 'get-up', start: Date.now(), duration: 200});
     instructor.moving = 'chase';
     instructor.head.rotation.y = 0;
