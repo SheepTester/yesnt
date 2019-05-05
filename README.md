@@ -2,6 +2,8 @@
 
 Vagus nerves, activate!
 
+Uses [three.js](https://threejs.org/) and [simple-reverb](https://github.com/web-audio-components/simple-reverb/).
+
 Sohum mantra track by [True Best News](https://www.youtube.com/watch?v=xOl7MWGjVRo).
 
 Bloom pass code from the [three.js examples](https://threejs.org/examples/#webgl_postprocessing_unreal_bloom).

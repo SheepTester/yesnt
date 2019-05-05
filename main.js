@@ -370,14 +370,23 @@ document.addEventListener('mousemove', e => {
   }
 });
 
-const keyToName = {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'shift', 70: 'f', 13: 'enter', 8: 'backspace'};
+const keyToName = {
+  87: 'forth',
+  65: 'left',
+  83: 'back',
+  68: 'right',
+  16: 'get-up',
+  70: 'phone',
+  13: 'skip-intro',
+  8: 'del-code-digit'
+};
 const keys = {};
 const onKeyPress = {
-  f() {
+  phone() {
     if (skipIntro || !isDark()) return;
     setPhoneState(!playerState.phoneOut);
   },
-  shift() {
+  'get-up'() {
     if (moving !== 'sitting' || !isDark()) return;
     moving = 'chase';
     scene.remove(sittingPlayer.person);
@@ -390,10 +399,10 @@ const onKeyPress = {
     hintText.textContent = 'Use WASD to move around.';
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   },
-  enter() {
+  'skip-intro'() {
     if (skipIntro) skipIntro();
   },
-  backspace() {
+  'del-code-digit'() {
     if (selectedDoor && typingState) {
       typeProgress = typeProgress.slice(0, -1);
       renderDoorPopup();
@@ -575,19 +584,19 @@ function animate() {
       movement.x = touchMovement.x * cos + touchMovement.y * sin;
       movement.z = -touchMovement.x * sin + touchMovement.y * cos;
     }
-    if (keys.w) {
+    if (keys.forth) {
       movement.x -= sin;
       movement.z -= cos;
     }
-    if (keys.s) {
+    if (keys.back) {
       movement.x += sin;
       movement.z += cos;
     }
-    if (keys.a) {
+    if (keys.left) {
       movement.x -= cos;
       movement.z += sin;
     }
-    if (keys.d) {
+    if (keys.right) {
       movement.x += cos;
       movement.z -= sin;
     }
