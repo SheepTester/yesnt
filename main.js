@@ -445,7 +445,11 @@ const keyToName = {
 const keys = {};
 const onKeyPress = {
   phone() {
-    if (!playerState.canDie) return;
+    if (!playerState.canDie) {
+      hintText.textContent = "You should take out your phone when it's dark so they won't notice.";
+      animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+      return;
+    }
     setPhoneState(!playerState.phoneOut);
   },
   reset() {
@@ -457,7 +461,12 @@ const onKeyPress = {
     }
   },
   'get-up'() {
-    if (moving !== 'sitting' || !playerState.canDie) return;
+    if (moving !== 'sitting') return;
+    if (!playerState.canDie) {
+      hintText.textContent = "You should get up when it's dark so they won't notice.";
+      animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+      return;
+    }
     moving = 'chase';
     scene.remove(sittingPlayer.person);
     animations.push({type: 'get-up', start: Date.now(), duration: 200});

@@ -14,16 +14,6 @@ Lights off sound by [Cyberkineticfilms](https://freesound.org/people/Cyberkineti
 
 ## To do
 
-- YES program (expansion breath, power breath)
-
-  - instructor voice timings
-
-  - arm movements of students
-
-  - player-controlled arm movements
-
-  - instructor check on arms
-
 - breathing
 
   - controls
