@@ -11,6 +11,7 @@ const STUDENT_X_RADIUS = 2.5 + PLAYER_THICKNESS;
 const STUDENT_BACK_SIZE = 1.75 + PLAYER_THICKNESS;
 const STUDENT_FRONT_SIZE = 2.75 + PLAYER_THICKNESS;
 const INSTRUCTOR_RUN_SPEED = 0.04;
+const EXPANSION_SPEED = 0.0005;
 
 const tunnelXBounds = {
   left: [
@@ -46,7 +47,10 @@ function start() {
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
   moving = 'sitting';
+  playerState.canDie = false;
   if (playerState.phoneOut) setPhoneState(false);
+  resetLimbRotations(sittingPlayer, false, restRotations);
+  playerState.pose = 'rest';
 }
 let interruptInstructor = null;
 const breathing = [
@@ -78,6 +82,7 @@ async function startGame() {
   toggleLights();
   setFaces(sleepyFace);
   instructor.face.map = creepyFace;
+  playerState.canDie = true;
   hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   for (const line of breathing) {
@@ -216,7 +221,7 @@ const collisionBoxes = [];
 const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
-const playerState = {phoneOut: false};
+const playerState = {phoneOut: false, pose: 'rest', canDie: false};
 
 const sittingPlayer = createPlayerSittingPerson();
 sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
@@ -231,9 +236,11 @@ function setPhoneState(to) {
   if (to) {
     sittingPlayer.limbs[0].forearm.add(phone.phone);
     resetLimbRotations(sittingPlayer, true, phoneRotations);
+    playerState.pose = 'phone';
   } else {
     sittingPlayer.limbs[0].forearm.remove(phone.phone);
     resetLimbRotations(sittingPlayer, true, restRotations);
+    playerState.pose = 'rest';
   }
 }
 
@@ -371,23 +378,40 @@ document.addEventListener('mousemove', e => {
 });
 
 const keyToName = {
-  87: 'forth',
-  65: 'left',
-  83: 'back',
-  68: 'right',
-  16: 'get-up',
-  70: 'phone',
-  13: 'skip-intro',
-  8: 'del-code-digit'
+  87: 'forth', // w
+  65: 'left', // a
+  83: 'back', // s
+  68: 'right', // d
+  16: 'get-up', // shift
+  70: 'phone', // f
+  13: 'skip-intro', // enter
+  8: 'del-code-digit', // backspace
+  82: 'reset', // r
+  79: 'om', // o
+  81: 'inhale', // q
+  69: 'exhale', // e
+  32: 'trip', // space
+  37: 'exp-down', // left
+  38: 'power-up', // up
+  39: 'exp-up', // right
+  40: 'power-down' // down
 };
 const keys = {};
 const onKeyPress = {
   phone() {
-    if (skipIntro || !isDark()) return;
+    if (!playerState.canDie) return;
     setPhoneState(!playerState.phoneOut);
   },
+  reset() {
+    if (!playerState.canDie) return;
+    if (playerState.phoneOut) setPhoneState(false);
+    if (playerState.pose !== 'rest') {
+      resetLimbRotations(sittingPlayer, true, restRotations);
+      playerState.pose = 'rest';
+    }
+  },
   'get-up'() {
-    if (moving !== 'sitting' || !isDark()) return;
+    if (moving !== 'sitting' || !playerState.canDie) return;
     moving = 'chase';
     scene.remove(sittingPlayer.person);
     animations.push({type: 'get-up', start: Date.now(), duration: 200});
@@ -407,6 +431,16 @@ const onKeyPress = {
       typeProgress = typeProgress.slice(0, -1);
       renderDoorPopup();
     }
+  },
+  'power-down'() {
+    if (playerState.phoneOut) setPhoneState(false);
+    playerState.pose = 'power';
+    resetLimbRotations(sittingPlayer, true, powerBreathDown);
+  },
+  'power-up'() {
+    if (playerState.phoneOut) setPhoneState(false);
+    playerState.pose = 'power';
+    resetLimbRotations(sittingPlayer, true, powerBreathUp);
   }
 };
 document.addEventListener('keydown', e => {
@@ -706,6 +740,20 @@ function animate() {
       if (playerState.phoneOut) {
         caught();
       }
+    }
+    if (keys['exp-down'] || keys['exp-up']) {
+      if (playerState.pose !== 'expansion') {
+        if (playerState.phoneOut) setPhoneState(false);
+        resetLimbRotations(sittingPlayer, true, defaultExpansionRotations);
+        playerState.pose = 'expansion';
+        playerState.position = 0;
+      }
+      if (keys['exp-down']) playerState.position -= EXPANSION_SPEED * elapsedTime;
+      if (keys['exp-up']) playerState.position += EXPANSION_SPEED * elapsedTime;
+      if (playerState.position < 0) playerState.position = 0;
+      else if (playerState.position > 1) playerState.position = 1;
+      sittingPlayer.limbs[0].limb.idealRot.z = playerState.position * (Math.PI - 0.2) + 0.1;
+      sittingPlayer.limbs[1].limb.idealRot.z = -playerState.position * (Math.PI - 0.2) - 0.1;
     }
   }
 
