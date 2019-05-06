@@ -18,6 +18,7 @@ const EXPANSION_REACTION_TIME = +params.get('expReact') || 3250; // time instruc
 const POWER_PREP_TIME = +params.get('pwrPrep') || Infinity; // same as above two, but for power breath
 const POWER_REACTION_TIME = +params.get('pwrReact') || 450;
 const POWER_EARLY_TIME = +params.get('pwrEarly') || 300; // time in which instructor allows you to bring your arms back early (ms)
+const PHONE_LENIENCY_DELAY = 200;
 
 const tunnelXBounds = {
   left: [
@@ -237,8 +238,10 @@ const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, on
 
 const playerState = {phoneOut: false, pose: 'rest', canDie: false};
 function isPlayerCatchworthy() {
-  if (playerState.phoneOut) return 'phone out';
   const now = Date.now();
+  if (playerState.phoneOut && now - playerState.phoneOutSince > PHONE_LENIENCY_DELAY) {
+    return 'phone out';
+  }
   if (yesState) {
     const time = now - yesState.start;
     switch (yesState.type) {
@@ -289,6 +292,7 @@ function setPhoneState(to) {
     sittingPlayer.limbs[0].forearm.add(phone.phone);
     resetLimbRotations(sittingPlayer, true, phoneRotations);
     playerState.pose = 'phone';
+    playerState.phoneOutSince = Date.now();
   } else {
     sittingPlayer.limbs[0].forearm.remove(phone.phone);
     resetLimbRotations(sittingPlayer, true, restRotations);
