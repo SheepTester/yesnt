@@ -559,6 +559,23 @@ function caught() {
   if (interruptInstructor) interruptInstructor('caught');
 }
 
+let lungIndicator;
+/**
+ * @param {number} oxygen 0 - 1
+ * @param {number} volume -1 - 1
+ */
+function setLungIndicator(oxygen, volume) {
+  lungIndicator.style.fill = `hsl(0, ${100 - oxygen * 25}%, ${oxygen * 50}%)`;
+  lungIndicator.setAttributeNS(
+    null,
+    'd',
+    `M -70 175 L -20 147 L -20 300 L -150 350 C -160 320 -${200 + volume * 15 - 10} 230 -${190 + volume * 15 - 10} 170 `
+    + `C -${180 + volume * 15 - 10} 110 -140 65 -80 40 L -20 55 L -20 90 L -100 140`
+    + `M 70 175 L 20 147 L 20 300 L 150 350 C 160 320 ${200 + volume * 15 - 10} 230 ${190 + volume * 15 - 10} 170`
+    + `C ${180 + volume * 15 - 10} 110 140 65 80 40 L 20 55 L 20 90 L 100 140`
+  );
+}
+
 let hintText;
 let lastTime, moving;
 const animations = [];
@@ -833,6 +850,8 @@ function animate() {
     darkPhongFloor.position.set(camera.position.x, 0, camera.position.z);
   }
 
+  setLungIndicator(Math.sin(Date.now() / 200) * 0.5 + 0.5, Math.sin(Date.now() / 200));
+
   onframe.forEach(fn => fn(now, elapsedTime));
   processLimbs(instructor);
   processLimbs(sittingPlayer);
@@ -855,6 +874,8 @@ let skipIntro = null;
 document.addEventListener('DOMContentLoaded', e => {
   hintText = document.getElementById('hint');
   loadingBar = document.getElementById('progress-bar');
+  lungIndicator = document.getElementById('blood-colour');
+  setLungIndicator(1, 0);
 
   document.body.appendChild(renderer.domElement);
   initTouch();

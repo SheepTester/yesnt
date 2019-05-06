@@ -73,3 +73,11 @@ canvas {
   transition: opacity .5s;
   pointer-events: none;
 }
+.lungs {
+  position: fixed;
+  z-index: 1;
+  bottom: 0;
+  right: 0;
+  margin: 10px;
+  width: 50px;
+}
