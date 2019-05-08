@@ -24,6 +24,8 @@ const BREATHING_SPEED = 0.00005; // how fast lungs expand/contract (L/ms^2)
 const MAX_OXYGEN = 1; // playerState.oxygen max (O)
 const LUNG_RANGE = 1; // playerState.lungSize max; determines when the slowing down affect starts, goes (-, +) (L)
 const LIVING_OXYGEN_USAGE = 0.00005; // how much oxygen you lose by living (O/ms)
+const LOW_OXYGEN = 0.4; // point at which the screen starts dimming, warning you to breathe (O)
+const ASPHYXIATION = 0.1; // point at which you black out (O)
 
 const tunnelXBounds = {
   left: [
@@ -577,13 +579,18 @@ function easeInCubic(t) {
   return t * t * t;
 }
 
+function die() {
+  instructor.moving = false;
+  setCanBreathe(false);
+  moving = 'caught';
+  if (interruptInstructor) interruptInstructor('caught');
+}
 function caught() {
+  die();
   const headPos = instructor.head.getWorldPosition(new THREE.Vector3());
   camera.lookAt(headPos);
   instructor.head.lookAt(camera.position);
   instructor.head.rotation.y += Math.PI;
-  instructor.moving = false;
-  moving = 'caught';
   document.body.style.backgroundColor = 'red';
   animations.push({
     type: 'intensify',
@@ -592,7 +599,6 @@ function caught() {
     zoomIntensity: camera.position.distanceTo(headPos) / 20,
     anchorY: camera.position.y
   });
-  if (interruptInstructor) interruptInstructor('caught');
 }
 
 let lungIndicator;
@@ -656,6 +662,14 @@ function animate() {
         case 'show-power': {
           resetLimbRotations(instructor, true, instructorRotations);
           animation.onDone();
+          break;
+        }
+        case 'black-out': {
+          renderer.domElement.style.opacity = null;
+          camera.zoom = 1;
+          camera.updateProjectionMatrix();
+          start();
+          startGame();
           break;
         }
       }
@@ -727,6 +741,13 @@ function animate() {
               animation.step = 4;
             }
           }
+          break;
+        }
+        case 'black-out': {
+          const position = easeOutCubic(progress);
+          renderer.domElement.style.opacity = 0.5 - position / 2;
+          camera.zoom = 1 / (1 + position * 3);
+          camera.updateProjectionMatrix();
           break;
         }
       }
@@ -883,6 +904,7 @@ function animate() {
   }
 
   if (playerState.canBreathe) {
+    const wasDying = playerState.oxygen < LOW_OXYGEN;
     playerState.oxygen -= LIVING_OXYGEN_USAGE * elapsedTime;
     playerState.respireVel *= 0.8;
     if (keys.inhale) playerState.respireVel += BREATHING_SPEED * elapsedTime;
@@ -896,6 +918,18 @@ function animate() {
       if (playerState.oxygen > MAX_OXYGEN) playerState.oxygen = MAX_OXYGEN;
     }
     setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
+    if (playerState.oxygen < ASPHYXIATION) {
+      die();
+      animations.push({
+        type: 'black-out',
+        start: Date.now(),
+        duration: 1000
+      });
+    } else if (playerState.oxygen < LOW_OXYGEN) {
+      renderer.domElement.style.opacity = (playerState.oxygen - ASPHYXIATION) / (LOW_OXYGEN - ASPHYXIATION) / 2 + 0.5;
+    } else if (wasDying) {
+      renderer.domElement.style.opacity = null;
+    }
   }
 
   if (darkPhongFloor) {
