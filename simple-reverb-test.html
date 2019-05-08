@@ -11,23 +11,58 @@
     <script src="./simple-reverb.js" charset="utf-8"></script>
   </head>
   <body>
-    <p>click the document for some USER INTERACTION so sound can be played</p>
+    <h1>wow reverb</h1>
+    <p><label for="seconds">impulse response length</label> <input type="number" id="seconds" value="3"></p>
+    <p><label for="decay">impulse response decay rate</label> <input type="number" id="decay" value="2"></p>
+    <p><label for="reverse">reverse the impulse response</label> <input type="checkbox" id="reverse"></p>
+    <p><label for="music">sound file</label> <input type="file" id="music" accept="audio/*"></p>
+    <p><button id="play" disabled>play</button> <button id="stop" disabled>stop</button></p>
+    <p>(plays so-hum track by default)</p>
     <script>
+const seconds = document.getElementById('seconds');
+const decay = document.getElementById('decay');
+const reverse = document.getElementById('reverse');
+const music = document.getElementById('music');
+const play = document.getElementById('play');
+const stop = document.getElementById('stop');
 const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
 const listener = new THREE.AudioListener();
 camera.add(listener);
 const sound = new THREE.Audio(listener);
-const verb = new SimpleReverb(sound.context);
 new THREE.AudioLoader().load('./sounds/sohum.mp3', buffer => {
+  play.disabled = false;
   sound.setBuffer(buffer);
+});
+music.addEventListener('change', e => {
+  const file = music.files[0];
+  if (file) {
+    const url = URL.createObjectURL(file)
+    new THREE.AudioLoader().load(url, buffer => {
+      URL.revokeObjectURL(url);
+      sound.setBuffer(buffer);
+    });
+  }
+});
+play.addEventListener('click', e => {
+  const verb = new SimpleReverb(sound.context, {
+    seconds: +seconds.value,
+    decay: +decay.value,
+    reverse: reverse.checked
+  });
   sound.setFilter(verb.input);
   verb.connect(sound.context.destination);
-  userGesture.then(() => {
-    sound.play();
-  });
+  sound.play();
+  play.disabled = true;
+  stop.disabled = false;
 });
-const userGesture = new Promise(res => {
-  document.addEventListener('click', res);
+sound.onEnded(() => {
+  stop.disabled = true;
+  play.disabled = false;
+});
+stop.addEventListener('click', e => {
+  sound.stop();
+  stop.disabled = true;
+  play.disabled = false;
 });
     </script>
   </body>
