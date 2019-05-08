@@ -81,3 +81,6 @@ canvas {
   margin: 10px;
   width: 50px;
 }
+.hide-lungs .lungs {
+  display: none;
+}

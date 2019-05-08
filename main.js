@@ -13,11 +13,11 @@ const STUDENT_BACK_SIZE = 1.75 + PLAYER_THICKNESS;
 const STUDENT_FRONT_SIZE = 2.75 + PLAYER_THICKNESS;
 const INSTRUCTOR_RUN_SPEED = 0.04; // speed of instructor in chase mode (tju/ms)
 const EXPANSION_SPEED = 0.0005; // speed of expansion breath arm progress (100%/ms)
-const EXPANSION_PREP_TIME = +params.get('expPrep') || 1200; // time instructor allows you to enter expansion breath pose (ms)
-const EXPANSION_REACTION_TIME = +params.get('expReact') || 3250; // time instructor allows you to bring your arms up/down (ms)
-const POWER_PREP_TIME = +params.get('pwrPrep') || Infinity; // same as above two, but for power breath
-const POWER_REACTION_TIME = +params.get('pwrReact') || 450;
-const POWER_EARLY_TIME = +params.get('pwrEarly') || 300; // time in which instructor allows you to bring your arms back early (ms)
+const EXPANSION_PREP_TIME = 1200; // time instructor allows you to enter expansion breath pose (ms)
+const EXPANSION_REACTION_TIME = 3250; // time instructor allows you to bring your arms up/down (ms)
+const POWER_PREP_TIME = Infinity; // same as above two, but for power breath
+const POWER_REACTION_TIME = 450;
+const POWER_EARLY_TIME = 300; // time in which instructor allows you to bring your arms back early (ms)
 const PHONE_LENIENCY_DELAY = 200;
 const INHALE_OXYGEN_SPEED = 0.0003; // how much oxygen you get when you breathe in (O/ms)
 const BREATHING_SPEED = 0.00005; // how fast lungs expand/contract (L/ms^2)
@@ -66,10 +66,7 @@ function start() {
   if (playerState.phoneOut) setPhoneState(false);
   resetLimbRotations(sittingPlayer, false, restRotations);
   playerState.pose = 'rest';
-  respire.set(0);
-  playerState.oxygen = MAX_OXYGEN;
-  playerState.lungSize = 0;
-  playerState.respireVel = 0;
+  if (playerState.canBreathe) setCanBreathe(false);
 }
 let interruptInstructor = null;
 const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] : [
@@ -104,6 +101,7 @@ async function startGame() {
   setFaces(sleepyFace);
   instructor.face.map = creepyFace;
   playerState.canDie = true;
+  setCanBreathe(true);
   hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   if (!skipExpansion) {
@@ -246,8 +244,24 @@ const collisionBoxes = [];
 const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
-const playerState = {phoneOut: false, pose: 'rest', canDie: false, canBreathe: true};
+const playerState = {phoneOut: false, pose: 'rest', canDie: false};
 const respire = limit(playerState.lungSize, -LUNG_RANGE + 1, LUNG_RANGE - 1);
+function setCanBreathe(to) {
+  if (playerState.phoneOut === to) return;
+  playerState.phoneOut = to;
+  if (to) {
+    playerState.canBreathe = true;
+    playerState.oxygen = MAX_OXYGEN;
+    playerState.lungSize = 0;
+    respire.set(playerState.lungSize);
+    playerState.respireVel = 0;
+    setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
+    document.body.classList.remove('hide-lungs');
+  } else {
+    playerState.canBreathe = false;
+    document.body.classList.add('hide-lungs');
+  }
+}
 function isPlayerCatchworthy() {
   const now = Date.now();
   if (playerState.phoneOut && now - playerState.phoneOutSince > PHONE_LENIENCY_DELAY) {
@@ -911,7 +925,6 @@ document.addEventListener('DOMContentLoaded', e => {
   hintText = document.getElementById('hint');
   loadingBar = document.getElementById('progress-bar');
   lungIndicator = document.getElementById('blood-colour');
-  setLungIndicator(1, 0);
 
   document.body.appendChild(renderer.domElement);
   initTouch();
