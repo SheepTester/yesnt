@@ -19,6 +19,11 @@ const POWER_PREP_TIME = +params.get('pwrPrep') || Infinity; // same as above two
 const POWER_REACTION_TIME = +params.get('pwrReact') || 450;
 const POWER_EARLY_TIME = +params.get('pwrEarly') || 300; // time in which instructor allows you to bring your arms back early (ms)
 const PHONE_LENIENCY_DELAY = 200;
+const INHALE_OXYGEN_SPEED = 0.0003; // how much oxygen you get when you breathe in (O/ms)
+const BREATHING_SPEED = 0.00005; // how fast lungs expand/contract (L/ms^2)
+const MAX_OXYGEN = 1; // playerState.oxygen max (O)
+const LUNG_RANGE = 1; // playerState.lungSize max; determines when the slowing down affect starts, goes (-, +) (L)
+const LIVING_OXYGEN_USAGE = 0.00005; // how much oxygen you lose by living (O/ms)
 
 const tunnelXBounds = {
   left: [
@@ -53,6 +58,7 @@ function start() {
   instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = 0;
   camera.position.set(0, SITTING_EYE_HEIGHT, MAT_FIRST_ROW_Z - 0.7);
   camera.rotation.set(0, 0, 0);
+  limitSittingHorizRot.set(camera.rotation.y);
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
   moving = 'sitting';
@@ -60,6 +66,10 @@ function start() {
   if (playerState.phoneOut) setPhoneState(false);
   resetLimbRotations(sittingPlayer, false, restRotations);
   playerState.pose = 'rest';
+  respire.set(0);
+  playerState.oxygen = MAX_OXYGEN;
+  playerState.lungSize = 0;
+  playerState.respireVel = 0;
 }
 let interruptInstructor = null;
 const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] : [
@@ -236,7 +246,8 @@ const collisionBoxes = [];
 const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
-const playerState = {phoneOut: false, pose: 'rest', canDie: false};
+const playerState = {phoneOut: false, pose: 'rest', canDie: false, canBreathe: true};
+const respire = limit(playerState.lungSize, -LUNG_RANGE + 1, LUNG_RANGE - 1);
 function isPlayerCatchworthy() {
   const now = Date.now();
   if (playerState.phoneOut && now - playerState.phoneOutSince > PHONE_LENIENCY_DELAY) {
@@ -399,27 +410,38 @@ document.addEventListener('click', e => {
   document.body.requestPointerLock();
   userInteracted();
 });
+// slows down up to 1 out of bounds, so if min = -5, max = 5, then the range would be (-6, 6)
+function limit(current, min, max) {
+  let psuedocurrent = current;
+  return {
+    change(change) {
+      psuedocurrent += change;
+      if (psuedocurrent > max && change > 0) {
+        return current = max + 1 - 1 / (1 + psuedocurrent - max);
+      } else if (psuedocurrent < min && change < 0) {
+        return current = min - 1 + 1 / (1 - psuedocurrent + min);
+      } else {
+        current += change;
+        if (current > max) {
+          psuedocurrent = max + 1 / (1 - current + max) - 1;
+        } else if (current < min) {
+          psuedocurrent = min + 1 - 1 / (1 + current - min);
+        } else psuedocurrent = current;
+        return current;
+      }
+    },
+    set(to) {
+      return psuedocurrent = current = to;
+    }
+  };
+}
 const MAX_ROTATION = Math.PI / 2;
-let yRotation = camera.rotation.y;
+const limitSittingHorizRot = limit(camera.rotation.y, -MAX_ROTATION, MAX_ROTATION);
 function rotateCamera(deltaX, deltaY) {
   if (moving === 'chase') {
     camera.rotation.y -= deltaX;
   } else if (moving === 'sitting') {
-    // this is probably more complicated than it needs to be
-    const change = -deltaX;
-    yRotation += change;
-    if (yRotation > MAX_ROTATION && change > 0) {
-      camera.rotation.y = MAX_ROTATION + 1 - 1 / (1 + yRotation - MAX_ROTATION);
-    } else if (yRotation < -MAX_ROTATION && change < 0) {
-      camera.rotation.y = -MAX_ROTATION - 1 + 1 / (1 - yRotation - MAX_ROTATION);
-    } else {
-      camera.rotation.y += change;
-      if (camera.rotation.y > MAX_ROTATION) {
-        yRotation = MAX_ROTATION + 1 / (1 - camera.rotation.y + MAX_ROTATION) - 1;
-      } else if (camera.rotation.y < -MAX_ROTATION) {
-        yRotation = -MAX_ROTATION + 1 - 1 / (1 + camera.rotation.y + MAX_ROTATION);
-      } else yRotation = camera.rotation.y;
-    }
+    camera.rotation.y = limitSittingHorizRot.change(-deltaX);
   }
   if (moving !== 'caught') {
     camera.rotation.x -= deltaY;
@@ -846,11 +868,25 @@ function animate() {
     }
   }
 
+  if (playerState.canBreathe) {
+    playerState.oxygen -= LIVING_OXYGEN_USAGE * elapsedTime;
+    playerState.respireVel *= 0.8;
+    if (keys.inhale) playerState.respireVel += BREATHING_SPEED * elapsedTime;
+    if (keys.exhale) playerState.respireVel -= BREATHING_SPEED * elapsedTime;
+    const oldLungSize = playerState.lungSize;
+    const expectedLungSizeChange = playerState.respireVel * elapsedTime;
+    playerState.lungSize = respire.change(expectedLungSizeChange);
+    if (playerState.respireVel > 0) {
+      const percentLungSizeChange = (playerState.lungSize - oldLungSize) / expectedLungSizeChange;
+      playerState.oxygen += INHALE_OXYGEN_SPEED * elapsedTime * percentLungSizeChange;
+      if (playerState.oxygen > MAX_OXYGEN) playerState.oxygen = MAX_OXYGEN;
+    }
+    setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
+  }
+
   if (darkPhongFloor) {
     darkPhongFloor.position.set(camera.position.x, 0, camera.position.z);
   }
-
-  setLungIndicator(Math.sin(Date.now() / 200) * 0.5 + 0.5, Math.sin(Date.now() / 200));
 
   onframe.forEach(fn => fn(now, elapsedTime));
   processLimbs(instructor);
