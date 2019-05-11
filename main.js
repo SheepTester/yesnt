@@ -19,13 +19,14 @@ const POWER_PREP_TIME = Infinity; // same as above two, but for power breath
 const POWER_REACTION_TIME = 450;
 const POWER_EARLY_TIME = 300; // time in which instructor allows you to bring your arms back early (ms)
 const PHONE_LENIENCY_DELAY = 200;
-const INHALE_OXYGEN_SPEED = 0.0003; // how much oxygen you get when you breathe in (O/ms)
-const BREATHING_SPEED = 0.00005; // how fast lungs expand/contract (L/ms^2)
-const MAX_OXYGEN = 1; // playerState.oxygen max (O)
-const LUNG_RANGE = 1; // playerState.lungSize max; determines when the slowing down affect starts, goes (-, +) (L)
-const LIVING_OXYGEN_USAGE = 0.00005; // how much oxygen you lose by living (O/ms)
-const LOW_OXYGEN = 0.4; // point at which the screen starts dimming, warning you to breathe (O)
-const ASPHYXIATION = 0.1; // point at which you black out (O)
+const INHALE_OXYGEN_SPEED = +params.get('INHALE_OXYGEN_SPEED') || 0.0003; // how much oxygen you get when you breathe in (O/ms)
+const BREATHING_SPEED = +params.get('BREATHING_SPEED') || 0.00005; // how fast lungs expand/contract (L/ms^2)
+const MAX_OXYGEN = +params.get('MAX_OXYGEN') || 1; // playerState.oxygen max (O)
+const LUNG_RANGE = +params.get('LUNG_RANGE') || 1; // playerState.lungSize max; determines when the slowing down affect starts, goes (-, +) (L)
+const LIVING_OXYGEN_USAGE = +params.get('LIVING_OXYGEN_USAGE') || 0.00005; // how much oxygen you lose by living (O/ms)
+const LOW_OXYGEN = +params.get('LOW_OXYGEN') || 0.4; // point at which the screen starts dimming, warning you to breathe (O)
+const ASPHYXIATION = +params.get('ASPHYXIATION') || 0.1; // point at which you black out (O)
+// ?INHALE_OXYGEN_SPEED=0.0003&BREATHING_SPEED=0.00005&MAX_OXYGEN=1&LUNG_RANGE=1&LIVING_OXYGEN_USAGE=0.00005&LOW_OXYGEN=0.4&ASPHYXIATION=0.1
 
 const tunnelXBounds = {
   left: [
@@ -80,6 +81,7 @@ const skipExpansion = params.get('skip-to') === 'power' || params.get('skip-to')
 const skipPower = params.get('skip-to') === 'om';
 let yesState = null;
 async function startGame() {
+  if (interruptInstructor) throw new Error('A game is still ongoing it seems.');
   instructor.moving = 'watch';
   instructor.walkOffsetTime = Date.now();
   const {speak, interrupt} = speaking(instructorVoice);
@@ -104,7 +106,7 @@ async function startGame() {
   instructor.face.map = creepyFace;
   playerState.canDie = true;
   setCanBreathe(true);
-  hintText.textContent = 'Press shift to get up; press F to take out/put away your phone.';
+  hintText.textContent = 'Press shift to get up; press F to take out/put away your phone; press Q and E to breath in and out; press the arrow keys to move your arms, and R to reset them.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   if (!skipExpansion) {
     for (const line of breathing) {
@@ -207,6 +209,7 @@ async function startGame() {
     cassette.play();
     doneWithYES = true;
   }
+  interruptInstructor = null;
 }
 
 const listener = new THREE.AudioListener();
@@ -249,10 +252,9 @@ const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, on
 const playerState = {phoneOut: false, pose: 'rest', canDie: false};
 const respire = limit(playerState.lungSize, -LUNG_RANGE + 1, LUNG_RANGE - 1);
 function setCanBreathe(to) {
-  if (playerState.phoneOut === to) return;
-  playerState.phoneOut = to;
+  if (playerState.canBreathe === to) return;
+  playerState.canBreathe = to;
   if (to) {
-    playerState.canBreathe = true;
     playerState.oxygen = MAX_OXYGEN;
     playerState.lungSize = 0;
     respire.set(playerState.lungSize);
@@ -260,7 +262,6 @@ function setCanBreathe(to) {
     setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
     document.body.classList.remove('hide-lungs');
   } else {
-    playerState.canBreathe = false;
     document.body.classList.add('hide-lungs');
   }
 }
@@ -584,6 +585,7 @@ function die() {
   setCanBreathe(false);
   moving = 'caught';
   if (interruptInstructor) interruptInstructor('caught');
+  playerState.canDie = false;
 }
 function caught() {
   die();
