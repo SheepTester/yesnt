@@ -616,6 +616,25 @@ function setLungIndicator(oxygen, volume) {
   lungIndicator.style.setProperty('--icon-size', (volume * 5 + 30) + 'px');
 }
 
+const reminderMessages = [
+  "Don't forget to breathe!",
+  'Need breath',
+  'Respiration required',
+  'Your cells desire oxygen!',
+  'Breathe!'
+];
+function remindUserToBreathe() {
+  const wrapper = document.createElement('div');
+  wrapper.classList.add('reminder-to-breathe');
+  const reminder = document.createElement('span');
+  reminder.textContent = reminderMessages[Math.floor(Math.random() * reminderMessages.length)];
+  reminder.addEventListener('animationend', e => {
+    document.body.removeChild(wrapper);
+  }, {once: true});
+  wrapper.appendChild(reminder);
+  document.body.appendChild(wrapper);
+}
+
 let hintText;
 let lastTime, moving;
 const animations = [];
@@ -930,13 +949,24 @@ function animate() {
       die();
       animations.push({
         type: 'black-out',
-        start: Date.now(),
+        start: now,
         duration: 1000
       });
     } else if (playerState.oxygen < LOW_OXYGEN) {
-      renderer.domElement.style.opacity = (playerState.oxygen - ASPHYXIATION) / (LOW_OXYGEN - ASPHYXIATION) / 2 + 0.5;
+      const percentToDeath = (playerState.oxygen - ASPHYXIATION) / (LOW_OXYGEN - ASPHYXIATION);
+      renderer.domElement.style.opacity = percentToDeath / 2 + 0.5;
+      if (playerState.lastLowOxygen) {
+        if (now - playerState.lastLowOxygen > 3000 * percentToDeath * percentToDeath + 50) {
+          remindUserToBreathe();
+          playerState.lastLowOxygen = now;
+        }
+      } else {
+        remindUserToBreathe();
+        playerState.lastLowOxygen = now;
+      }
     } else if (wasDying) {
       renderer.domElement.style.opacity = null;
+      playerState.nextLowOxygen = null;
     }
   }
 
