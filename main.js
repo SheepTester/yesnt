@@ -19,11 +19,12 @@ const POWER_PREP_TIME = Infinity; // same as above two, but for power breath
 const POWER_REACTION_TIME = 450;
 const POWER_EARLY_TIME = 300; // time in which instructor allows you to bring your arms back early (ms)
 const PHONE_LENIENCY_DELAY = 200;
-const INHALE_OXYGEN_SPEED = +params.get('INHALE_OXYGEN_SPEED') || 0.0003; // how much oxygen you get when you breathe in (O/ms)
-const BREATHING_SPEED = +params.get('BREATHING_SPEED') || 0.00005; // how fast lungs expand/contract (L/ms^2)
+const INHALE_OXYGEN_SPEED = +params.get('INHALE_OXYGEN_SPEED') || 0.3; // how much oxygen you get when your lungs expand (O/L)
+const BREATHING_SPEED = +params.get('BREATHING_SPEED') || 0.00001; // how fast lungs expand/contract (L/ms^2)
+const BREATHING_BOOST_SPEED = +params.get('BREATHING_BOOST_SPEED') || 0.003; // how fast lungs expand/contract when the breathe key is initially pressed (L/ms)
 const MAX_OXYGEN = +params.get('MAX_OXYGEN') || 1; // playerState.oxygen max (O)
 const LUNG_RANGE = +params.get('LUNG_RANGE') || 1; // playerState.lungSize max; determines when the slowing down affect starts, goes (-, +) (L)
-const LIVING_OXYGEN_USAGE = +params.get('LIVING_OXYGEN_USAGE') || 0.00005; // how much oxygen you lose by living (O/ms)
+const LIVING_OXYGEN_USAGE = +params.get('LIVING_OXYGEN_USAGE') || 0.00003; // how much oxygen you lose by living (O/ms)
 const LOW_OXYGEN = +params.get('LOW_OXYGEN') || 0.4; // point at which the screen starts dimming, warning you to breathe (O)
 const ASPHYXIATION = +params.get('ASPHYXIATION') || 0.1; // point at which you black out (O)
 // ?INHALE_OXYGEN_SPEED=0.0003&BREATHING_SPEED=0.00005&MAX_OXYGEN=1&LUNG_RANGE=1&LIVING_OXYGEN_USAGE=0.00005&LOW_OXYGEN=0.4&ASPHYXIATION=0.1
@@ -79,6 +80,7 @@ const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] :
 ];
 const skipExpansion = params.get('skip-to') === 'power' || params.get('skip-to') === 'om';
 const skipPower = params.get('skip-to') === 'om';
+const skipEyesClosed = params.get('skip-eyes-closed') === 'true';
 let yesState = null;
 async function startGame() {
   if (interruptInstructor) throw new Error('A game is still ongoing it seems.');
@@ -97,7 +99,7 @@ async function startGame() {
     }
     interrupt();
   };
-  await speak('eyesClosed');
+  if (!skipEyesClosed) await speak('eyesClosed');
   const sound = new THREE.Audio(listener);
   sound.setBuffer(sounds.lights);
   sound.play();
@@ -609,15 +611,9 @@ let lungIndicator;
  * @param {number} volume -1 - 1
  */
 function setLungIndicator(oxygen, volume) {
-  lungIndicator.style.fill = `hsl(0, ${100 - oxygen * 25}%, ${oxygen * 50}%)`;
-  lungIndicator.setAttributeNS(
-    null,
-    'd',
-    `M -70 175 L -20 147 L -20 300 L -150 350 C -160 320 -${200 + volume * 15 - 10} 230 -${190 + volume * 15 - 10} 170 `
-    + `C -${180 + volume * 15 - 10} 110 -140 65 -80 40 L -20 55 L -20 90 L -100 140`
-    + `M 70 175 L 20 147 L 20 300 L 150 350 C 160 320 ${200 + volume * 15 - 10} 230 ${190 + volume * 15 - 10} 170`
-    + `C ${180 + volume * 15 - 10} 110 140 65 80 40 L 20 55 L 20 90 L 100 140`
-  );
+  lungIndicator.style.setProperty('--blood', `hsl(0, ${100 - oxygen * 25}%, ${oxygen * 50}%)`);
+  lungIndicator.style.setProperty('--size', (volume * 20 + 50) + 'px');
+  lungIndicator.style.setProperty('--icon-size', (volume * 5 + 30) + 'px');
 }
 
 let hintText;
@@ -909,14 +905,24 @@ function animate() {
     const wasDying = playerState.oxygen < LOW_OXYGEN;
     playerState.oxygen -= LIVING_OXYGEN_USAGE * elapsedTime;
     playerState.respireVel *= 0.8;
-    if (keys.inhale) playerState.respireVel += BREATHING_SPEED * elapsedTime;
-    if (keys.exhale) playerState.respireVel -= BREATHING_SPEED * elapsedTime;
+    if (keys.inhale) {
+      if (!keys._inhaleWasDown) {
+        playerState.respireVel += BREATHING_BOOST_SPEED;
+        keys._inhaleWasDown = true;
+      }
+      playerState.respireVel += BREATHING_SPEED * elapsedTime;
+    } else keys._inhaleWasDown = false;
+    if (keys.exhale) {
+      if (!keys._exhaleWasDown) {
+        playerState.respireVel -= BREATHING_BOOST_SPEED;
+        keys._exhaleWasDown = true;
+      }
+      playerState.respireVel -= BREATHING_SPEED * elapsedTime;
+    } else keys._exhaleWasDown = false;
     const oldLungSize = playerState.lungSize;
-    const expectedLungSizeChange = playerState.respireVel * elapsedTime;
-    playerState.lungSize = respire.change(expectedLungSizeChange);
+    playerState.lungSize = respire.change(playerState.respireVel * elapsedTime);
     if (playerState.respireVel > 0) {
-      const percentLungSizeChange = (playerState.lungSize - oldLungSize) / expectedLungSizeChange;
-      playerState.oxygen += INHALE_OXYGEN_SPEED * elapsedTime * percentLungSizeChange;
+      playerState.oxygen += INHALE_OXYGEN_SPEED * (playerState.lungSize - oldLungSize);
       if (playerState.oxygen > MAX_OXYGEN) playerState.oxygen = MAX_OXYGEN;
     }
     setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
@@ -960,7 +966,7 @@ let skipIntro = null;
 document.addEventListener('DOMContentLoaded', e => {
   hintText = document.getElementById('hint');
   loadingBar = document.getElementById('progress-bar');
-  lungIndicator = document.getElementById('blood-colour');
+  lungIndicator = document.getElementById('lung-indicator');
 
   document.body.appendChild(renderer.domElement);
   initTouch();

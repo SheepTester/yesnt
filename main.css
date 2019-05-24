@@ -73,14 +73,37 @@ canvas {
   transition: opacity .5s;
   pointer-events: none;
 }
-.lungs {
+#lung-indicator {
   position: fixed;
   z-index: 1;
   bottom: 0;
   right: 0;
-  margin: 10px;
-  width: 50px;
+  margin: 40px;
+  --size: 50px;
+  --icon-size: 20px;
+  --blood: red;
 }
-.hide-lungs .lungs {
+#lung-indicator::before, #lung-indicator::after {
+  content: '';
+  display: block;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+#lung-indicator::before {
+  width: var(--size);
+  height: var(--size);
+  border: 2px solid white;
+  border-radius: 50%;
+  background-color: var(--blood);
+}
+#lung-indicator::after {
+  width: 50px;
+  height: 50px;
+  background-image: url('./lungs.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: var(--icon-size);
+}
+.hide-lungs #lung-indicator {
   display: none;
 }
