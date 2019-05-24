@@ -312,8 +312,8 @@ const sittingPlayer = createPlayerSittingPerson();
 sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
 
 const phone = createPhone();
-phone.phone.position.set(0.4, 2.5, 0);
-phone.phone.rotation.set(Math.PI * 4 / 5, Math.PI / 8, -Math.PI * 3 / 20);
+phone.phone.position.set(0.051712800199567255, 2.5974805742832814, 0.4137824638055463);
+phone.phone.rotation.set(1.97030219, 1.10130276, 0.432667122); // TODO: this is an approximation
 
 function setPhoneState(to) {
   if (playerState.phoneOut === to) return;

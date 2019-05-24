@@ -127,10 +127,10 @@ const defaultExpansionRotations = [
   [0, 0, -0.1]
 ];
 const restRotations = [
-  [Math.PI + 0.3, 0, 0],
-  [Math.PI / 9, 0, -Math.PI / 10],
-  [Math.PI + 0.3, 0, 0],
-  [Math.PI / 9, 0, Math.PI / 10]
+  [Math.PI + 0.3, Math.PI / 2, 0],
+  [Math.PI / 9, 0, Math.PI / 10],
+  [Math.PI + 0.3, -Math.PI / 2, 0],
+  [Math.PI / 9, 0, -Math.PI / 10]
 ];
 const instructorRotations = [
   [0, 0, Math.PI * 2 / 3],
@@ -139,21 +139,21 @@ const instructorRotations = [
   [0, 0, -Math.PI * 2 / 3]
 ];
 const phoneRotations = [
-  [Math.PI * 5 / 4, 0, 0],
-  [Math.PI / 4, 0, -Math.PI * 0.2],
-  [Math.PI * 5 / 4, 0, 0],
-  [Math.PI / 4, 0, Math.PI * 0.2]
+  [Math.PI * 5 / 4, Math.PI / 2, 0],
+  [Math.PI / 4, 0, Math.PI * 0.2],
+  [Math.PI * 5 / 4, -Math.PI / 2, 0],
+  [Math.PI / 4, 0, -Math.PI * 0.2]
 ];
 const powerBreathDown = [
-  [Math.PI + 0.2, 0, 0],
-  [Math.PI - 0.4, 0, 0],
-  [Math.PI + 0.2, 0, 0],
-  [Math.PI - 0.4, 0, 0]
+  [Math.PI, 0, 0.2],
+  [0, 0, Math.PI - 0.4],
+  [Math.PI, 0, -0.2],
+  [0, 0, -Math.PI + 0.4]
 ];
 const powerBreathUp = [
-  [Math.PI * 2 - 0.4, 0, 0],
+  [Math.PI, 0, Math.PI],
   [0, 0, 0],
-  [Math.PI * 2 - 0.4, 0, 0],
+  [Math.PI, 0, -Math.PI],
   [0, 0, 0]
 ];
 function resetLimbRotations(student, animate = true, target = defaultRotations) {
