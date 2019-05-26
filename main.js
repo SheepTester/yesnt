@@ -25,6 +25,7 @@ const BREATHING_BOOST_SPEED = +params.get('BREATHING_BOOST_SPEED') || 0.003; // 
 const MAX_OXYGEN = +params.get('MAX_OXYGEN') || 1; // playerState.oxygen max (O)
 const LUNG_RANGE = +params.get('LUNG_RANGE') || 1; // playerState.lungSize max; determines when the slowing down affect starts, goes (-, +) (L)
 const LIVING_OXYGEN_USAGE = +params.get('LIVING_OXYGEN_USAGE') || 0.00003; // how much oxygen you lose by living (O/ms)
+const RUNNING_OXYGEN_USAGE = +params.get('RUNNING_OXYGEN_USAGE') || 0.0001; // how much oxygen you lose by running (O/ms)
 const LOW_OXYGEN = +params.get('LOW_OXYGEN') || 0.4; // point at which the screen starts dimming, warning you to breathe (O)
 const ASPHYXIATION = +params.get('ASPHYXIATION') || 0.1; // point at which you black out (O)
 // ?INHALE_OXYGEN_SPEED=0.0003&BREATHING_SPEED=0.00005&MAX_OXYGEN=1&LUNG_RANGE=1&LIVING_OXYGEN_USAGE=0.00005&LOW_OXYGEN=0.4&ASPHYXIATION=0.1
@@ -45,6 +46,7 @@ const shaders = params.get('shaders') !== 'false';
 const instructorCanMove = params.get('freeze-instructor') !== 'please';
 const checkPlayer = !params.get('override-player-check');
 const alwaysCheckPlayer = params.get('override-player-check') === 'omniscient';
+const loseOxygen = params.get('unrealistic-breathing') !== 'true';
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
@@ -771,6 +773,7 @@ function animate() {
     }
   }
 
+  let speed = 0;
   if (moving === 'chase') {
     const sin = Math.sin(camera.rotation.y);
     const cos = Math.cos(camera.rotation.y);
@@ -796,6 +799,7 @@ function animate() {
       movement.z -= sin;
     }
     if (movement.lengthSq() > 1) movement.normalize();
+    speed = movement.length();
     movement.multiplyScalar(MOVEMENT_SPEED * elapsedTime);
 
     const matX = Math.round(camera.position.x / (MAT_WIDTH + MAT_SPACING));
@@ -922,7 +926,10 @@ function animate() {
 
   if (playerState.canBreathe) {
     const wasDying = playerState.oxygen < LOW_OXYGEN;
-    playerState.oxygen -= LIVING_OXYGEN_USAGE * elapsedTime;
+    if (loseOxygen) {
+      playerState.oxygen -= LIVING_OXYGEN_USAGE * elapsedTime;
+      playerState.oxygen -= RUNNING_OXYGEN_USAGE * elapsedTime * speed;
+    }
     playerState.respireVel *= 0.8;
     if (keys.inhale) {
       if (!keys._inhaleWasDown) {
