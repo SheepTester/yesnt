@@ -141,3 +141,22 @@ canvas {
     opacity: 0;
   }
 }
+.cant-jump {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px;
+  z-index: 4;
+  background-color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 14px;
+  color: white;
+}
+.hide-cant-jump .cant-jump {
+  display: none;
+}

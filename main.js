@@ -254,7 +254,7 @@ const collisionBoxes = [];
 const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
-const playerState = {phoneOut: false, pose: 'rest', canDie: false};
+const playerState = {phoneOut: false, pose: 'rest', canDie: false, jumpVel: null};
 const respire = limit(playerState.lungSize, -LUNG_RANGE + 1, LUNG_RANGE - 1);
 function setCanBreathe(to) {
   if (playerState.canBreathe === to) return;
@@ -603,6 +603,11 @@ const onKeyPress = {
       hintText.textContent = 'You feel too attached to the light to let it go.';
       animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
     }
+  },
+  trip() {
+    if (moving !== 'chase') return;
+    die();
+    playerState.jumpVel = 5;
   }
 };
 document.addEventListener('keydown', e => {
@@ -736,6 +741,12 @@ function animate() {
           renderer.domElement.style.opacity = null;
           camera.zoom = 1;
           camera.updateProjectionMatrix();
+          start();
+          startGame();
+          break;
+        }
+        case 'hide-cant-jump': {
+          document.body.classList.add('hide-cant-jump');
           start();
           startGame();
           break;
@@ -959,8 +970,9 @@ function animate() {
     }
 
     hands.position.copy(camera.position);
-    hands.rotation.x += (camera.rotation.x - hands.rotation.x) / 3;
-    hands.rotation.y += (camera.rotation.y - hands.rotation.y) / 3;
+    const change = 1 - (2 / 3) ** (elapsedTime / 15);
+    hands.rotation.x += (camera.rotation.x - hands.rotation.x) * change;
+    hands.rotation.y += (camera.rotation.y - hands.rotation.y) * change;
 
     const angle = Math.atan2(
       instructor.person.position.x - camera.position.x,
@@ -998,6 +1010,19 @@ function animate() {
         console.log('DEATH BY MEANS OF: ' + reason);
         caught();
       }
+    }
+  } else if (playerState.jumpVel !== null) {
+    playerState.jumpVel -= 0.5 * elapsedTime / 60;
+    camera.position.y += playerState.jumpVel * elapsedTime / 60;
+    hands.position.y += (camera.position.y - hands.position.y) * (1 - 0.1 ** (elapsedTime / 15));
+    if (camera.position.y < 1) {
+      document.body.classList.remove('hide-cant-jump');
+      animations.push({
+        type: 'hide-cant-jump',
+        start: now,
+        duration: 2000
+      });
+      playerState.jumpVel = null;
     }
   }
 
