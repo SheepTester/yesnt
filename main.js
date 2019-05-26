@@ -911,13 +911,25 @@ function animate() {
       }
     });
 
-    if (keys['pick-up'] && lampHand.children.length === 0) {
+    if (lampHand.children.length === 0) {
       const xz = camera.position.clone().setY(0);
+      let selectedLight;
       for (const light of lights.keys()) {
         if (xz.distanceToSquared(light.parent.position) <= light.radius * light.radius) {
-          lampHand.add(light);
+          selectedLight = light;
           break;
         }
+      }
+      if (selectedLight) {
+        if (keys['pick-up']) {
+          lampHand.add(selectedLight);
+        } else if (!playerState.showedPickupHint) {
+          hintText.textContent = 'Press Z to pick up the light.';
+          animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+          playerState.showedPickupHint = true;
+        }
+      } else if (playerState.showedPickupHint) {
+        playerState.showedPickupHint = false;
       }
     }
 
