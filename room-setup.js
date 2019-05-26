@@ -106,15 +106,21 @@ function setupRoom(scene, onframe, collisions) {
     }
   }
 
+  const lampStuff = new Map();
+
   const CANDLE_RADIUS = 0.1 + PLAYER_THICKNESS;
   objectLoader.load('./models/candle.json', model => {
     model.scale.multiplyScalar(0.5);
     const lights = [[-15, -490], [-20, -490], [-25, -490]].map(([x, z]) => {
       const candle = model.clone();
+      candle.radius = CANDLE_RADIUS + 2;
       const light = candle.getObjectByName('flame');
-      candle.position.set(x, 0, z);
-      collisions.push([x - CANDLE_RADIUS, x + CANDLE_RADIUS, z - CANDLE_RADIUS, z + CANDLE_RADIUS]);
-      scene.add(candle);
+      const candleWrapper = new THREE.Group();
+      candleWrapper.add(candle);
+      candleWrapper.position.set(x, 0, z);
+      collisions.push([x - CANDLE_RADIUS, x + CANDLE_RADIUS, z - CANDLE_RADIUS, z + CANDLE_RADIUS, candle]);
+      scene.add(candleWrapper);
+      lampStuff.set(candle, candleWrapper);
       return light;
     });
     onframe.push(timeStamp => {
@@ -126,10 +132,15 @@ function setupRoom(scene, onframe, collisions) {
 
   const LAMP_RADIUS = 1.5 + PLAYER_THICKNESS;
   objectLoader.load('./models/better-lamp.json', lamp => {
+    lamp.radius = LAMP_RADIUS + 2;
     const [x, z] = [15, -490];
-    lamp.position.set(x, 0, z);
-    collisions.push([x - LAMP_RADIUS, x + LAMP_RADIUS, z - LAMP_RADIUS, z + LAMP_RADIUS]);
-    scene.add(lamp);
+    const lampWrapper = new THREE.Group();
+    lampWrapper.add(lamp);
+    lampWrapper.position.set(x, 0, z);
+    collisions.push([x - LAMP_RADIUS, x + LAMP_RADIUS, z - LAMP_RADIUS, z + LAMP_RADIUS, lamp]);
+    scene.add(lampWrapper);
+    lampStuff.set(lamp, lampWrapper);
+    window.lampy = lamp; // TEMP
   });
 
   const sound = new THREE.PositionalAudio(listener);
@@ -158,7 +169,8 @@ function setupRoom(scene, onframe, collisions) {
     },
     darkPhongFloor,
     doors,
-    cassette: sound
+    cassette: sound,
+    lights: lampStuff
   };
 }
 

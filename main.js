@@ -67,12 +67,13 @@ function start() {
   limitSittingHorizRot.set(camera.rotation.y);
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
+  if (playerState.phoneOut) setPhoneState(false);
   moving = 'sitting';
   playerState.canDie = false;
-  if (playerState.phoneOut) setPhoneState(false);
   resetLimbRotations(sittingPlayer, false, restRotations);
   playerState.pose = 'rest';
   if (playerState.canBreathe) setCanBreathe(false);
+  if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
 }
 let interruptInstructor = null;
 const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] : [
@@ -250,7 +251,7 @@ scene.add(camera);
 
 const onframe = [];
 const collisionBoxes = [];
-const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette} = setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false, pose: 'rest', canDie: false};
@@ -314,19 +315,23 @@ const sittingPlayer = createPlayerSittingPerson();
 sittingPlayer.person.position.set(camera.position.x, -5, MAT_FIRST_ROW_Z);
 
 const phone = createPhone();
-phone.phone.position.set(0.051712800199567255, 2.5974805742832814, 0.4137824638055463);
-phone.phone.rotation.set(1.97030219, 1.10130276, 0.432667122); // TODO: this is an approximation
+const phoneWrapper = new THREE.Group();
+phoneWrapper.position.set(0.051712800199567255, 2.5974805742832814, 0.4137824638055463);
+phoneWrapper.rotation.set(1.97030219, 1.10130276, 0.432667122); // TODO: this is an approximation
+sittingPlayer.limbs[0].forearm.add(phoneWrapper);
 
 function setPhoneState(to) {
   if (playerState.phoneOut === to) return;
   playerState.phoneOut = to;
   if (to) {
-    sittingPlayer.limbs[0].forearm.add(phone.phone);
+    if (moving === 'sitting') phoneWrapper.add(phone.phone);
+    else phoneHand.add(phone.phone);
     resetLimbRotations(sittingPlayer, true, phoneRotations);
     playerState.pose = 'phone';
     playerState.phoneOutSince = Date.now();
   } else {
-    sittingPlayer.limbs[0].forearm.remove(phone.phone);
+    if (moving === 'sitting') phoneWrapper.remove(phone.phone);
+    else phoneHand.remove(phone.phone);
     resetLimbRotations(sittingPlayer, true, restRotations);
     playerState.pose = 'rest';
   }
@@ -413,6 +418,39 @@ if (shaders) {
 	composer.addPass(bloomPass);
 }
 
+const hands = new THREE.Group();
+hands.rotation.order = 'YXZ';
+const phoneHand = new THREE.Group();
+phoneHand.rotation.set(Math.PI / 2, 0, 0);
+phoneHand.scale.multiplyScalar(0.5);
+const lampHand = new THREE.Group();
+lampHand.scale.multiplyScalar(0.1);
+hands.add(phoneHand);
+hands.add(lampHand);
+scene.add(hands);
+function calculateHandPositions() {
+  const tempRotation = camera.rotation.clone();
+  camera.rotation.set(0, 0, 0);
+  camera.updateMatrixWorld();
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(new THREE.Vector2(-1, -1), camera);
+  phoneHand.position.copy(
+    camera.worldToLocal(
+      new THREE.Ray(
+        raycaster.ray.at(1, new THREE.Vector3()),
+        raycaster.ray.direction.multiply(new THREE.Vector3(-1, -1, 1))
+      ).at(0.2, new THREE.Vector3())));
+  raycaster.setFromCamera(new THREE.Vector2(1, -1), camera);
+  lampHand.position.copy(camera.worldToLocal(raycaster.ray.at(1, new THREE.Vector3())));
+  camera.rotation.copy(tempRotation);
+}
+calculateHandPositions();
+
+// new THREE.Mesh(
+//   new THREE.SphereBufferGeometry(1),
+//   new THREE.MeshBasicMaterial({color: 0x178262})
+// )
+
 window.addEventListener('resize', e => {
   document.body.style.display = 'none';
   const width = window.innerWidth;
@@ -421,6 +459,7 @@ window.addEventListener('resize', e => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
   if (shaders) composer.setSize(width, height);
+  calculateHandPositions();
   document.body.style.display = null;
 });
 
@@ -493,11 +532,13 @@ const keyToName = {
   37: 'exp-down', // left
   38: 'power-up', // up
   39: 'exp-up', // right
-  40: 'power-down' // down
+  40: 'power-down', // down
+  90: 'pick-up' // z
 };
 const keys = {};
 const onKeyPress = {
   phone() {
+    if (moving !== 'sitting' && moving !== 'chase') return;
     if (!playerState.canDie) {
       hintText.textContent = "You should take out your phone when it's dark so they won't notice.";
       animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
@@ -521,6 +562,8 @@ const onKeyPress = {
       return;
     }
     moving = 'chase';
+    hands.rotation.set(-Math.PI / 4, 0, 0);
+    if (playerState.phoneOut) phoneHand.add(phone.phone);
     scene.remove(sittingPlayer.person);
     for (let i = animations.length - 1; i >= 0; i--) {
       if (animations[i].type === 'intense-om') animations.splice(i, 1);
@@ -554,6 +597,12 @@ const onKeyPress = {
     playerState.pose = 'power';
     playerState.up = true;
     resetLimbRotations(sittingPlayer, true, powerBreathUp);
+  },
+  'pick-up'() {
+    if (lampHand.children.length) {
+      hintText.textContent = 'You feel too attached to the light to let it go.';
+      animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+    }
   }
 };
 document.addEventListener('keydown', e => {
@@ -830,7 +879,8 @@ function animate() {
         camera.position.x = MAX_X;
       }
     }
-    rects.forEach(([minX, maxX, minZ, maxZ]) => {
+    rects.forEach(([minX, maxX, minZ, maxZ, obj]) => {
+      if (obj && obj.parent !== lights.get(obj)) return;
       if (camera.position.z > minZ && camera.position.z < maxZ) {
         if (camera.position.x > minX && camera.position.x < maxX) {
           if (movement.x > 0) camera.position.x = minX;
@@ -851,7 +901,8 @@ function animate() {
         if (camera.position.z > tunnelXBounds.right[1]) camera.position.z = tunnelXBounds.right[1];
       }
     }
-    rects.forEach(([minX, maxX, minZ, maxZ]) => {
+    rects.forEach(([minX, maxX, minZ, maxZ, obj]) => {
+      if (obj && obj.parent !== lights.get(obj)) return;
       if (camera.position.x > minX && camera.position.x < maxX) {
         if (camera.position.z > minZ && camera.position.z < maxZ) {
           if (movement.z > 0) camera.position.z = minZ;
@@ -859,6 +910,16 @@ function animate() {
         }
       }
     });
+
+    if (keys['pick-up'] && lampHand.children.length === 0) {
+      const xz = camera.position.clone().setY(0);
+      for (const light of lights.keys()) {
+        if (xz.distanceToSquared(light.parent.position) <= light.radius * light.radius) {
+          lampHand.add(light);
+          break;
+        }
+      }
+    }
 
     raycaster.setFromCamera(new THREE.Vector2(), camera);
     const intersection = raycaster.intersectObjects(doors, true)[0];
@@ -884,6 +945,10 @@ function animate() {
       selectedDoor.remove(doorPopup);
       selectedDoor = null;
     }
+
+    hands.position.copy(camera.position);
+    hands.rotation.x += (camera.rotation.x - hands.rotation.x) / 3;
+    hands.rotation.y += (camera.rotation.y - hands.rotation.y) / 3;
 
     const angle = Math.atan2(
       instructor.person.position.x - camera.position.x,
@@ -1053,6 +1118,6 @@ document.addEventListener('DOMContentLoaded', e => {
       if (dontContinue) break;
     }
     skipIntro = null;
-    startGame();
+    if (params.get('stay-intro') !== 'true') startGame();
   });
 });
