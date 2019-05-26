@@ -47,12 +47,15 @@ function createDoor() {
   door.add(bar);
   return door;
 }
-function createDoubleDoors(exitSignURL) {
+function createDoubleDoors(metadata = {type: 'no code'}, exitSignURL) {
   const door = new THREE.Group();
   door.isDoors = true;
-  const exitSign = createExitSign(exitSignURL);
-  exitSign.position.y = 30;
-  door.add(exitSign);
+  door.metadata = metadata;
+  if (exitSignURL !== null) {
+    const exitSign = createExitSign(exitSignURL);
+    exitSign.position.y = 30;
+    door.add(exitSign);
+  }
   const leftDoor = createDoor();
   leftDoor.position.x = -14;
   door.add(leftDoor);
@@ -61,6 +64,20 @@ function createDoubleDoors(exitSignURL) {
   rightDoor.position.x = 14;
   door.add(rightDoor);
   return door;
+}
+function createSingleDoor(metadata = {type: 'no code'}, exitSignURL) {
+  const doorWrapper = new THREE.Group();
+  doorWrapper.isDoors = true;
+  doorWrapper.metadata = metadata;
+  if (exitSignURL !== null) {
+    const exitSign = createExitSign(exitSignURL);
+    exitSign.position.y = 30;
+    doorWrapper.add(exitSign);
+  }
+  const door = createDoor();
+  door.position.x = -7;
+  doorWrapper.add(door);
+  return doorWrapper;
 }
 
 let wallMaterial;
@@ -288,11 +305,17 @@ function createDarkRoom() {
     exitSign.position.set(500 - 0.1, DOOR_TUNNEL_HEIGHT + 5, z);
     darkRoom.add(exitSign);
 
-    const doors = createDoubleDoors();
-    doors.rotation.y = -Math.PI / 2;
-    doors.position.set(500 + TUNNEL_LENGTH, 0, z);
-    darkRoom.add(doors);
-    doorList.push(doors);
+    const leftDoors = createDoubleDoors({type: 'other door'});
+    leftDoors.rotation.y = -Math.PI / 2;
+    leftDoors.position.set(500 + TUNNEL_LENGTH, 0, z - 15);
+    darkRoom.add(leftDoors);
+    doorList.push(leftDoors);
+
+    const rightDoors = createDoubleDoors({type: 'code'});
+    rightDoors.rotation.y = -Math.PI / 2;
+    rightDoors.position.set(500 + TUNNEL_LENGTH, 0, z + 15);
+    darkRoom.add(rightDoors);
+    doorList.push(rightDoors);
   });
 
   [
@@ -301,12 +324,35 @@ function createDarkRoom() {
     250,
     280
   ].forEach((z, i) => {
-    const doors = createDoubleDoors(i === 0 && './textures/exit-green.png');
+    const doors = createDoubleDoors({type: 'code'}, i === 0 && './textures/exit-green.png');
     doors.rotation.y = Math.PI / 2;
     doors.position.set(-500, 0, z);
     darkRoom.add(doors);
     doorList.push(doors);
   });
+
+  const boysDoor = createSingleDoor({type: 'no code'}, null);
+  boysDoor.position.set(-485, 0, -500);
+  darkRoom.add(boysDoor);
+  doorList.push(boysDoor);
+
+  const girlsDoor = createSingleDoor({type: 'no code'}, null);
+  girlsDoor.rotation.y = Math.PI;
+  girlsDoor.position.set(-485, 0, 500);
+  darkRoom.add(girlsDoor);
+  doorList.push(girlsDoor);
+
+  const leftMaintenanceDoor = createSingleDoor({type: 'no exit'}, null);
+  leftMaintenanceDoor.rotation.y = Math.PI / 2;
+  leftMaintenanceDoor.position.set(-500, 0, 470);
+  darkRoom.add(leftMaintenanceDoor);
+  doorList.push(leftMaintenanceDoor);
+
+  const rightMaintenanceDoor = createSingleDoor({type: 'no exit'}, null);
+  rightMaintenanceDoor.rotation.y = Math.PI / 2;
+  rightMaintenanceDoor.position.set(-500, 0, -470);
+  darkRoom.add(rightMaintenanceDoor);
+  doorList.push(rightMaintenanceDoor);
 
   return {darkRoom, doors: doorList};
 }
@@ -431,10 +477,15 @@ function createLightRoom() {
     exitSign.position.set(ROOM_WIDTH / 2 - 0.1, DOOR_TUNNEL_HEIGHT + 5, z);
     lightRoom.add(exitSign);
 
-    const doors = createDoubleDoors();
-    doors.rotation.y = -Math.PI / 2;
-    doors.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH, 0, z);
-    lightRoom.add(doors);
+    const leftDoors = createDoubleDoors();
+    leftDoors.rotation.y = -Math.PI / 2;
+    leftDoors.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH, 0, z - 15);
+    lightRoom.add(leftDoors);
+
+    const rightDoors = createDoubleDoors();
+    rightDoors.rotation.y = -Math.PI / 2;
+    rightDoors.position.set(ROOM_WIDTH / 2 + TUNNEL_LENGTH, 0, z + 15);
+    lightRoom.add(rightDoors);
   });
 
   objectLoader.load('./models/gym-light-on.json', model => {
@@ -465,11 +516,30 @@ function createLightRoom() {
     100,
     130
   ].forEach((z, i) => {
-    const doors = createDoubleDoors(i === 0 && './textures/exit-green.png');
+    const doors = createDoubleDoors(null, i === 0 && './textures/exit-green.png');
     doors.rotation.y = Math.PI / 2;
     doors.position.set(-ROOM_WIDTH / 2, 0, -500 + ROOM_LENGTH / 2 + z);
     lightRoom.add(doors);
   });
+
+  const boysDoor = createSingleDoor(null, null);
+  boysDoor.position.set(-ROOM_WIDTH / 2 + 15, 0, -500);
+  lightRoom.add(boysDoor);
+
+  const girlsDoor = createSingleDoor(null, null);
+  girlsDoor.rotation.y = Math.PI;
+  girlsDoor.position.set(-ROOM_WIDTH / 2 + 15, 0, -500 + ROOM_LENGTH);
+  lightRoom.add(girlsDoor);
+
+  const leftMaintenanceDoor = createSingleDoor(null, null);
+  leftMaintenanceDoor.rotation.y = Math.PI / 2;
+  leftMaintenanceDoor.position.set(-ROOM_WIDTH / 2, 0, -530 + ROOM_LENGTH);
+  lightRoom.add(leftMaintenanceDoor);
+
+  const rightMaintenanceDoor = createSingleDoor(null, null);
+  rightMaintenanceDoor.rotation.y = Math.PI / 2;
+  rightMaintenanceDoor.position.set(-ROOM_WIDTH / 2, 0, -470);
+  lightRoom.add(rightMaintenanceDoor);
 
   return lightRoom;
 }

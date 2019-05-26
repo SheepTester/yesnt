@@ -377,29 +377,53 @@ doorPopup.position.set(0, 7, 1.5);
 let selectedDoor = null, typeProgress, typingState, typingTimeout = null;
 function renderDoorPopup(internalCall = false) {
   dc.clearRect(0, 0, 256, 128);
-  if (internalCall && typeProgress.length >= 6) {
-    // TODO: check if it's right
-    dc.fillStyle = '#ff0000';
-    typingTimeout = setTimeout(() => {
-      typeProgress = '';
-      typingState = true;
-      typingTimeout = null;
-      renderDoorPopup();
-    }, 500);
-  } else {
-    dc.fillStyle = '#00ffff';
+  switch (selectedDoor.metadata.type) {
+    case 'code': {
+      if (internalCall && typeProgress.length >= 6) {
+        // TODO: check if it's right
+        dc.fillStyle = '#ff0000';
+        typingTimeout = setTimeout(() => {
+          typeProgress = '';
+          typingState = true;
+          typingTimeout = null;
+          renderDoorPopup();
+        }, 500);
+      } else {
+        dc.fillStyle = '#00ffff';
+      }
+      dc.font = '20px sans-serif';
+      dc.fillText('Press 0-9 to enter keycode:', 128, 5);
+      dc.font = '30px sans-serif';
+      dc.fillText(typeProgress, 128, 30);
+      if (!internalCall && typeProgress.length >= 6) {
+        typingState = false;
+        typingTimeout = setTimeout(() => {
+          renderDoorPopup(true);
+        }, 500);
+      }
+      break;
+    }
+    case 'no code': {
+      dc.fillStyle = '#ffff00';
+      dc.font = '20px sans-serif';
+      dc.fillText("The code won't work", 128, 5);
+      dc.fillText("on this door", 128, 35);
+      break;
+    }
+    case 'other door': {
+      dc.fillStyle = '#ffff00';
+      dc.font = '20px sans-serif';
+      dc.fillText('Use the other door', 128, 5);
+      break;
+    }
+    case 'no exit': {
+      dc.fillStyle = '#ffff00';
+      dc.font = '30px sans-serif';
+      dc.fillText('Not an exit', 128, 5);
+      break;
+    }
   }
-  dc.font = '20px sans-serif';
-  dc.fillText('Press 0-9 to enter keycode:', 128, 5);
-  dc.font = '30px sans-serif';
-  dc.fillText(typeProgress, 128, 30);
   doorPopupTexture.needsUpdate = true;
-  if (!internalCall && typeProgress.length >= 6) {
-    typingState = false;
-    typingTimeout = setTimeout(() => {
-      renderDoorPopup(true);
-    }, 500);
-  }
 }
 
 const renderer = new THREE.WebGLRenderer();
@@ -959,8 +983,12 @@ function animate() {
         if (typingTimeout) clearTimeout(typingTimeout);
         selectedDoor = object;
         object.add(doorPopup);
-        typeProgress = '';
-        typingState = true;
+        if (selectedDoor.metadata.type === 'code') {
+          typeProgress = '';
+          typingState = true;
+        } else {
+          typingState = false;
+        }
         renderDoorPopup();
       }
     } else if (selectedDoor) {
