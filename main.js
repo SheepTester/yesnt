@@ -28,6 +28,7 @@ const LIVING_OXYGEN_USAGE = +params.get('LIVING_OXYGEN_USAGE') || 0.00003; // ho
 const RUNNING_OXYGEN_USAGE = +params.get('RUNNING_OXYGEN_USAGE') || 0.0001; // how much oxygen you lose by running (O/ms)
 const LOW_OXYGEN = +params.get('LOW_OXYGEN') || 0.4; // point at which the screen starts dimming, warning you to breathe (O)
 const ASPHYXIATION = +params.get('ASPHYXIATION') || 0.1; // point at which you black out (O)
+const CODE_LENGTH = 4;
 // ?INHALE_OXYGEN_SPEED=0.0003&BREATHING_SPEED=0.00005&MAX_OXYGEN=1&LUNG_RANGE=1&LIVING_OXYGEN_USAGE=0.00005&LOW_OXYGEN=0.4&ASPHYXIATION=0.1
 
 const tunnelXBounds = {
@@ -50,6 +51,10 @@ const loseOxygen = params.get('unrealistic-breathing') !== 'true';
 
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
+
+const digitSet = '0123456789';
+const symbolSet = '零壹貳贰叄叁肆伍陸陆柒捌玖拾佰仟萬億';
+const fullWidthDigits = '０１２３４５６７８９';
 function start() {
   if (codeChangeInterval) clearInterval(codeChangeInterval);
   if (cassette.isPlaying) cassette.stop();
@@ -68,30 +73,51 @@ function start() {
   limitSittingHorizRot.set(camera.rotation.y);
   scene.add(sittingPlayer.person);
   animations.push({type: 'start', start: Date.now(), duration: 1000});
-  if (playerState.phoneOut) setPhoneState(false);
   moving = 'sitting';
+  if (playerState.phoneOut) setPhoneState(false);
   playerState.canDie = false;
   resetLimbRotations(sittingPlayer, false, restRotations);
   playerState.pose = 'rest';
   if (playerState.canBreathe) setCanBreathe(false);
   if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
   code = '';
-  const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  for (let i = 0; i < 6; i++) {
-    const index = Math.floor(Math.random() * (10 - i));
-    code += digits[index];
-    digits[index] = digits[9 - i];
+  const digits = digitSet.split('');
+  const symbols = symbolSet.split('');
+  const key = new Map();
+  let i;
+  for (i = 0; i < digitSet.length; i++) {
+    const digitIndex = Math.floor(Math.random() * (10 - i));
+    const symbolIndex = Math.floor(Math.random() * (10 - i));
+    if (i < CODE_LENGTH) code += digits[digitIndex];
+    key.set(digits[digitIndex], symbols[symbolIndex]);
+    digits[digitIndex] = digits[digits.length - 1 - i];
+    symbols[symbolIndex] = symbols[symbols.length - 1 - i];
   }
-  const codeStr = code + ' ';
-  let char = code.length - 1;
+  let frame = 0;
   codeChangeInterval = setInterval(() => {
+    c.fillStyle = '#666';
+    c.fillRect(0, 30, 128, 226);
     c.fillStyle = 'black';
-    c.fillRect(20, 50, 88, 100);
-    char = (char + 1) % codeStr.length;
-    c.fillStyle = 'white';
-    c.fillText(codeStr[char], 20 + Math.random() * 40, 150 - Math.random() * 40);
+    if (frame % 15 > 10) {
+      c.font = '64px monospace';
+      c.fillText(key.get(code[0]), 0, 90);
+      c.fillText(key.get(code[1]), 64, 180);
+      c.fillText(key.get(code[2]), 0, 180);
+      c.fillText(key.get(code[3]), 64, 90);
+    } else if (frame % 15 === 10) {
+      c.font = '64px monospace';
+      c.fillText(fullWidthDigits[0], 0, 90);
+      c.fillText(fullWidthDigits[1], 64, 180);
+      c.fillText(fullWidthDigits[2], 0, 180);
+      c.fillText(fullWidthDigits[3], 64, 90);
+    } else {
+      const digit = frame % 15 + '';
+      c.font = '36px monospace';
+      c.fillText(fullWidthDigits[digit] + '＝' + key.get(digit), 0, 90);
+    }
+    frame++;
     phone.update();
-  }, 3000);
+  }, 500);
   doors.forEach(door => {
     door.wrong = false;
   });
@@ -352,7 +378,7 @@ function setPhoneState(to) {
     playerState.pose = 'phone';
     playerState.phoneOutSince = Date.now();
   } else {
-    if (moving === 'sitting') phoneWrapper.remove(phone.phone);
+    if (phone.phone.parent === phoneWrapper) phoneWrapper.remove(phone.phone);
     else phoneHand.remove(phone.phone);
     resetLimbRotations(sittingPlayer, true, restRotations);
     playerState.pose = 'rest';
@@ -362,12 +388,9 @@ function setPhoneState(to) {
 const c = phone.canvas.getContext('2d');
 c.fillStyle = '#BE1E2D';
 c.fillRect(0, 0, 128, 30);
-c.fillStyle = 'black';
-c.fillRect(20, 50, 88, 100);
 c.font = '15px monospace';
 c.fillStyle = 'white';
 c.fillText('Gunn admin MSG', 5, 25);
-c.font = 'bold 100px monospace';
 let code, codeChangeInterval, testedTunnelDoor;
 
 const doorPopupCanvas = document.createElement('canvas');
@@ -392,7 +415,7 @@ function renderDoorPopup(internalCall = false) {
   dc.clearRect(0, 0, 256, 128);
   switch (selectedDoor.metadata.type) {
     case 'code': {
-      if (internalCall && typeProgress.length >= 6) {
+      if (internalCall && typeProgress.length >= CODE_LENGTH) {
         if (typeProgress === code) {
           if (testedTunnelDoor && !selectedDoor.wrong) {
             die();
@@ -435,7 +458,7 @@ function renderDoorPopup(internalCall = false) {
       dc.fillText('Press 0-9 to enter keycode:', 128, 5);
       dc.font = '30px sans-serif';
       dc.fillText(typeProgress, 128, 30);
-      if (!internalCall && typeProgress.length >= 6) {
+      if (!internalCall && typeProgress.length >= CODE_LENGTH) {
         typingState = false;
         typingTimeout = setTimeout(() => {
           renderDoorPopup(true);
@@ -531,7 +554,7 @@ let userInteracted;
 const userInteraction = new Promise(res => userInteracted = res);
 
 document.addEventListener('click', e => {
-  if (!document.body.classList.contains('hide-end')) {
+  if (document.body.classList.contains('hide-end')) {
     document.body.requestPointerLock();
   }
   userInteracted();
@@ -969,7 +992,7 @@ function animate() {
     const matZ = Math.round((camera.position.z - MAT_FIRST_ROW_Z) / (MAT_LENGTH + MAT_SPACING));
     const studentX = matX * (MAT_WIDTH + MAT_SPACING);
     const studentZ = matZ * (MAT_LENGTH + MAT_SPACING) + MAT_FIRST_ROW_Z;
-    const stagger = matX % 2 === 0 ? STAGGER_DISTANCE : -STAGGER_DISTANCE;
+    const stagger = matX % 2 === 0 ? -STAGGER_DISTANCE : STAGGER_DISTANCE;
     const rects = [...collisionBoxes];
     if (studentMap[`${matX},${matZ}`]) {
       rects.push([

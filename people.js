@@ -289,7 +289,7 @@ function loadPeople(scene, onframe) {
     for (let z = x === 0 ? 1 : 0; z < stop; z++) {
       students.push(makeStudent(
         x * (MAT_WIDTH + MAT_SPACING),
-        MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING) + (x % 2 === 0 ? STAGGER_DISTANCE : -STAGGER_DISTANCE)
+        MAT_FIRST_ROW_Z + z * (MAT_LENGTH + MAT_SPACING) + (x % 2 === 0 ? -STAGGER_DISTANCE : STAGGER_DISTANCE)
       ));
       studentMap[`${x},${z}`] = true;
     }
