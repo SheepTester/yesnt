@@ -14,14 +14,6 @@ Lights off sound by [Cyberkineticfilms](https://freesound.org/people/Cyberkineti
 
 ## To do
 
-- breathing
-
-  - controls
-
-  - lung icon
-
-  - blacking out animation
-
 - sounds
 
   - instructor voices
@@ -29,16 +21,6 @@ Lights off sound by [Cyberkineticfilms](https://freesound.org/people/Cyberkineti
   - footstep sounds
 
   - caught sounds (static or something)
-
-- puzzle
-
-  - holding phone out while running
-
-    - and by extension, the lamp, which can be picked up
-
-  - assigning doors codes
-
-  - displaying code on phone
 
 - minor touches
 
