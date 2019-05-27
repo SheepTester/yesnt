@@ -58,10 +58,12 @@ function createDoubleDoors(metadata = {type: 'no code'}, exitSignURL) {
   }
   const leftDoor = createDoor();
   leftDoor.position.x = -14;
+  door.left = leftDoor;
   door.add(leftDoor);
   const rightDoor = createDoor();
   rightDoor.rotation.y = Math.PI;
   rightDoor.position.x = 14;
+  door.right = rightDoor;
   door.add(rightDoor);
   return door;
 }
@@ -173,6 +175,12 @@ function setupRoom(scene, onframe, collisions) {
     collisions.push([5 - 4.5 - PLAYER_THICKNESS, 5 + 4.5 + PLAYER_THICKNESS, -495 - 1.5 - PLAYER_THICKNESS, -495 + 1.5 + PLAYER_THICKNESS]);
   });
 
+  const outsideLight = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(28, 24),
+    new THREE.MeshBasicMaterial({emissive: 0xffffff})
+  );
+  outsideLight.position.set(0, 12, 0.1);
+
   return {
     swap() {
       scene.remove(dark ? darkRoom : lightRoom);
@@ -187,7 +195,8 @@ function setupRoom(scene, onframe, collisions) {
     darkPhongFloor,
     doors,
     cassette: sound,
-    lights: lampStuff
+    lights: lampStuff,
+    outsideLight
   };
 }
 
@@ -311,7 +320,7 @@ function createDarkRoom() {
     darkRoom.add(leftDoors);
     doorList.push(leftDoors);
 
-    const rightDoors = createDoubleDoors({type: 'code'});
+    const rightDoors = createDoubleDoors({type: 'code', tunnel: true});
     rightDoors.rotation.y = -Math.PI / 2;
     rightDoors.position.set(500 + TUNNEL_LENGTH, 0, z + 15);
     darkRoom.add(rightDoors);

@@ -160,3 +160,25 @@ canvas {
 .hide-cant-jump .cant-jump {
   display: none;
 }
+.end {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: rgba(0, 0, 0, 0.8);
+  font-family: sans-serif;
+}
+.end .wrapper {
+  max-width: 500px;
+  animation: fade-out .5s reverse;
+  font-size: 18px;
+}
+.hide-end .end {
+  display: none;
+}

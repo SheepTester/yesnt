@@ -51,6 +51,7 @@ const loseOxygen = params.get('unrealistic-breathing') !== 'true';
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
 function start() {
+  if (codeChangeInterval) clearInterval(codeChangeInterval);
   if (cassette.isPlaying) cassette.stop();
   if (isDark()) {
     toggleLights();
@@ -74,6 +75,27 @@ function start() {
   playerState.pose = 'rest';
   if (playerState.canBreathe) setCanBreathe(false);
   if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
+  code = '';
+  const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  for (let i = 0; i < 6; i++) {
+    const index = Math.floor(Math.random() * (10 - i));
+    code += digits[index];
+    digits[index] = digits[9 - i];
+  }
+  const codeStr = code + ' ';
+  let char = code.length - 1;
+  codeChangeInterval = setInterval(() => {
+    c.fillStyle = 'black';
+    c.fillRect(20, 50, 88, 100);
+    char = (char + 1) % codeStr.length;
+    c.fillStyle = 'white';
+    c.fillText(codeStr[char], 20 + Math.random() * 40, 150 - Math.random() * 40);
+    phone.update();
+  }, 3000);
+  doors.forEach(door => {
+    door.wrong = false;
+  });
+  testedTunnelDoor = false;
 }
 let interruptInstructor = null;
 const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] : [
@@ -251,7 +273,7 @@ scene.add(camera);
 
 const onframe = [];
 const collisionBoxes = [];
-const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights} = setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights, outsideLight} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false, pose: 'rest', canDie: false, jumpVel: null};
@@ -346,16 +368,7 @@ c.font = '15px monospace';
 c.fillStyle = 'white';
 c.fillText('Gunn admin MSG', 5, 25);
 c.font = 'bold 100px monospace';
-const code = (Math.random() * 1e6 >> 0).toString().padStart(6, '0') + ' ';
-let char = code.length - 1;
-const codeChangeInterval = setInterval(() => { // don't clear! that way it can continue when you die
-  c.fillStyle = 'black';
-  c.fillRect(20, 50, 88, 100);
-  char = (char + 1) % code.length;
-  c.fillStyle = 'white';
-  c.fillText(code[char], 20 + Math.random() * 40, 150 - Math.random() * 40);
-  phone.update();
-}, 3000);
+let code, codeChangeInterval, testedTunnelDoor;
 
 const doorPopupCanvas = document.createElement('canvas');
 doorPopupCanvas.width = 256;
@@ -380,8 +393,35 @@ function renderDoorPopup(internalCall = false) {
   switch (selectedDoor.metadata.type) {
     case 'code': {
       if (internalCall && typeProgress.length >= 6) {
-        // TODO: check if it's right
-        dc.fillStyle = '#ff0000';
+        if (typeProgress === code) {
+          if (testedTunnelDoor && !selectedDoor.wrong) {
+            die();
+            dc.fillStyle = '#00ff00';
+            typingTimeout = setTimeout(() => {
+              typeProgress = '';
+              typingState = true;
+              typingTimeout = null;
+              selectedDoor.add(outsideLight);
+              animations.push({
+                type: 'open-doors',
+                start: Date.now(),
+                doors: selectedDoor,
+                duration: 1000
+              });
+              selectedDoor.remove(doorPopup);
+              selectedDoor = null;
+            }, 1000);
+          } else {
+            if (selectedDoor.metadata.tunnel) testedTunnelDoor = true;
+            selectedDoor.wrong = true;
+            dc.fillStyle = '#ff0000';
+            dc.font = '20px sans-serif';
+            dc.fillText('Try another door', 128, 5);
+            break;
+          }
+        } else {
+          dc.fillStyle = '#ff0000';
+        }
         typingTimeout = setTimeout(() => {
           typeProgress = '';
           typingState = true;
@@ -491,7 +531,9 @@ let userInteracted;
 const userInteraction = new Promise(res => userInteracted = res);
 
 document.addEventListener('click', e => {
-  document.body.requestPointerLock();
+  if (!document.body.classList.contains('hide-end')) {
+    document.body.requestPointerLock();
+  }
   userInteracted();
 });
 // slows down up to 1 out of bounds, so if min = -5, max = 5, then the range would be (-6, 6)
@@ -775,6 +817,30 @@ function animate() {
           startGame();
           break;
         }
+        case 'open-doors': {
+          document.body.style.backgroundColor = 'white';
+          animations.push({
+            type: 'into-the-light',
+            start: Date.now(),
+            doors: animation.doors,
+            initialPlayerX: camera.position.x,
+            initialPlayerZ: camera.position.z,
+            finalPlayerX: animation.doors.position.x,
+            finalPlayerZ: animation.doors.position.z,
+            duration: 2000
+          });
+          break;
+        }
+        case 'into-the-light': {
+          animation.doors.remove(outsideLight);
+          animation.doors.left.rotation.y = 0;
+          animation.doors.right.rotation.y = Math.PI;
+          document.body.classList.remove('hide-end');
+          renderer.domElement.style.opacity = null;
+          document.body.style.backgroundColor = null;
+          document.exitPointerLock();
+          break;
+        }
       }
       animations.splice(i--, 1);
     } else {
@@ -851,6 +917,19 @@ function animate() {
           renderer.domElement.style.opacity = 0.5 - position / 2;
           camera.zoom = 1 / (1 + position * 3);
           camera.updateProjectionMatrix();
+          break;
+        }
+        case 'open-doors': {
+          const position = easeOutCubic(progress);
+          animation.doors.left.rotation.y = -Math.PI / 2 * position;
+          animation.doors.right.rotation.y = Math.PI + Math.PI / 2 * position;
+          break;
+        }
+        case 'into-the-light': {
+          const position = easeInCubic(progress);
+          camera.position.x = position * (animation.finalPlayerX - animation.initialPlayerX) + animation.initialPlayerX;
+          camera.position.z = position * (animation.finalPlayerZ - animation.initialPlayerZ) + animation.initialPlayerZ;
+          renderer.domElement.style.opacity = 1 - position;
           break;
         }
       }
