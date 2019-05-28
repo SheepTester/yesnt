@@ -48,6 +48,7 @@ function initTouch() {
     e.preventDefault();
   }, {passive: false});
   document.addEventListener('touchmove', e => {
+    if (e.target.closest('.clickable')) return;
     for (const touch of e.changedTouches) {
       if (cameraRotator && cameraRotator.identifier === touch.identifier) {
         rotateCamera((touch.clientX - cameraRotator.lastX) / options.touchSensitivity, (touch.clientY - cameraRotator.lastY) / options.touchSensitivity);
@@ -60,6 +61,7 @@ function initTouch() {
     e.preventDefault();
   }, {passive: false});
   document.addEventListener('touchend', e => {
+    if (e.target.closest('.clickable')) return;
     for (const touch of e.changedTouches) {
       if (cameraRotator && cameraRotator.identifier === touch.identifier) {
         cameraRotator = null;

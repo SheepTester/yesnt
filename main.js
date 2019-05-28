@@ -745,7 +745,7 @@ document.addEventListener('keydown', e => {
       if (onKeyPress[keyFn]) onKeyPress[keyFn]();
     }
     e.preventDefault();
-  } else if (document.activeElement.classList.contains('key-input')) {
+  } else if (document.activeElement && document.activeElement.classList.contains('key-input')) {
     const keyInput = document.activeElement;
     if (keyFn) {
       if (!keyInput.classList.contains('duplicate-key')) {
@@ -767,8 +767,8 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => {
   const key = options.controls[e.keyCode];
-  if (document.activeElement === document.body && key) {
-    keys[key] = false;
+  if (document.pointerLockElement) {
+    if (key) keys[key] = false;
     e.preventDefault();
   }
 });
