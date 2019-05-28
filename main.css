@@ -318,3 +318,9 @@ button:hover {
 button:focus {
   outline: none;
 }
+.controls-keyboard {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  max-width: 90vw;
+  max-height: 90vh;
+}

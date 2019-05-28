@@ -66,6 +66,9 @@ try {
 } catch (e) {
   options = JSON.parse(JSON.stringify(defaultOptions));
 }
+function saveOptions() {
+  localStorage.setItem('[yesnt] options', JSON.stringify(options));
+}
 
 const tunnelXBounds = {
   left: [
@@ -168,7 +171,7 @@ const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] :
 const skipExpansion = params.get('skip-to') === 'power' || params.get('skip-to') === 'om';
 const skipPower = params.get('skip-to') === 'om';
 const skipEyesClosed = params.get('skip-eyes-closed') === 'true';
-let yesState = null;
+let yesState = null, currentGame;
 async function startGame() {
   if (interruptInstructor) throw new Error('A game is still ongoing it seems.');
   instructor.moving = 'watch';
@@ -195,8 +198,13 @@ async function startGame() {
   instructor.face.map = creepyFace;
   playerState.canDie = true;
   setCanBreathe(true);
-  hintText.textContent = 'Refer to the controls settings (ESCAPE) for the controls.';
-  animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+  if (options.controls.default) {
+    hintText.innerHTML = `<img src="./images/controls-keyboard.svg" class="controls-keyboard">`;
+    animations.push({type: 'flash-hint', start: Date.now(), duration: 10000});
+  } else {
+    hintText.textContent = 'Refer to the controls settings (ESCAPE) for the controls.';
+    animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+  }
   if (!skipExpansion) {
     for (const line of breathing) {
       if (line === 'expansionOpening') yesState = {type: 'expansion-ready'};
@@ -751,8 +759,8 @@ document.addEventListener('keydown', e => {
       options.controls[e.keyCode] = keyInput.dataset.fn;
       keyInput.textContent = options.keyNames[e.keyCode] = e.key === ' ' ? 'Space' : e.key;
       options.controls.default = false;
-      // saveOptions();
       keyInput.blur();
+      saveOptions();
     }
     e.preventDefault();
   }
@@ -859,7 +867,7 @@ function animate() {
           camera.filmOffset = 0;
           camera.updateProjectionMatrix();
           start();
-          startGame();
+          currentGame = startGame();
           document.body.style.backgroundColor = null;
           break;
         }
@@ -887,13 +895,13 @@ function animate() {
           camera.zoom = 1;
           camera.updateProjectionMatrix();
           start();
-          startGame();
+          currentGame = startGame();
           break;
         }
         case 'hide-cant-jump': {
           document.body.classList.add('hide-cant-jump');
           start();
-          startGame();
+          currentGame = startGame();
           break;
         }
         case 'open-doors': {
@@ -1299,21 +1307,21 @@ document.addEventListener('DOMContentLoaded', e => {
   fovSlider.addEventListener('input', e => {
     fovValue.textContent = camera.fov = options.fov = +fovSlider.value;
     camera.updateProjectionMatrix();
-    // saveOptions();
+    saveOptions();
   });
 
   const sensitivitySlider = document.getElementById('sensitivity');
   sensitivitySlider.value = Math.log10(options.sensitivity);
   sensitivitySlider.addEventListener('input', e => {
     options.sensitivity = Math.pow(10, +sensitivitySlider.value);
-    // saveOptions();
+    saveOptions();
   });
 
   const touchSensitivitySlider = document.getElementById('touch-sensitivity');
   touchSensitivitySlider.value = Math.log10(options.touchSensitivity);
   touchSensitivitySlider.addEventListener('input', e => {
     options.touchSensitivity = Math.pow(10, +touchSensitivitySlider.value);
-    // saveOptions();
+    saveOptions();
   });
 
   const functionToKey = {};
@@ -1327,6 +1335,7 @@ document.addEventListener('DOMContentLoaded', e => {
   document.getElementById('reset-settings').addEventListener('click', e => {
     options = JSON.parse(JSON.stringify(defaultOptions));
     fovValue.textContent = fovSlider.value = camera.fov = options.fov;
+    camera.updateProjectionMatrix();
     sensitivitySlider.value = Math.log10(options.sensitivity);
     touchSensitivitySlider.value = Math.log10(options.touchSensitivity);
     const functionToKey = {};
@@ -1335,7 +1344,16 @@ document.addEventListener('DOMContentLoaded', e => {
       keyInput.dataset.keyCode = functionToKey[keyInput.dataset.fn];
       keyInput.textContent = options.keyNames[functionToKey[keyInput.dataset.fn]];
     });
-    // saveOptions();
+    saveOptions();
+  });
+
+  document.getElementById('restart').addEventListener('click', e => {
+    die();
+    console.log(interruptInstructor);
+    Promise.resolve(currentGame).then(() => {
+      start();
+      currentGame = startGame();
+    });
   });
 
   document.body.appendChild(renderer.domElement);
@@ -1387,6 +1405,6 @@ document.addEventListener('DOMContentLoaded', e => {
       if (dontContinue) break;
     }
     skipIntro = null;
-    if (params.get('stay-intro') !== 'true') startGame();
+    if (params.get('stay-intro') !== 'true') currentGame = startGame();
   });
 });
