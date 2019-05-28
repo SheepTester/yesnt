@@ -12,7 +12,8 @@ function createMat(x, z) {
   return mat;
 }
 
-function createExitSign(url) {
+let exitSign, greenExitSign;
+function createExitSign(texture = exitSign) {
   const sign = new THREE.Group();
   const base = new THREE.Mesh(
     new THREE.BoxBufferGeometry(8.5, 4.5, 1),
@@ -22,7 +23,7 @@ function createExitSign(url) {
   const text = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(8, 4),
     new THREE.MeshBasicMaterial({
-      map: loadTexture(url || './textures/exit.png'),
+      map: texture,
       transparent: true
     })
   );
@@ -47,12 +48,12 @@ function createDoor() {
   door.add(bar);
   return door;
 }
-function createDoubleDoors(metadata = {type: 'no code'}, exitSignURL) {
+function createDoubleDoors(metadata = {type: 'no code'}, exitSignTexture = exitSign) {
   const door = new THREE.Group();
   door.isDoors = true;
   door.metadata = metadata;
-  if (exitSignURL !== null) {
-    const exitSign = createExitSign(exitSignURL);
+  if (exitSignTexture !== null) {
+    const exitSign = createExitSign(exitSignTexture);
     exitSign.position.y = 30;
     door.add(exitSign);
   }
@@ -67,12 +68,12 @@ function createDoubleDoors(metadata = {type: 'no code'}, exitSignURL) {
   door.add(rightDoor);
   return door;
 }
-function createSingleDoor(metadata = {type: 'no code'}, exitSignURL) {
+function createSingleDoor(metadata = {type: 'no code'}, exitSignTexture = exitSign) {
   const doorWrapper = new THREE.Group();
   doorWrapper.isDoors = true;
   doorWrapper.metadata = metadata;
-  if (exitSignURL !== null) {
-    const exitSign = createExitSign(exitSignURL);
+  if (exitSignTexture) {
+    const exitSign = createExitSign(exitSignTexture);
     exitSign.position.y = 30;
     doorWrapper.add(exitSign);
   }
@@ -87,6 +88,8 @@ let wallMaterial;
 const mats = [];
 function setupRoom(scene, onframe, collisions) {
   wallMaterial = gameMaterial(0xffffff, 0, 0.9, 0.1);
+  exitSign = loadTexture('./textures/exit.png');
+  greenExitSign = loadTexture('./textures/exit-green.png');
 
   const floor = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1000, 1000),
@@ -333,7 +336,7 @@ function createDarkRoom() {
     250,
     280
   ].forEach((z, i) => {
-    const doors = createDoubleDoors({type: 'code'}, i === 0 && './textures/exit-green.png');
+    const doors = createDoubleDoors({type: 'code'}, i === 0 ? greenExitSign : exitSign);
     doors.rotation.y = Math.PI / 2;
     doors.position.set(-500, 0, z);
     darkRoom.add(doors);
@@ -525,7 +528,7 @@ function createLightRoom() {
     100,
     130
   ].forEach((z, i) => {
-    const doors = createDoubleDoors(null, i === 0 && './textures/exit-green.png');
+    const doors = createDoubleDoors(null, i === 0 ? greenExitSign : exitSign);
     doors.rotation.y = Math.PI / 2;
     doors.position.set(-ROOM_WIDTH / 2, 0, -500 + ROOM_LENGTH / 2 + z);
     lightRoom.add(doors);

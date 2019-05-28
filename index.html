@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>YES escape</title>
+    <title>YESNT</title>
     <meta charset="UTF-8">
     <meta name="description" content="Your school is pushing their psuedoscientific agendas on you; you must escape before things get worse."/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
+    <link href="https://fonts.googleapis.com/css?family=Karla:400,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./main.css">
     <link rel="stylesheet" href="./touch.css">
 
@@ -19,6 +20,17 @@
 
     <script type="text/javascript">
       const params = new URL(window.location).searchParams;
+      function outputError(msg) {
+        const errorMsg = document.createElement('div');
+        errorMsg.classList.add('error');
+        errorMsg.textContent = msg;
+        if (document.body) document.body.appendChild(errorMsg);
+        else document.addEventListener('DOMContentLoaded', e => {
+          document.body.appendChild(errorMsg);
+        });
+      }
+      window.addEventListener('error', e => outputError(e.message));
+      window.addEventListener('unhandledrejection', e => outputError(e.reason));
     </script>
     <script src="./speech.js" charset="utf-8"></script>
     <script src="./room-setup.js" charset="utf-8"></script>
@@ -26,7 +38,7 @@
     <script src="./touch.js" charset="utf-8"></script>
     <script src="./main.js" charset="utf-8"></script>
   </head>
-  <body class="hide-lungs hide-cant-jump hide-end">
+  <body class="hide-lungs hide-cant-jump hide-end hide-options">
     <p id="subtitles"></p>
     <p id="hint"></p>
     <div class="note">
@@ -44,11 +56,41 @@
     <div id="progress-bar"></div>
     <div id="lung-indicator"></div>
     <div class="cant-jump"><span>Jumping upwards is easy. Landing softly is the hard part.</span></div>
-    <div class="end">
+    <div class="end clickable">
       <div class="wrapper">
         <h1>You've escaped</h1>
         <p>lol oof</p>
       </div>
+    </div>
+    <div class="options clickable">
+      <p>Click outside of this panel to close.</p>
+      <h1>Controls</h1>
+      <p><button id="reset-settings">Reset settings</button></p>
+      <label>FOV <div class="slider-wrapper"><input type="range" id="fov" min="30" max="110"><span id="fov-val"></span></div></label>
+      <label>Mouse sensitivity <div class="slider-wrapper"><input type="range" id="sensitivity" min="2.2" max="4" step="any"></div></label>
+      <label>Touch sensitivity <div class="slider-wrapper"><input type="range" id="touch-sensitivity" min="1" max="3" step="any"></div></label>
+      <h2>Key mappings</h2>
+      <p>The number keys are used for entering in the code and cannot be reassigned.</p>
+      <p><span class="key-input" tabindex="0" data-fn="inhale"></span>Inhale</p>
+      <p><span class="key-input" tabindex="0" data-fn="exhale"></span>Exhale</p>
+      <p><span class="key-input" tabindex="0" data-fn="skip-intro"></span>Skip intro</p>
+      <p><span class="key-input" tabindex="0" data-fn="reset"></span>Reset pose</p>
+      <p><span class="key-input" tabindex="0" data-fn="exp-up"></span>Expansion breath: arms up</p>
+      <p><span class="key-input" tabindex="0" data-fn="exp-down"></span>Expansion breath: arms down</p>
+      <p><span class="key-input" tabindex="0" data-fn="power-up"></span>Power breath: arms up</p>
+      <p><span class="key-input" tabindex="0" data-fn="power-down"></span>Power breath: arms down</p>
+      <p><span class="key-input" tabindex="0" data-fn="om"></span>Say omm</p>
+      <p><span class="key-input" tabindex="0" data-fn="get-up"></span>Get up</p>
+      <p><span class="key-input" tabindex="0" data-fn="phone"></span>Take out/put away phone</p>
+      <p><span class="key-input" tabindex="0" data-fn="forth"></span>Run forwards</p>
+      <p><span class="key-input" tabindex="0" data-fn="back"></span>Run backwards</p>
+      <p><span class="key-input" tabindex="0" data-fn="left"></span>Sidestep left</p>
+      <p><span class="key-input" tabindex="0" data-fn="right"></span>Sidestep right</p>
+      <p><span class="key-input" tabindex="0" data-fn="trip"></span>Jump</p>
+      <p><span class="key-input" tabindex="0" data-fn="pick-up"></span>Pick up light</p>
+      <p><span class="key-input" tabindex="0" data-fn="del-code-digit"></span>Delete last code digit</p>
+      <h1>About</h1>
+      <p>A mysterious YES (YES Exhaling Students) Program has come to your school, and you immediately suspect something going on. You deduce that they are trialing an experimental breathing exercise to brainwash students. As an indepedent citizen, you do not desire to be dictated by a foreign power, so you must egress from the situation promptly!</p>
     </div>
   </body>
 </html>

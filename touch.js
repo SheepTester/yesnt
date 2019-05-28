@@ -14,6 +14,8 @@ function initTouch() {
     touchCircle.style.setProperty('--y', touchMovement.y * 40 + 'px');
   }
   document.addEventListener('touchstart', e => {
+    if (e.target.closest('.clickable')) return;
+    document.body.classList.add('hide-options');
     if (!usingTouch) {
       usingTouch = true;
       touchUI.classList.add('using-touch');
@@ -48,7 +50,7 @@ function initTouch() {
   document.addEventListener('touchmove', e => {
     for (const touch of e.changedTouches) {
       if (cameraRotator && cameraRotator.identifier === touch.identifier) {
-        rotateCamera((touch.clientX - cameraRotator.lastX) / 200, (touch.clientY - cameraRotator.lastY) / 200);
+        rotateCamera((touch.clientX - cameraRotator.lastX) / options.touchSensitivity, (touch.clientY - cameraRotator.lastY) / options.touchSensitivity);
         cameraRotator.lastX = touch.clientX;
         cameraRotator.lastY = touch.clientY;
       } else if (movement && movement.identifier === touch.identifier) {

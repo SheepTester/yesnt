@@ -1,5 +1,4 @@
 // tju = three.js unit
-const FOV = 75;
 const SITTING_EYE_HEIGHT = 6;
 const STANDING_EYE_HEIGHT = 11;
 const MOVEMENT_SPEED = 0.05; // speed of player (tju/ms)
@@ -31,6 +30,43 @@ const ASPHYXIATION = +params.get('ASPHYXIATION') || 0.1; // point at which you b
 const CODE_LENGTH = 4;
 // ?INHALE_OXYGEN_SPEED=0.0003&BREATHING_SPEED=0.00005&MAX_OXYGEN=1&LUNG_RANGE=1&LIVING_OXYGEN_USAGE=0.00005&LOW_OXYGEN=0.4&ASPHYXIATION=0.1
 
+const defaultOptions = {
+  fov: 75,
+  sensitivity: 700,
+  touchSensitivity: 200,
+  controls: {
+    default: true,
+    87: 'forth', // w
+    65: 'left', // a
+    83: 'back', // s
+    68: 'right', // d
+    16: 'get-up', // shift
+    70: 'phone', // f
+    13: 'skip-intro', // enter
+    8: 'del-code-digit', // backspace
+    82: 'reset', // r
+    79: 'om', // o
+    81: 'inhale', // q
+    69: 'exhale', // e
+    32: 'trip', // space
+    37: 'exp-down', // left
+    38: 'power-up', // up
+    39: 'exp-up', // right
+    40: 'power-down', // down
+    90: 'pick-up' // z
+  },
+  keyNames: {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'Shift', 70: 'f', 13: 'Enter',
+    8: 'Backspace', 82: 'r', 79: 'o', 81: 'q', 69: 'e', 32: 'Space',
+    37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown', 90: 'z'}
+};
+let options;
+try {
+  options = JSON.parse(localStorage.getItem('[yesnt] options'));
+  if (options === null || typeof options !== 'object') throw new Error();
+} catch (e) {
+  options = JSON.parse(JSON.stringify(defaultOptions));
+}
+
 const tunnelXBounds = {
   left: [
     -500 + DARK_DOOR_TUNNEL_PADDING + PLAYER_THICKNESS,
@@ -49,7 +85,7 @@ const checkPlayer = !params.get('override-player-check');
 const alwaysCheckPlayer = params.get('override-player-check') === 'omniscient';
 const loseOxygen = params.get('unrealistic-breathing') !== 'true';
 
-const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(options.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
 
 const digitSet = '0123456789';
@@ -159,7 +195,7 @@ async function startGame() {
   instructor.face.map = creepyFace;
   playerState.canDie = true;
   setCanBreathe(true);
-  hintText.textContent = 'Press shift to get up; press F to take out/put away your phone; press Q and E to breath in and out; press the arrow keys to move your arms, and R to reset them.';
+  hintText.textContent = 'Refer to the controls settings (ESCAPE) for the controls.';
   animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   if (!skipExpansion) {
     for (const line of breathing) {
@@ -269,9 +305,12 @@ const listener = new THREE.AudioListener();
 camera.add(listener);
 
 THREE.Cache.enabled = true;
+const logLoadingProgress = params.get('log-loading') === 'true';
 const manager = new THREE.LoadingManager();
+const resourcesReady = new Promise(res => manager.onLoad = res);
 let loadingBar;
 manager.onProgress = (url, loaded, total) => {
+  if (logLoadingProgress) console.log(url, loaded, total);
   if (loadingBar) loadingBar.style.width = (loaded / total * 100) + '%';
 };
 const textureLoader = new THREE.TextureLoader(manager);
@@ -554,8 +593,9 @@ let userInteracted;
 const userInteraction = new Promise(res => userInteracted = res);
 
 document.addEventListener('click', e => {
-  if (document.body.classList.contains('hide-end')) {
+  if (!e.target.closest('.clickable')) {
     document.body.requestPointerLock();
+    document.body.classList.add('hide-options');
   }
   userInteracted();
 });
@@ -600,30 +640,10 @@ function rotateCamera(deltaX, deltaY) {
 }
 document.addEventListener('mousemove', e => {
   if (document.pointerLockElement) {
-    rotateCamera(e.movementX / 700, e.movementY / 700);
+    rotateCamera(e.movementX / options.sensitivity, e.movementY / options.sensitivity);
   }
 });
 
-const keyToName = {
-  87: 'forth', // w
-  65: 'left', // a
-  83: 'back', // s
-  68: 'right', // d
-  16: 'get-up', // shift
-  70: 'phone', // f
-  13: 'skip-intro', // enter
-  8: 'del-code-digit', // backspace
-  82: 'reset', // r
-  79: 'om', // o
-  81: 'inhale', // q
-  69: 'exhale', // e
-  32: 'trip', // space
-  37: 'exp-down', // left
-  38: 'power-up', // up
-  39: 'exp-up', // right
-  40: 'power-down', // down
-  90: 'pick-up' // z
-};
 const keys = {};
 const onKeyPress = {
   phone() {
@@ -663,7 +683,12 @@ const onKeyPress = {
     instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
     instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
     if (interruptInstructor) interruptInstructor('getting up');
-    hintText.textContent = 'Use WASD to move around.';
+    hintText.textContent = 'Press '
+      + options.keyNames[keyInputs.forth.dataset.keyCode].toUpperCase() + ', '
+      + options.keyNames[keyInputs.left.dataset.keyCode].toUpperCase() + ', '
+      + options.keyNames[keyInputs.back.dataset.keyCode].toUpperCase() + ', and '
+      + options.keyNames[keyInputs.right.dataset.keyCode].toUpperCase()
+      + ' to move around.';
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
   },
   'skip-intro'() {
@@ -699,18 +724,48 @@ const onKeyPress = {
     playerState.jumpVel = 5;
   }
 };
+document.addEventListener('pointerlockchange', e => {
+  if (!document.pointerLockElement) {
+    document.body.classList.remove('hide-options');
+  }
+});
 document.addEventListener('keydown', e => {
-  const key = keyToName[e.keyCode];
-  if (key) {
-    keys[key] = true;
-    if (onKeyPress[key]) onKeyPress[key]();
+  const keyFn = options.controls[e.keyCode];
+  if (document.pointerLockElement) {
+    if (keyFn) {
+      keys[keyFn] = true;
+      if (onKeyPress[keyFn]) onKeyPress[keyFn]();
+    }
+    e.preventDefault();
+  } else if (document.activeElement.classList.contains('key-input')) {
+    const keyInput = document.activeElement;
+    if (keyFn) {
+      if (!keyInput.classList.contains('duplicate-key')) {
+        keyInput.classList.add('duplicate-key');
+        setTimeout(() => {
+          keyInput.classList.remove('duplicate-key');
+        }, 200);
+      }
+    } else {
+      delete options.controls[keyInput.dataset.keyCode];
+      options.controls[e.keyCode] = keyInput.dataset.fn;
+      keyInput.textContent = options.keyNames[e.keyCode] = e.key === ' ' ? 'Space' : e.key;
+      options.controls.default = false;
+      // saveOptions();
+      keyInput.blur();
+    }
+    e.preventDefault();
   }
 });
 document.addEventListener('keyup', e => {
-  if (keyToName[e.keyCode]) keys[keyToName[e.keyCode]] = false;
+  const key = options.controls[e.keyCode];
+  if (document.activeElement === document.body && key) {
+    keys[key] = false;
+    e.preventDefault();
+  }
 });
 for (let i = 0; i < 10; i++) {
-  keyToName[i + 48] = i + '';
+  options.controls[i + 48] = i + '';
   onKeyPress[i] = () => {
     if (selectedDoor && typingState) {
       typeProgress += i;
@@ -782,6 +837,7 @@ function remindUserToBreathe() {
 
 let hintText;
 let lastTime, moving;
+const keyInputs = {};
 const animations = [];
 const raycaster = new THREE.Raycaster();
 function animate() {
@@ -1061,7 +1117,7 @@ function animate() {
         if (keys['pick-up']) {
           lampHand.add(selectedLight);
         } else if (!playerState.showedPickupHint) {
-          hintText.textContent = 'Press Z to pick up the light.';
+          hintText.textContent = `Press ${options.keyNames[keyInputs['pick-up'].dataset.keyCode].toUpperCase()} to pick up the light.`;
           animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
           playerState.showedPickupHint = true;
         }
@@ -1237,13 +1293,59 @@ document.addEventListener('DOMContentLoaded', e => {
   loadingBar = document.getElementById('progress-bar');
   lungIndicator = document.getElementById('lung-indicator');
 
+  const fovSlider = document.getElementById('fov');
+  const fovValue = document.getElementById('fov-val');
+  fovValue.textContent = fovSlider.value = options.fov;
+  fovSlider.addEventListener('input', e => {
+    fovValue.textContent = camera.fov = options.fov = +fovSlider.value;
+    camera.updateProjectionMatrix();
+    // saveOptions();
+  });
+
+  const sensitivitySlider = document.getElementById('sensitivity');
+  sensitivitySlider.value = Math.log10(options.sensitivity);
+  sensitivitySlider.addEventListener('input', e => {
+    options.sensitivity = Math.pow(10, +sensitivitySlider.value);
+    // saveOptions();
+  });
+
+  const touchSensitivitySlider = document.getElementById('touch-sensitivity');
+  touchSensitivitySlider.value = Math.log10(options.touchSensitivity);
+  touchSensitivitySlider.addEventListener('input', e => {
+    options.touchSensitivity = Math.pow(10, +touchSensitivitySlider.value);
+    // saveOptions();
+  });
+
+  const functionToKey = {};
+  Object.keys(options.controls).forEach(key => functionToKey[options.controls[key]] = key);
+  Array.from(document.getElementsByClassName('key-input'), keyInput => {
+    keyInput.dataset.keyCode = functionToKey[keyInput.dataset.fn];
+    keyInput.textContent = options.keyNames[functionToKey[keyInput.dataset.fn]];
+    keyInputs[keyInput.dataset.fn] = keyInput;
+  });
+
+  document.getElementById('reset-settings').addEventListener('click', e => {
+    options = JSON.parse(JSON.stringify(defaultOptions));
+    fovValue.textContent = fovSlider.value = camera.fov = options.fov;
+    sensitivitySlider.value = Math.log10(options.sensitivity);
+    touchSensitivitySlider.value = Math.log10(options.touchSensitivity);
+    const functionToKey = {};
+    Object.keys(options.controls).forEach(key => functionToKey[options.controls[key]] = key);
+    Array.from(document.getElementsByClassName('key-input'), keyInput => {
+      keyInput.dataset.keyCode = functionToKey[keyInput.dataset.fn];
+      keyInput.textContent = options.keyNames[functionToKey[keyInput.dataset.fn]];
+    });
+    // saveOptions();
+  });
+
   document.body.appendChild(renderer.domElement);
   initTouch();
 
   lastTime = Date.now();
   renderer.domElement.style.opacity = 0;
   Promise.all([
-    new Promise(res => manager.onLoad = res).then(() => {
+    resourcesReady.then(() => {
+      if (logLoadingProgress) console.log('loading done');
       loadingBar.classList.add('hide-bar');
     }),
     initSpeech()
@@ -1252,7 +1354,7 @@ document.addEventListener('DOMContentLoaded', e => {
     start();
     animate();
 
-    hintText.textContent = 'Press enter to skip the intro.';
+    hintText.textContent = `Press ${options.keyNames[keyInputs['skip-intro'].dataset.keyCode].toUpperCase()} to skip the intro.`;
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
     const {speak, interrupt} = speaking(instructorVoice);
     let dontContinue = false, currentAnimation = null;
