@@ -333,12 +333,14 @@ function loadTexture(url) {
 
 const sounds = {};
 audioLoader.load('./sounds/lights-sound.mp3', buffer => sounds.lights = buffer);
+audioLoader.load('./sounds/floor-creak.mp3', buffer => sounds.creak = buffer);
 
 const usingLambert = params.get('lambert') === 'true';
+const wireframe = params.get('wireframe') === 'true';
 const gameMaterial = usingLambert ? (colour, emissive) => {
-  return new THREE.MeshLambertMaterial({color: colour, emissive});
+  return new THREE.MeshLambertMaterial({color: colour, emissive, wireframe});
 } : (colour, emissive, roughness, metalness) => {
-  return new THREE.MeshStandardMaterial({color: colour, emissive, roughness, metalness});
+  return new THREE.MeshStandardMaterial({color: colour, emissive, roughness, metalness, wireframe});
 };
 
 const scene = new THREE.Scene();
@@ -698,6 +700,9 @@ const onKeyPress = {
       + options.keyNames[keyInputs.right.dataset.keyCode].toUpperCase()
       + ' to move around.';
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+    const sound = new THREE.Audio(listener);
+    sound.setBuffer(sounds.creak);
+    sound.play();
   },
   'skip-intro'() {
     if (skipIntro) skipIntro();

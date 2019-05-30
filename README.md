@@ -12,6 +12,8 @@ Exit sign font is [Teko](https://fonts.google.com/specimen/Teko).
 
 Lights off sound by [Cyberkineticfilms](https://freesound.org/people/Cyberkineticfilms/sounds/135434/).
 
+Floor creak sound by [TheBuilder15](https://freesound.org/people/TheBuilder15/sounds/367050/).
+
 ## To do
 
 - sounds
