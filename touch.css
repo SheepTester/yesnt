@@ -7,7 +7,7 @@
   display: none;
   z-index: 1;
 }
-#touch-ui.using-touch {
+.using-touch #touch-ui {
   display: block;
 }
 

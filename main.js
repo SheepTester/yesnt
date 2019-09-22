@@ -160,7 +160,7 @@ function start() {
   doors.forEach(door => {
     door.wrong = false;
   });
-  testedTunnelDoor = false;
+  testedTunnelDoor = params.get('one-door-only') === 'true';
 }
 let interruptInstructor = null;
 const breathing = params.get('skip-to') === 'expansion' ? ['expansionOpening'] : [
@@ -334,6 +334,9 @@ function loadTexture(url) {
 const sounds = {};
 audioLoader.load('./sounds/lights-sound.mp3', buffer => sounds.lights = buffer);
 audioLoader.load('./sounds/floor-creak.mp3', buffer => sounds.creak = buffer);
+audioLoader.load('./sounds/keypress.mp3', buffer => sounds.keypress = buffer);
+audioLoader.load('./sounds/wrong.mp3', buffer => sounds.wrong = buffer);
+audioLoader.load('./sounds/correct.mp3', buffer => sounds.correct = buffer);
 
 const usingLambert = params.get('lambert') === 'true';
 const wireframe = params.get('wireframe') === 'true';
@@ -483,16 +486,25 @@ function renderDoorPopup(internalCall = false) {
               selectedDoor.remove(doorPopup);
               selectedDoor = null;
             }, 1000);
+            const beep = new THREE.Audio(listener);
+            beep.setBuffer(sounds.correct);
+            beep.play();
           } else {
             if (selectedDoor.metadata.tunnel) testedTunnelDoor = true;
             selectedDoor.wrong = true;
             dc.fillStyle = '#ff0000';
             dc.font = '20px sans-serif';
             dc.fillText('Try another door', 128, 5);
+            const beep = new THREE.Audio(listener);
+            beep.setBuffer(sounds.wrong);
+            beep.play();
             break;
           }
         } else {
           dc.fillStyle = '#ff0000';
+          const beep = new THREE.Audio(listener);
+          beep.setBuffer(sounds.wrong);
+          beep.play();
         }
         typingTimeout = setTimeout(() => {
           typeProgress = '';
@@ -711,6 +723,9 @@ const onKeyPress = {
     if (selectedDoor && typingState) {
       typeProgress = typeProgress.slice(0, -1);
       renderDoorPopup();
+      const beep = new THREE.Audio(listener);
+      beep.setBuffer(sounds.keypress);
+      beep.play();
     }
   },
   'power-down'() {
@@ -783,6 +798,9 @@ for (let i = 0; i < 10; i++) {
     if (selectedDoor && typingState) {
       typeProgress += i;
       renderDoorPopup();
+      const beep = new THREE.Audio(listener);
+      beep.setBuffer(sounds.keypress);
+      beep.play();
     }
   };
 }
@@ -1354,6 +1372,7 @@ document.addEventListener('DOMContentLoaded', e => {
 
   document.getElementById('restart').addEventListener('click', e => {
     die();
+    document.body.classList.add('hide-end');
     console.log(interruptInstructor);
     Promise.resolve(currentGame).then(() => {
       start();

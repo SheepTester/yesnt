@@ -18,7 +18,7 @@ function initTouch() {
     document.body.classList.add('hide-options');
     if (!usingTouch) {
       usingTouch = true;
-      touchUI.classList.add('using-touch');
+      document.body.classList.add('using-touch');
       userInteracted();
     }
     for (const touch of e.changedTouches) {
