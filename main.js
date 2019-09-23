@@ -116,8 +116,10 @@ function start() {
   if (playerState.phoneOut) setPhoneState(false);
   playerState.canDie = false;
   resetLimbRotations(sittingPlayer, false, restRotations);
-  playerState.pose = 'rest';
+  setPose('rest');
+  document.body.classList.remove('hide-pose');
   if (playerState.canBreathe) setCanBreathe(false);
+  playerState.canAsphyxiate = true;
   if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
   code = '';
   const digits = digitSet.split('');
@@ -337,6 +339,7 @@ audioLoader.load('./sounds/floor-creak.mp3', buffer => sounds.creak = buffer);
 audioLoader.load('./sounds/keypress.mp3', buffer => sounds.keypress = buffer);
 audioLoader.load('./sounds/wrong.mp3', buffer => sounds.wrong = buffer);
 audioLoader.load('./sounds/correct.mp3', buffer => sounds.correct = buffer);
+audioLoader.load('./sounds/caught.mp3', buffer => sounds.caught = buffer);
 
 const usingLambert = params.get('lambert') === 'true';
 const wireframe = params.get('wireframe') === 'true';
@@ -355,6 +358,11 @@ const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights, outs
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false, pose: 'rest', canDie: false, jumpVel: null};
+function setPose(pose) {
+  document.body.classList.remove('indicate-' + playerState.pose);
+  document.body.classList.add('indicate-' + pose);
+  playerState.pose = pose;
+}
 const respire = limit(playerState.lungSize, -LUNG_RANGE + 1, LUNG_RANGE - 1);
 function setCanBreathe(to) {
   if (playerState.canBreathe === to) return;
@@ -427,13 +435,13 @@ function setPhoneState(to) {
     if (moving === 'sitting') phoneWrapper.add(phone.phone);
     else phoneHand.add(phone.phone);
     resetLimbRotations(sittingPlayer, true, phoneRotations);
-    playerState.pose = 'phone';
+    setPose('phone');
     playerState.phoneOutSince = Date.now();
   } else {
     if (phone.phone.parent === phoneWrapper) phoneWrapper.remove(phone.phone);
     else phoneHand.remove(phone.phone);
     resetLimbRotations(sittingPlayer, true, restRotations);
-    playerState.pose = 'rest';
+    setPose('rest');
   }
 }
 
@@ -682,7 +690,7 @@ const onKeyPress = {
     if (playerState.phoneOut) setPhoneState(false);
     if (playerState.pose !== 'rest') {
       resetLimbRotations(sittingPlayer, true, restRotations);
-      playerState.pose = 'rest';
+      setPose('rest');
     }
   },
   'get-up'() {
@@ -712,6 +720,7 @@ const onKeyPress = {
       + options.keyNames[keyInputs.right.dataset.keyCode].toUpperCase()
       + ' to move around.';
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+    document.body.classList.add('hide-pose');
     const sound = new THREE.Audio(listener);
     sound.setBuffer(sounds.creak);
     sound.play();
@@ -730,13 +739,17 @@ const onKeyPress = {
   },
   'power-down'() {
     if (playerState.phoneOut) setPhoneState(false);
-    playerState.pose = 'power';
+    setPose('power');
+    document.body.classList.remove('indicate-power-up');
+    document.body.classList.add('indicate-power-down');
     playerState.up = false;
     resetLimbRotations(sittingPlayer, true, powerBreathDown);
   },
   'power-up'() {
     if (playerState.phoneOut) setPhoneState(false);
-    playerState.pose = 'power';
+    setPose('power');
+    document.body.classList.remove('indicate-power-down');
+    document.body.classList.add('indicate-power-up');
     playerState.up = true;
     resetLimbRotations(sittingPlayer, true, powerBreathUp);
   },
@@ -834,6 +847,9 @@ function caught() {
     zoomIntensity: camera.position.distanceTo(headPos) / 20,
     anchorY: camera.position.y
   });
+  const sound = new THREE.Audio(listener);
+  sound.setBuffer(sounds.caught);
+  sound.play();
 }
 
 let lungIndicator;
@@ -917,8 +933,13 @@ function animate() {
           renderer.domElement.style.opacity = null;
           camera.zoom = 1;
           camera.updateProjectionMatrix();
-          start();
-          currentGame = startGame();
+          if (animation.restart) {
+            start();
+            currentGame = startGame();
+          } else {
+            setCanBreathe(true);
+            animations.push({type: 'start', start: Date.now(), duration: 1000});
+          }
           break;
         }
         case 'hide-cant-jump': {
@@ -1211,7 +1232,7 @@ function animate() {
       if (playerState.pose !== 'expansion') {
         if (playerState.phoneOut) setPhoneState(false);
         resetLimbRotations(sittingPlayer, true, defaultExpansionRotations);
-        playerState.pose = 'expansion';
+        setPose('expansion');
         playerState.position = 0;
       }
       if (keys['exp-down']) playerState.position -= EXPANSION_SPEED * elapsedTime;
@@ -1220,6 +1241,7 @@ function animate() {
       else if (playerState.position > 1) playerState.position = 1;
       sittingPlayer.limbs[0].limb.idealRot.z = playerState.position * (Math.PI - 0.2) + 0.1;
       sittingPlayer.limbs[1].limb.idealRot.z = -playerState.position * (Math.PI - 0.2) - 0.1;
+      document.body.style.setProperty('--expansion', playerState.position * 180 - 90 + 'deg');
     }
     if (checkPlayer ? instructorDirection.angleTo(playerDirection) < Math.PI * 0.2 : alwaysCheckPlayer) {
       const reason = isPlayerCatchworthy();
@@ -1272,11 +1294,13 @@ function animate() {
     }
     setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
     if (playerState.oxygen < ASPHYXIATION) {
-      die();
+      if (playerState.canAsphyxiate) die();
+      else setCanBreathe(false);
       animations.push({
         type: 'black-out',
         start: now,
-        duration: 1000
+        duration: 1000,
+        restart: playerState.canAsphyxiate
       });
     } else if (playerState.oxygen < LOW_OXYGEN) {
       const percentToDeath = (playerState.oxygen - ASPHYXIATION) / (LOW_OXYGEN - ASPHYXIATION);
@@ -1395,6 +1419,8 @@ document.addEventListener('DOMContentLoaded', e => {
     document.body.classList.add('hide-note');
     start();
     animate();
+    setCanBreathe(true);
+    playerState.canAsphyxiate = false;
 
     hintText.textContent = `Press ${options.keyNames[keyInputs['skip-intro'].dataset.keyCode].toUpperCase()} to skip the intro.`;
     animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
@@ -1429,6 +1455,9 @@ document.addEventListener('DOMContentLoaded', e => {
       if (dontContinue) break;
     }
     skipIntro = null;
-    if (params.get('stay-intro') !== 'true') currentGame = startGame();
+    if (params.get('stay-intro') !== 'true') {
+      playerState.canAsphyxiate = true;
+      currentGame = startGame();
+    }
   });
 });

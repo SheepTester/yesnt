@@ -38,12 +38,12 @@
     <script src="./touch.js" charset="utf-8"></script>
     <script src="./main.js" charset="utf-8"></script>
   </head>
-  <body class="hide-lungs hide-cant-jump hide-end hide-options">
+  <body class="hide-lungs hide-cant-jump hide-end hide-options hide-pose">
     <p id="subtitles"></p>
     <p id="hint"></p>
     <div class="note">
       <p>This is a work of fiction. Names, characters, businesses, places, events and incidents are either the products of the author's imagination or used in a fictitious manner. Any resemblance to actual persons, living or dead, or actual events is purely coincidental.</p>
-      <p>Click/tap the screen if you believe this.</p>
+      <p>Click/tap the screen iff you believe this.</p>
     </div>
     <div id="touch-ui">
       <div id="touch-circle" class="touch-target"></div>
@@ -55,6 +55,7 @@
     </div>
     <div id="progress-bar"></div>
     <div id="lung-indicator"></div>
+    <div class="pose-indicator"><span class="expansion-indicator"></span></div>
     <div class="cant-jump"><span>Jumping upwards is easy. Landing softly is the hard part.</span></div>
     <div class="end clickable">
       <div class="wrapper">
@@ -67,7 +68,7 @@
       <p><button id="restart">Restart</button></p>
       <h1>Controls</h1>
       <p><button id="reset-settings">Reset settings</button></p>
-      <label>FOV <div class="slider-wrapper"><input type="range" id="fov" min="30" max="110"><span id="fov-val"></span></div></label>
+      <label>FOV <div class="slider-wrapper"><input type="range" id="fov" min="30" max="120"><span id="fov-val"></span></div></label>
       <label>Mouse sensitivity <div class="slider-wrapper"><input type="range" id="sensitivity" min="2.2" max="4" step="any"></div></label>
       <label>Touch sensitivity <div class="slider-wrapper"><input type="range" id="touch-sensitivity" min="1" max="3" step="any"></div></label>
       <h2>Key mappings</h2>

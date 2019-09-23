@@ -15,6 +15,7 @@ canvas {
   width: 100%;
   height: 100%;
 }
+
 #subtitles {
   text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
   font-size: 16px;
@@ -64,6 +65,7 @@ canvas {
 .hide-note .note {
   display: none;
 }
+
 #progress-bar {
   background-color: rgba(255, 255, 255, 0.5);
   height: 5px;
@@ -79,6 +81,7 @@ canvas {
   transition: opacity .5s;
   pointer-events: none;
 }
+
 #lung-indicator {
   position: fixed;
   z-index: 1;
@@ -147,6 +150,72 @@ canvas {
     opacity: 0;
   }
 }
+
+.pose-indicator {
+  position: fixed;
+  z-index: 1;
+  bottom: 0;
+  right: 80px;
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 5px;
+  margin: 7px;
+  border-radius: 10px;
+}
+.pose-indicator::before {
+  content: 'REST';
+  font-size: 10px;
+  display: block;
+  text-align: center;
+  color: white;
+}
+.pose-indicator::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 45px;
+  background-image: url(./images/poses.svg);
+  background-size: auto 100%;
+  background-position-x: 0;
+}
+.indicate-phone .pose-indicator::before { content: 'PHONE'; }
+.indicate-phone .pose-indicator::after { background-position-x: 25%; }
+.indicate-power .pose-indicator::before { content: 'POWER'; }
+.indicate-power.indicate-power-up .pose-indicator::after { background-position-x: 50%; }
+.indicate-power.indicate-power-down .pose-indicator::after { background-position-x: 75%; }
+.indicate-expansion .pose-indicator::before { content: 'EXPAND'; }
+.indicate-expansion .pose-indicator::after { background-position-x: 100%; }
+.hide-pose .pose-indicator, .expansion-indicator {
+  display: none;
+}
+.indicate-expansion .expansion-indicator {
+  display: block;
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  right: 5px;
+  height: 45px;
+}
+.expansion-indicator::before, .expansion-indicator::after {
+  content: '';
+  position: absolute;
+  width: 15px;
+  height: 2.5px;
+  border-radius: 5px;
+  background-color: white;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  left: 0;
+  transform-origin: right;
+  transform: rotate(var(--expansion));
+}
+.expansion-indicator::after {
+  left: auto;
+  right: 0;
+  transform-origin: left;
+  transform: scaleY(-1) rotate(var(--expansion));
+}
+
 .cant-jump {
   position: fixed;
   top: 0;
@@ -166,6 +235,7 @@ canvas {
 .hide-cant-jump .cant-jump {
   display: none;
 }
+
 .end {
   position: fixed;
   top: 0;
@@ -187,6 +257,7 @@ canvas {
 .hide-end .end {
   display: none;
 }
+
 .error {
   background-color: red;
   font-size: 16px;
@@ -203,6 +274,7 @@ canvas {
     top: 0;
   }
 }
+
 .options {
   font-size: 14px;
   padding: 20px;
@@ -223,6 +295,7 @@ canvas {
   left: -250px;
   pointer-events: none;
 }
+
 .options p {
   margin: 0.5em 0;
 }
@@ -230,6 +303,7 @@ canvas {
   display: block;
   margin: 0.5em 0;
 }
+
 .slider-wrapper {
   display: flex;
 }
@@ -262,6 +336,7 @@ input[type=range]::-webkit-slider-thumb {
   cursor: pointer;
   -webkit-appearance: none;
 }
+
 .key-input {
   display: inline-block;
   background-color: rgba(255, 255, 255, 0.5);
@@ -302,6 +377,7 @@ input[type=range]::-webkit-slider-thumb {
 .key-input.duplicate-key::before {
   color: rgba(255, 78, 81, 0.5);
 }
+
 button {
   -webkit-appearance: none;
   cursor: pointer;
@@ -318,6 +394,7 @@ button:hover {
 button:focus {
   outline: none;
 }
+
 .controls-keyboard {
   position: absolute;
   transform: translate(-50%, -50%);

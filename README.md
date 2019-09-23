@@ -20,6 +20,8 @@ Key press sound by [junggle](https://freesound.org/people/junggle/sounds/26777/)
 
 Correct sound by [pan14](https://freesound.org/people/pan14/sounds/263133/).
 
+Caught sound by [onderwish](https://freesound.org/people/onderwish/sounds/469141/) (reversed and sped up).
+
 ## URL parameters
 
 `INHALE_OXYGEN_SPEED`, `BREATHING_SPEED`, `BREATHING_BOOST_SPEED`, `MAX_OXYGEN`, `LUNG_RANGE`, `LIVING_OXYGEN_USAGE`, `RUNNING_OXYGEN_USAGE`, `LOW_OXYGEN`, and `ASPHYXIATION` adjust breathing; refer to `main.js` for how they work.
