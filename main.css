@@ -39,7 +39,7 @@ canvas {
   padding: 5px 10px;
   color: white;
   left: 50%;
-  transform: translate(-50%);
+  transform: translateX(-50%);
   margin-bottom: 8px;
   border-radius: 5px;
 }
@@ -53,6 +53,52 @@ canvas {
   margin: auto;
   max-width: 500px;
 }
+
+.death-note {
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%, 0);
+  bottom: 100px;
+  background-color: #b53232;
+  padding: 10px;
+  border-radius: 50px;
+  z-index: 1;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  transition: all .5s;
+  animation: fade-away .5s 6s forwards;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.death-note.hide-death-note {
+  opacity: 0;
+  transform: translate(-50%, 20px);
+  max-width: 44px;
+  transition: none;
+  animation: none;
+}
+.death-note img {
+  height: 24px;
+  opacity: 0.8;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+#death-reason {
+  color: white;
+}
+@keyframes fade-away {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+}
+
 .note {
   position: fixed;
   display: flex;

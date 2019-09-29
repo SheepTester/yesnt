@@ -24,6 +24,8 @@ Caught sound by [onderwish](https://freesound.org/people/onderwish/sounds/469141
 
 Introduction is read by [Justin](https://ttsmp3.com/).
 
+Sad face icon from [Material Design](https://material.io/resources/icons/?search=social&icon=mood_bad&style=baseline).
+
 ## URL parameters
 
 `INHALE_OXYGEN_SPEED`, `BREATHING_SPEED`, `BREATHING_BOOST_SPEED`, `MAX_OXYGEN`, `LUNG_RANGE`, `LIVING_OXYGEN_USAGE`, `RUNNING_OXYGEN_USAGE`, `LOW_OXYGEN`, and `ASPHYXIATION` adjust breathing; refer to `main.js` for how they work.

@@ -390,7 +390,7 @@ function setCanBreathe(to) {
 function isPlayerCatchworthy() {
   const now = Date.now();
   if (playerState.phoneOut && now - playerState.phoneOutSince > PHONE_LENIENCY_DELAY) {
-    return 'phone out';
+    return 'hide your phone';
   }
   if (yesState) {
     const time = now - yesState.start;
@@ -398,28 +398,28 @@ function isPlayerCatchworthy() {
       case 'expansion':
         if (!(yesState.first && time < EXPANSION_PREP_TIME)) {
           if (playerState.pose !== 'expansion') {
-            return 'not in expansion breath pose';
+            return 'be ready for expansion breath';
           } else if (time > EXPANSION_REACTION_TIME) {
-            if (playerState.position < 0.5 && yesState.mode === 'up') return 'arms are not up';
-            if (playerState.position > 0.5 && yesState.mode === 'down') return 'arms are not down';
+            if (playerState.position < 0.5 && yesState.mode === 'up') return 'raise your arms at the right time';
+            if (playerState.position > 0.5 && yesState.mode === 'down') return 'lower your arms at the right time';
           }
         }
         break;
       case 'power-down':
         if (!(yesState.first && time < POWER_PREP_TIME)) {
           if (playerState.pose !== 'power') {
-             return 'not in power breath pose';
+             return 'be ready for power breath';
           } else if (playerState.up) {
-            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'arms up when they should be down';
+            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'raise your arms at the right time';
           }
         }
         break;
       case 'power-up':
         if (!(yesState.first && time < POWER_PREP_TIME)) {
           if (playerState.pose !== 'power') {
-             return 'not in power breath pose';
+             return 'be ready for power breath';
           } else if (!playerState.up) {
-            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'arms down when they should be up';
+            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'lower your arms at the right time';
           }
         }
         break;
@@ -794,6 +794,7 @@ const onKeyPress = {
     instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
     if (interruptInstructor) interruptInstructor('getting up');
     addKeyHint('phone', true);
+    addKeyHint('breathe');
     addKeyHint('move');
     document.body.classList.add('hide-pose');
     const sound = new THREE.Audio(listener);
@@ -927,6 +928,15 @@ function caught() {
   const sound = new THREE.Audio(listener);
   sound.setBuffer(sounds.caught);
   sound.play();
+}
+let deathReason;
+function youFailedTo(failure, delay = 2) {
+  deathReason.textContent = failure;
+  deathReason.parentNode.style.transitionDelay = delay + 's';
+  deathReason.parentNode.style.maxWidth = null;
+  deathReason.parentNode.classList.add('hide-death-note');
+  deathReason.parentNode.style.maxWidth = deathReason.parentNode.scrollWidth + 'px';
+  deathReason.parentNode.classList.remove('hide-death-note');
 }
 
 let lungIndicator;
@@ -1311,6 +1321,7 @@ function animate() {
     }
 
     if (camera.position.distanceToSquared(instructor.person.position) < 144) {
+      youFailedTo('outrun the instructor');
       caught();
     }
   } else if (moving === 'sitting') {
@@ -1334,7 +1345,7 @@ function animate() {
     if (checkPlayer ? instructorDirection.angleTo(playerDirection) < Math.PI * 0.2 : alwaysCheckPlayer) {
       const reason = isPlayerCatchworthy();
       if (reason) {
-        console.log('DEATH BY MEANS OF: ' + reason);
+        youFailedTo(reason);
         caught();
       }
     }
@@ -1343,7 +1354,7 @@ function animate() {
     camera.position.y += playerState.jumpVel * elapsedTime / 60;
     hands.position.y += (camera.position.y - hands.position.y) * (1 - 0.1 ** (elapsedTime / 15));
     if (camera.position.y < 1) {
-      console.log('jumped and couldnt land');
+      youFailedTo('land a jump');
       document.body.classList.remove('hide-cant-jump');
       animations.push({
         type: 'hide-cant-jump',
@@ -1384,7 +1395,7 @@ function animate() {
     setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
     if (playerState.oxygen < ASPHYXIATION) {
       if (playerState.canAsphyxiate) {
-        console.log('asphyxiated');
+        youFailedTo('breathe', 1);
         die();
       } else {
         setCanBreathe(false);
@@ -1404,12 +1415,14 @@ function animate() {
           playerState.lastLowOxygen = now;
         }
       } else {
+        removeKeyHint('breathe');
+        addKeyHint('breathe');
         remindUserToBreathe();
         playerState.lastLowOxygen = now;
       }
     } else if (wasDying) {
       renderer.domElement.style.opacity = null;
-      playerState.nextLowOxygen = null;
+      playerState.lastLowOxygen = null;
     }
   }
 
@@ -1441,6 +1454,7 @@ document.addEventListener('DOMContentLoaded', e => {
   loadingBar = document.getElementById('progress-bar');
   lungIndicator = document.getElementById('lung-indicator');
   keyHintText = document.getElementById('key-hint');
+  deathReason = document.getElementById('death-reason');
 
   const fovSlider = document.getElementById('fov');
   const fovValue = document.getElementById('fov-val');
@@ -1489,9 +1503,9 @@ document.addEventListener('DOMContentLoaded', e => {
   });
 
   document.getElementById('restart').addEventListener('click', e => {
+    if (skipIntro) return skipIntro();
     die();
     document.body.classList.add('hide-end');
-    console.log(interruptInstructor);
     Promise.resolve(currentGame).then(() => {
       start();
       currentGame = startGame();
@@ -1556,7 +1570,7 @@ document.addEventListener('DOMContentLoaded', e => {
     currentAnimation.setTrack([5, 10, -447], [1, 5, -452], 0.1);
     addKeyHint('phone');
     if (!dontContinue) await speak('intro2');
-    currentAnimation.setTrack([-310, 15, -300], [-330, 12, -300], 0);
+    currentAnimation.setTrack([-310, 15, -300], [-330, 12, -300], -0.05);
     addKeyHint('type');
     if (!dontContinue) await speak('intro3');
     currentAnimation.duration = 0;
