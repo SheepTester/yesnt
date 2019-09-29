@@ -123,6 +123,10 @@ function start() {
   playerState.canAsphyxiate = true;
   if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
   removeKeyHint(true); // remove what? yes.
+  if (selectedDoor) {
+    selectedDoor.remove(doorPopup);
+    selectedDoor = null;
+  }
   code = '';
   const digits = digitSet.split('');
   const symbols = symbolSet.split('');
@@ -359,7 +363,7 @@ scene.add(camera);
 
 const onframe = [];
 const collisionBoxes = [];
-const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights, outsideLight} = setupRoom(scene, onframe, collisionBoxes);
+const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights, outsideLight, entranceDoors} = setupRoom(scene, onframe, collisionBoxes);
 const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false, pose: 'rest', canDie: false, jumpVel: null};
@@ -529,7 +533,7 @@ function renderDoorPopup(internalCall = false) {
         dc.fillStyle = '#00ffff';
       }
       dc.font = '20px sans-serif';
-      dc.fillText('Press 0-9 to enter keycode:', 128, 5);
+      dc.fillText('Press 0–9 to enter keycode:', 128, 5);
       dc.font = '30px sans-serif';
       dc.fillText(typeProgress, 128, 30);
       if (!internalCall && typeProgress.length >= CODE_LENGTH) {
@@ -740,6 +744,9 @@ function showKeyHint() {
     case 'pick-up':
       keyHintText.textContent = `Press ${options.keyNames[keyInputs['pick-up'].dataset.keyCode].toUpperCase()} to pick up the light.`;
       break;
+    case 'type':
+      keyHintText.textContent = `Type the keycode using the 0–9 keys.`;
+      break;
     default:
       console.warn([...currentKeyHints][keyHintIndex]);
   }
@@ -806,6 +813,7 @@ const onKeyPress = {
     }
   },
   'power-down'() {
+    if (moving !== 'sitting') return;
     if (playerState.phoneOut) setPhoneState(false);
     setPose('power');
     document.body.classList.remove('indicate-power-up');
@@ -814,6 +822,7 @@ const onKeyPress = {
     resetLimbRotations(sittingPlayer, true, powerBreathDown);
   },
   'power-up'() {
+    if (moving !== 'sitting') return;
     if (playerState.phoneOut) setPhoneState(false);
     setPose('power');
     document.body.classList.remove('indicate-power-down');
@@ -1511,9 +1520,14 @@ document.addEventListener('DOMContentLoaded', e => {
       if (currentAnimation) currentAnimation.duration = 0;
     };
 
+    document.body.classList.add('hide-pose');
     sittingPlayer.head.visible = true;
     instructor.person.rotation.y = -Math.PI / 2;
     instructor.person.position.x = 20;
+    selectedDoor = entranceDoors[1];
+    selectedDoor.add(doorPopup);
+    typeProgress = '';
+    renderDoorPopup();
     // NOTE: phone is only put in hand when moving is 'sitting'
     setPhoneState(true);
     moving = 'caught';
@@ -1542,14 +1556,15 @@ document.addEventListener('DOMContentLoaded', e => {
     currentAnimation.setTrack([5, 10, -447], [1, 5, -452], 0.1);
     addKeyHint('phone');
     if (!dontContinue) await speak('intro2');
-    // TODO: intro3
-    // also TODO: mash keys to see if it breaks anything during the cutscene, like F or SHIFT
+    currentAnimation.setTrack([-310, 15, -300], [-330, 12, -300], 0);
+    addKeyHint('type');
+    if (!dontContinue) await speak('intro3');
     currentAnimation.duration = 0;
     sittingPlayer.head.visible = false;
     // start doesn't reset this apparently; people.js does for animating her walking up and down
     instructor.person.position.x = 0;
     instructor.person.rotation.y = Math.PI;
-    // return;
+    document.body.classList.remove('hide-pose');
 
     start();
     setCanBreathe(true);

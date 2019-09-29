@@ -117,7 +117,7 @@ function setupRoom(scene, onframe, collisions) {
 
   let dark = false;
   const {darkRoom, doors} = createDarkRoom();
-  const lightRoom = createLightRoom();
+  const {lightRoom, entranceDoors} = createLightRoom();
   scene.add(lightRoom);
 
   for (let x = -10; x <= 10; x++) {
@@ -197,6 +197,7 @@ function setupRoom(scene, onframe, collisions) {
     },
     darkPhongFloor,
     doors,
+    entranceDoors,
     cassette: sound,
     lights: lampStuff,
     outsideLight
@@ -522,16 +523,17 @@ function createLightRoom() {
     }
   });
 
-  [
+  const entranceDoors = [
     -130,
     -100,
     100,
     130
-  ].forEach((z, i) => {
-    const doors = createDoubleDoors(null, i === 0 ? greenExitSign : exitSign);
+  ].map((z, i) => {
+    const doors = createDoubleDoors({type: 'code'}, i === 0 ? greenExitSign : exitSign);
     doors.rotation.y = Math.PI / 2;
     doors.position.set(-ROOM_WIDTH / 2, 0, -500 + ROOM_LENGTH / 2 + z);
     lightRoom.add(doors);
+    return doors;
   });
 
   const boysDoor = createSingleDoor(null, null);
@@ -553,5 +555,8 @@ function createLightRoom() {
   rightMaintenanceDoor.position.set(-ROOM_WIDTH / 2, 0, -470);
   lightRoom.add(rightMaintenanceDoor);
 
-  return lightRoom;
+  return {
+    lightRoom,
+    entranceDoors
+  };
 }
