@@ -1,5 +1,5 @@
 const lines = { // [subtitles, pathToAudio]
-  intro1: ['Plan to escape: While the instructor isn’t looking,', './sounds/intro1.mp3'],
+  intro1: ['My plan to escape: While the instructor isn’t looking,', './sounds/intro1.mp3'],
   intro2: ['I sneak out my phone and decode the passcode on the secret Admin broadcast.', './sounds/intro2.mp3'],
   intro3: ['I then get up and try the code on all the doors until it works.', './sounds/intro3.mp3'],
 

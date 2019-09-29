@@ -1040,6 +1040,9 @@ function animate() {
           document.exitPointerLock();
           break;
         }
+        case 'camera-pan': {
+          break;
+        }
       }
       animations.splice(i--, 1);
     } else {
@@ -1129,6 +1132,14 @@ function animate() {
           camera.position.x = position * (animation.finalPlayerX - animation.initialPlayerX) + animation.initialPlayerX;
           camera.position.z = position * (animation.finalPlayerZ - animation.initialPlayerZ) + animation.initialPlayerZ;
           renderer.domElement.style.opacity = 1 - position;
+          break;
+        }
+        case 'camera-pan': {
+          const prog = (now - animation.start) / animation.actualDuration;
+          camera.position.x = animation.from.x + (animation.to.x - animation.from.x) * prog;
+          camera.position.y = animation.from.y + (animation.to.y - animation.from.y) * prog;
+          camera.position.z = animation.from.z + (animation.to.z - animation.from.z) * prog;
+          camera.rotation.z = animation.roll * (1 - 2 * prog);
           break;
         }
       }
@@ -1493,19 +1504,64 @@ document.addEventListener('DOMContentLoaded', e => {
     document.body.classList.add('hide-note');
     start();
     animate();
-    setCanBreathe(true);
-    playerState.canAsphyxiate = false;
-
-    addKeyHint('skip-intro');
-    addKeyHint('breathe');
-    const {speak, interrupt} = speaking(instructorVoice);
     let dontContinue = false, currentAnimation = null;
     skipIntro = () => {
       interrupt();
       dontContinue = true;
       if (currentAnimation) currentAnimation.duration = 0;
     };
+
+    sittingPlayer.head.visible = true;
+    instructor.person.rotation.y = -Math.PI / 2;
+    instructor.person.position.x = 20;
+    // NOTE: phone is only put in hand when moving is 'sitting'
+    setPhoneState(true);
+    moving = 'caught';
+    const narrator = new THREE.Audio(listener);
+    let {speak, interrupt} = speaking(narrator);
+    animations.push(currentAnimation = {
+      type: 'camera-pan',
+      start: Date.now(),
+      duration: Infinity,
+      actualDuration: 4000,
+      setTrack(from, to, roll) {
+        currentAnimation.start = Date.now();
+        from = new THREE.Vector3(...from);
+        to = new THREE.Vector3(...to);
+        currentAnimation.from = from;
+        currentAnimation.to = to;
+        currentAnimation.roll = roll;
+        camera.position.copy(from);
+        camera.lookAt(to);
+        camera.rotation.z = roll;
+      }
+    });
+    currentAnimation.setTrack([-150, 30, -350], [-15, 15, -440], -0.2);
+    addKeyHint('skip-intro');
+    if (!dontContinue) await speak('intro1');
+    currentAnimation.setTrack([5, 10, -447], [1, 5, -452], 0.1);
+    addKeyHint('phone');
+    if (!dontContinue) await speak('intro2');
+    // TODO: intro3
+    // also TODO: mash keys to see if it breaks anything during the cutscene, like F or SHIFT
+    currentAnimation.duration = 0;
+    sittingPlayer.head.visible = false;
+    // start doesn't reset this apparently; people.js does for animating her walking up and down
+    instructor.person.position.x = 0;
+    instructor.person.rotation.y = Math.PI;
+    // return;
+
+    start();
+    setCanBreathe(true);
+    playerState.canAsphyxiate = false;
+    moving = 'sitting';
+
+    addKeyHint('skip-intro');
+    addKeyHint('breathe');
+    ({speak, interrupt} = speaking(instructorVoice));
+    if (dontContinue) interrupt();
     for (const line of intro) {
+      if (dontContinue) break;
       if (line === 'introExpansion1') {
         addKeyHint('expansion');
         await Promise.all([
@@ -1530,7 +1586,6 @@ document.addEventListener('DOMContentLoaded', e => {
       } else {
         await speak(line);
       }
-      if (dontContinue) break;
     }
     removeKeyHint('skip-intro');
     skipIntro = null;
