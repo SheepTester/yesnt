@@ -1,4 +1,8 @@
 const lines = { // [subtitles, pathToAudio]
+  intro1: ['Plan to escape: While the instructor isn’t looking,', './sounds/intro1.mp3'],
+  intro2: ['I sneak out my phone and decode the passcode on the secret Admin broadcast.', './sounds/intro2.mp3'],
+  intro3: ['I then get up and try the code on all the doors until it works.', './sounds/intro3.mp3'],
+
   intro: ['Anyone remember the first one we do, the breathing?', null],
   introStraw: ['We’ll do the straw breath five times.', null],
   introExpansion1: ['And then we’ll do the expansion breath.', null],
@@ -103,9 +107,10 @@ function initSpeech() {
 
 function speaking(instructorVoice) {
   let onEnd = null, cancelEarly = null;
-  instructorVoice.onEnded(() => {
+  instructorVoice.onEnded = function() {
     if (onEnd) onEnd();
-  });
+    this.isPlaying = false;
+  };
   return {
     speak: (lineID, length = null) => new Promise((res, rej) => {
       const line = lines[lineID];

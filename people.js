@@ -395,10 +395,11 @@ function createPhone() {
   };
 }
 function createPlayerSittingPerson() {
-  const person = createPerson(randomSkin(), 0, 0, false);
+  const person = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5);
   kneel(person.limbs[2]);
   kneel(person.limbs[3]);
-  person.person.remove(person.head);
+  person.head.visible = false;
+  person.face.map = awakeFace;
   resetLimbRotations(person, false, restRotations);
   processLimbs(person);
   return person;

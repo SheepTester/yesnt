@@ -28,6 +28,7 @@ const RUNNING_OXYGEN_USAGE = +params.get('RUNNING_OXYGEN_USAGE') || 0.0001; // h
 const LOW_OXYGEN = +params.get('LOW_OXYGEN') || 0.4; // point at which the screen starts dimming, warning you to breathe (O)
 const ASPHYXIATION = +params.get('ASPHYXIATION') || 0.1; // point at which you black out (O)
 const CODE_LENGTH = 4;
+const KEY_HINT_CYCLE_SPEED = 5000;
 // ?INHALE_OXYGEN_SPEED=0.0003&BREATHING_SPEED=0.00005&MAX_OXYGEN=1&LUNG_RANGE=1&LIVING_OXYGEN_USAGE=0.00005&LOW_OXYGEN=0.4&ASPHYXIATION=0.1
 
 const defaultOptions = {
@@ -121,6 +122,7 @@ function start() {
   if (playerState.canBreathe) setCanBreathe(false);
   playerState.canAsphyxiate = true;
   if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
+  removeKeyHint(true); // remove what? yes.
   code = '';
   const digits = digitSet.split('');
   const symbols = symbolSet.split('');
@@ -200,16 +202,14 @@ async function startGame() {
   instructor.face.map = creepyFace;
   playerState.canDie = true;
   setCanBreathe(true);
-  if (options.controls.default) {
-    hintText.innerHTML = `<img src="./images/controls-keyboard.svg" class="controls-keyboard">`;
-    animations.push({type: 'flash-hint', start: Date.now(), duration: 10000});
-  } else {
-    hintText.textContent = 'Refer to the controls settings (ESCAPE) for the controls.';
-    animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
-  }
+  addKeyHint('phone');
+  addKeyHint('get-up');
   if (!skipExpansion) {
     for (const line of breathing) {
-      if (line === 'expansionOpening') yesState = {type: 'expansion-ready'};
+      if (line === 'expansionOpening') {
+        yesState = {type: 'expansion-ready'};
+        addKeyHint('expansion');
+      }
       await speak(line);
       if (haltYES) break;
     }
@@ -258,12 +258,14 @@ async function startGame() {
         && await speak('hold', 2000);
     }
     yesState = null;
+    removeKeyHint('expansion');
   }
   if (!skipPower) {
     if (!haltYES) {
-      await speak('relaxLong')
-        && await speak('powerKleenex1')
-        && await speak('powerOpening');
+      if (await speak('relaxLong') && await speak('powerKleenex1')) {
+        addKeyHint('power');
+        await speak('powerOpening');
+      }
     }
     async function doPower(first) {
       yesState = {type: 'power-down', start: Date.now(), first};
@@ -293,6 +295,7 @@ async function startGame() {
         && await speak('powerKleenex3')
         && await speak('omOpening');
     }
+    removeKeyHint('power');
   }
   for (let i = 0; i < 3 && !haltYES; i++) {
     if (i > 0) await speak('omBreathe');
@@ -303,7 +306,9 @@ async function startGame() {
     }
   }
   if (haltYES) {
-    if (!haltForever) await speak('stopRunning');
+    if (!haltForever) {
+      await speak('stopRunning');
+    }
   } else {
     cassette.play();
     doneWithYES = true;
@@ -675,6 +680,74 @@ document.addEventListener('mousemove', e => {
 });
 
 const keys = {};
+let keyHintText;
+let keyHintIndex;
+let keyHintTimeout;
+let currentKeyHints;
+function addKeyHint(keyHint, overwrite = false) {
+  if (currentKeyHints.has(keyHint) && !overwrite) return;
+  clearTimeout(keyHintTimeout);
+  keyHintText.style.display = 'block';
+  if (overwrite) {
+    currentKeyHints = new Set([keyHint]);
+    keyHintIndex = 0;
+  } else {
+    currentKeyHints.add(keyHint);
+    keyHintIndex = currentKeyHints.size - 1;
+  }
+  showKeyHint();
+}
+// pass true to remove all
+function removeKeyHint(keyHint) {
+  if (keyHint !== true && !currentKeyHints.delete(keyHint)) return;
+  clearTimeout(keyHintTimeout);
+  if (keyHint !== true && currentKeyHints.size) {
+    keyHintIndex = keyHintIndex % currentKeyHints.size;
+    showKeyHint();
+  } else {
+    keyHintText.style.display = null;
+    if (keyHint === true) currentKeyHints = new Set();
+  }
+}
+function showKeyHint() {
+  switch ([...currentKeyHints][keyHintIndex]) {
+    case 'breathe':
+      keyHintText.textContent = `Press ${options.keyNames[keyInputs['inhale'].dataset.keyCode].toUpperCase()} and ${options.keyNames[keyInputs['exhale'].dataset.keyCode].toUpperCase()} to inhale and exhale.`;
+      break;
+    case 'skip-intro':
+      keyHintText.textContent = `Press ${options.keyNames[keyInputs['skip-intro'].dataset.keyCode].toUpperCase()} to skip the intro.`;
+      break;
+    case 'phone':
+      keyHintText.textContent = `Press ${options.keyNames[keyInputs['phone'].dataset.keyCode].toUpperCase()} to take out your phone.`;
+      break;
+    case 'get-up':
+      keyHintText.textContent = `Press ${options.keyNames[keyInputs['get-up'].dataset.keyCode].toUpperCase()} to get up and move.`;
+      break;
+    case 'expansion':
+      keyHintText.textContent = `Hold ${options.keyNames[keyInputs['exp-up'].dataset.keyCode].toUpperCase()} and ${options.keyNames[keyInputs['exp-down'].dataset.keyCode].toUpperCase()} to raise and lower your arms for expansion breath.`;
+      break;
+    case 'power':
+      keyHintText.textContent = `Press ${options.keyNames[keyInputs['power-up'].dataset.keyCode].toUpperCase()} and ${options.keyNames[keyInputs['power-down'].dataset.keyCode].toUpperCase()} to raise and lower your arms for power breath.`;
+      break;
+    case 'move':
+      keyHintText.textContent = 'Press '
+        + options.keyNames[keyInputs.forth.dataset.keyCode].toUpperCase() + ', '
+        + options.keyNames[keyInputs.left.dataset.keyCode].toUpperCase() + ', '
+        + options.keyNames[keyInputs.back.dataset.keyCode].toUpperCase() + ', and '
+        + options.keyNames[keyInputs.right.dataset.keyCode].toUpperCase()
+        + ' to move around.';
+      break;
+    case 'pick-up':
+      keyHintText.textContent = `Press ${options.keyNames[keyInputs['pick-up'].dataset.keyCode].toUpperCase()} to pick up the light.`;
+      break;
+    default:
+      console.warn([...currentKeyHints][keyHintIndex]);
+  }
+  if (currentKeyHints.size > 1) {
+    keyHintIndex = (keyHintIndex + 1) % currentKeyHints.size;
+    keyHintTimeout = setTimeout(showKeyHint, KEY_HINT_CYCLE_SPEED);
+  }
+}
 const onKeyPress = {
   phone() {
     if (moving !== 'sitting' && moving !== 'chase') return;
@@ -713,13 +786,8 @@ const onKeyPress = {
     instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
     instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
     if (interruptInstructor) interruptInstructor('getting up');
-    hintText.textContent = 'Press '
-      + options.keyNames[keyInputs.forth.dataset.keyCode].toUpperCase() + ', '
-      + options.keyNames[keyInputs.left.dataset.keyCode].toUpperCase() + ', '
-      + options.keyNames[keyInputs.back.dataset.keyCode].toUpperCase() + ', and '
-      + options.keyNames[keyInputs.right.dataset.keyCode].toUpperCase()
-      + ' to move around.';
-    animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+    addKeyHint('phone', true);
+    addKeyHint('move');
     document.body.classList.add('hide-pose');
     const sound = new THREE.Audio(listener);
     sound.setBuffer(sounds.creak);
@@ -1169,11 +1237,11 @@ function animate() {
         if (keys['pick-up']) {
           lampHand.add(selectedLight);
         } else if (!playerState.showedPickupHint) {
-          hintText.textContent = `Press ${options.keyNames[keyInputs['pick-up'].dataset.keyCode].toUpperCase()} to pick up the light.`;
-          animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+          addKeyHint('pick-up');
           playerState.showedPickupHint = true;
         }
       } else if (playerState.showedPickupHint) {
+        removeKeyHint('pick-up');
         playerState.showedPickupHint = false;
       }
     }
@@ -1255,6 +1323,7 @@ function animate() {
     camera.position.y += playerState.jumpVel * elapsedTime / 60;
     hands.position.y += (camera.position.y - hands.position.y) * (1 - 0.1 ** (elapsedTime / 15));
     if (camera.position.y < 1) {
+      console.log('jumped and couldnt land');
       document.body.classList.remove('hide-cant-jump');
       animations.push({
         type: 'hide-cant-jump',
@@ -1294,8 +1363,12 @@ function animate() {
     }
     setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
     if (playerState.oxygen < ASPHYXIATION) {
-      if (playerState.canAsphyxiate) die();
-      else setCanBreathe(false);
+      if (playerState.canAsphyxiate) {
+        console.log('asphyxiated');
+        die();
+      } else {
+        setCanBreathe(false);
+      }
       animations.push({
         type: 'black-out',
         start: now,
@@ -1347,6 +1420,7 @@ document.addEventListener('DOMContentLoaded', e => {
   hintText = document.getElementById('hint');
   loadingBar = document.getElementById('progress-bar');
   lungIndicator = document.getElementById('lung-indicator');
+  keyHintText = document.getElementById('key-hint');
 
   const fovSlider = document.getElementById('fov');
   const fovValue = document.getElementById('fov-val');
@@ -1422,8 +1496,8 @@ document.addEventListener('DOMContentLoaded', e => {
     setCanBreathe(true);
     playerState.canAsphyxiate = false;
 
-    hintText.textContent = `Press ${options.keyNames[keyInputs['skip-intro'].dataset.keyCode].toUpperCase()} to skip the intro.`;
-    animations.push({type: 'flash-hint', start: Date.now(), duration: 5000});
+    addKeyHint('skip-intro');
+    addKeyHint('breathe');
     const {speak, interrupt} = speaking(instructorVoice);
     let dontContinue = false, currentAnimation = null;
     skipIntro = () => {
@@ -1433,6 +1507,7 @@ document.addEventListener('DOMContentLoaded', e => {
     };
     for (const line of intro) {
       if (line === 'introExpansion1') {
+        addKeyHint('expansion');
         await Promise.all([
           speak('introExpansion1'),
           new Promise(res => {
@@ -1440,20 +1515,24 @@ document.addEventListener('DOMContentLoaded', e => {
             animations.push(currentAnimation = {type: 'show-expansion', start: Date.now(), duration: 5000, onDone: res});
           })
         ]);
+        removeKeyHint('expansion');
         currentAnimation = null;
       } else if (line === 'introPower1') {
+        addKeyHint('power');
         await Promise.all([
           speak('introPower1'),
           new Promise(res => {
             animations.push(currentAnimation = {type: 'show-power', start: Date.now(), duration: 2000, onDone: res});
           })
         ]);
+        removeKeyHint('power');
         currentAnimation = null;
       } else {
         await speak(line);
       }
       if (dontContinue) break;
     }
+    removeKeyHint('skip-intro');
     skipIntro = null;
     if (params.get('stay-intro') !== 'true') {
       playerState.canAsphyxiate = true;
