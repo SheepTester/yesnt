@@ -270,8 +270,7 @@ function loadPeople(scene, onframe) {
     countenance.rotation.y = Math.PI;
     box.add(countenance);
     box.position.set(x, 3, z - 0.5);
-    scene.add(box);
-    return {face: faceTexture};
+    return {face: faceTexture, person: box};
   } : (x, z) => {
     const student = createPerson(randomSkin(), randomHair(), Math.random() * 2 + 0.5);
     student.face.map = awakeFace;
@@ -281,7 +280,6 @@ function loadPeople(scene, onframe) {
     kneel(student.limbs[3]);
     resetLimbRotations(student, false, restRotations);
     processLimbs(student);
-    scene.add(student.person);
     return student;
   };
   for (let x = -10; x <= 10; x++) {
@@ -351,6 +349,11 @@ function loadPeople(scene, onframe) {
     setFaces(texture) {
       students.forEach(({face}) => {
         face.map = texture;
+      });
+    },
+    addStudents() {
+      students.forEach(({person}) => {
+        scene.add(person);
       });
     }
   };

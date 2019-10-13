@@ -95,7 +95,7 @@ camera.rotation.order = 'YXZ';
 const digitSet = '0123456789';
 const symbolSet = '零壹貳贰叄叁肆伍陸陆柒捌玖拾佰仟萬億';
 const fullWidthDigits = '０１２３４５６７８９';
-function start() {
+function start(minimal = false) {
   if (codeChangeInterval) clearInterval(codeChangeInterval);
   if (cassette.isPlaying) cassette.stop();
   if (isDark()) {
@@ -108,17 +108,19 @@ function start() {
   instructor.person.position.z = -475;
   instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI;
   instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = 0;
-  camera.position.set(0, SITTING_EYE_HEIGHT, MAT_FIRST_ROW_Z - 0.7);
-  camera.rotation.set(0, 0, 0);
-  limitSittingHorizRot.set(camera.rotation.y);
-  scene.add(sittingPlayer.person);
-  animations.push({type: 'start', start: Date.now(), duration: 1000});
-  moving = 'sitting';
+  if (!minimal) {
+    camera.position.set(0, SITTING_EYE_HEIGHT, MAT_FIRST_ROW_Z - 0.7);
+    camera.rotation.set(0, 0, 0);
+    limitSittingHorizRot.set(camera.rotation.y);
+    scene.add(sittingPlayer.person);
+    animations.push({type: 'start', start: Date.now(), duration: 1000});
+    moving = 'sitting';
+    document.body.classList.remove('hide-pose');
+  }
   if (playerState.phoneOut) setPhoneState(false);
   playerState.canDie = false;
   resetLimbRotations(sittingPlayer, false, restRotations);
   setPose('rest');
-  document.body.classList.remove('hide-pose');
   if (playerState.canBreathe) setCanBreathe(false);
   playerState.canAsphyxiate = true;
   if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
@@ -127,6 +129,7 @@ function start() {
     selectedDoor.remove(doorPopup);
     selectedDoor = null;
   }
+  if (minimal) return;
   code = '';
   const digits = digitSet.split('');
   const symbols = symbolSet.split('');
@@ -374,7 +377,7 @@ scene.add(camera);
 const onframe = [];
 const collisionBoxes = [];
 const {swap: toggleLights, isDark, darkPhongFloor, doors, cassette, lights, outsideLight, entranceDoors} = setupRoom(scene, onframe, collisionBoxes);
-const {studentMap, instructor, instructorVoice, setFaces} = loadPeople(scene, onframe);
+const {studentMap, instructor, instructorVoice, setFaces, addStudents} = loadPeople(scene, onframe);
 
 const playerState = {phoneOut: false, pose: 'rest', canDie: false, jumpVel: null};
 function setPose(pose) {
@@ -577,6 +580,18 @@ function renderDoorPopup(internalCall = false) {
   }
   doorPopupTexture.needsUpdate = true;
 }
+
+const logoTexture = loadTexture('./textures/yesnt-logo.png');
+logoTexture.magFilter = THREE.NearestFilter;
+logoTexture.minFilter = THREE.NearestFilter;
+const logo = new THREE.Mesh(
+  new THREE.PlaneBufferGeometry(160, 80),
+  new THREE.MeshBasicMaterial({
+    map: logoTexture,
+    transparent: true
+  })
+);
+logo.position.set(0, 50, -499.9);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1172,6 +1187,26 @@ function animate() {
           camera.rotation.z = animation.roll * (1 - 2 * prog);
           break;
         }
+        case 'start-screen-pan':
+          let prog = easeOutCubic((now - animation.start) / animation.actualDuration);
+          if (prog > 1) {
+            camera.position.y = Math.random() * 30 + 10;
+            animation.startAngle = Math.random() * Math.PI;
+            animation.deltaAngle = Math.random() * Math.PI - animation.startAngle;
+            animation.actualDuration = Math.abs(animation.deltaAngle) * 3000 + 1000;
+            animation.startRadius = Math.random() * 100 + 10;
+            animation.deltaRadius = Math.random() * 100 + 10 - animation.startRadius;
+            animation.start = Date.now();
+            prog = 0;
+          }
+          const angle = animation.startAngle + prog * animation.deltaAngle;
+          const radius = animation.startRadius + prog * animation.deltaRadius;
+          camera.position.x = Math.cos(angle) * radius;
+          camera.position.z = instructor.person.position.z + Math.sin(angle) * radius;
+          camera.lookAt(animation.lookTarget);
+
+          instructor.head.rotation.y = Math.sin(now / 100) * 0.2;
+          break;
       }
     }
   }
@@ -1527,18 +1562,38 @@ document.addEventListener('DOMContentLoaded', e => {
   initTouch();
 
   lastTime = Date.now();
-  renderer.domElement.style.opacity = 0;
-  Promise.all([
-    resourcesReady.then(() => {
-      if (logLoadingProgress) console.log('loading done');
-      loadingBar.classList.add('hide-bar');
-    }),
-    initSpeech()
-  ]).then(async () => {
-    document.body.classList.add('hide-note');
-    start();
+  const speechPromise = initSpeech();
+  // renderer.domElement.style.opacity = 0;
+  let currentAnimation = null;
+  resourcesReady.then(() => {
+    if (logLoadingProgress) console.log('loading done');
+    loadingBar.classList.add('hide-bar');
+  }).then(() => {
+    camera.position.set(0, 5, -350);
+    camera.rotation.x = -0.1;
+    scene.add(logo);
+    start(true);
+    instructor.head.parent.updateMatrixWorld();
+    animations.push(currentAnimation = {
+      type: 'start-screen-pan',
+      start: Date.now(),
+      duration: Infinity,
+      actualDuration: 3000,
+      startAngle: Math.PI / 2,
+      deltaAngle: 0,
+      startRadius: 500,
+      deltaRadius: -480,
+      lookTarget: instructor.head.getWorldPosition(new THREE.Vector3())
+    });
     animate();
-    let dontContinue = false, currentAnimation = null;
+    return speechPromise;
+  }).then(async () => {
+    scene.remove(logo);
+    currentAnimation.duration = 0;
+    document.body.classList.add('hide-note');
+    addStudents();
+    start();
+    let dontContinue = false;
     skipIntro = () => {
       interrupt();
       dontContinue = true;
