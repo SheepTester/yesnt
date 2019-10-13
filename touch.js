@@ -16,11 +16,6 @@ function initTouch() {
   document.addEventListener('touchstart', e => {
     if (e.target.closest('.clickable')) return;
     document.body.classList.add('hide-options');
-    if (!usingTouch) {
-      usingTouch = true;
-      document.body.classList.add('using-touch');
-      userInteracted();
-    }
     for (const touch of e.changedTouches) {
       if (touch.target.classList.contains('touch-target')) {
         if (touch.target === touchCircle && !movement) {
@@ -62,6 +57,11 @@ function initTouch() {
   }, {passive: false});
   document.addEventListener('touchend', e => {
     if (e.target.closest('.clickable')) return;
+    if (!usingTouch) {
+      usingTouch = true;
+      document.body.classList.add('using-touch');
+      userInteracted();
+    }
     for (const touch of e.changedTouches) {
       if (cameraRotator && cameraRotator.identifier === touch.identifier) {
         cameraRotator = null;
