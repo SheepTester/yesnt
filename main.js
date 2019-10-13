@@ -1205,7 +1205,12 @@ function animate() {
           camera.position.z = instructor.person.position.z + Math.sin(angle) * radius;
           camera.lookAt(animation.lookTarget);
 
-          instructor.head.rotation.y = Math.sin(now / 100) * 0.2;
+          instructor.head.rotation.y = Math.sin(now / 1000) * 0.5;
+          instructor.person.position.y = (Math.cos(now / 200) - 1) * 1.5;
+          instructor.limbs[2].limb.rotation.x = Math.PI + (1 - Math.cos(now / 200)) * 0.5;
+          instructor.limbs[2].forearm.rotation.x = Math.cos(now / 200) - 1;
+          instructor.limbs[3].limb.rotation.x = Math.PI + (1 - Math.cos(now / 200)) * 0.5;
+          instructor.limbs[3].forearm.rotation.x = Math.cos(now / 200) - 1;
           break;
       }
     }
@@ -1590,6 +1595,11 @@ document.addEventListener('DOMContentLoaded', e => {
   }).then(async () => {
     scene.remove(logo);
     currentAnimation.duration = 0;
+    instructor.person.position.y = 0;
+    instructor.limbs[2].limb.rotation.x = Math.PI;
+    instructor.limbs[2].forearm.rotation.x = 0;
+    instructor.limbs[3].limb.rotation.x = Math.PI;
+    instructor.limbs[3].forearm.rotation.x = 0;
     document.body.classList.add('hide-note');
     addStudents();
     start();
