@@ -145,22 +145,32 @@ function start() {
     c.fillStyle = '#666';
     c.fillRect(0, 30, 128, 226);
     c.fillStyle = 'black';
-    if (frame % 15 > 10) {
+    if (frame % 16 > 11) {
       c.font = '64px monospace';
       c.fillText(key.get(code[0]), 0, 90);
       c.fillText(key.get(code[1]), 64, 180);
       c.fillText(key.get(code[2]), 0, 180);
       c.fillText(key.get(code[3]), 64, 90);
-    } else if (frame % 15 === 10) {
+    } else if (frame % 16 === 11) {
       c.font = '64px monospace';
       c.fillText(fullWidthDigits[0], 0, 90);
       c.fillText(fullWidthDigits[1], 64, 180);
       c.fillText(fullWidthDigits[2], 0, 180);
       c.fillText(fullWidthDigits[3], 64, 90);
+    } else if (frame % 16 === 10) {
+      c.font = '32px monospace';
+      for (let i = 0; i < 4; i++) {
+        c.strokeRect(i * 32 + 2, 50, 28, 50);
+        c.fillText('#', i * 32 + 5, 90);
+        c.fillText(fullWidthDigits[i], i * 32, 130);
+      }
+      c.font = '16px monospace';
+      c.fillText('Symbols not in', 0, 160);
+      c.fillText('Chinese! -L.M.', 0, 180);
     } else {
-      const digit = frame % 15 + '';
-      c.font = '36px monospace';
-      c.fillText(fullWidthDigits[digit] + '＝' + key.get(digit), 0, 90);
+      const digit = frame % 16 + '';
+      c.font = '44px monospace';
+      c.fillText(key.get(digit) + '＝' + fullWidthDigits[digit], 0, 90);
     }
     frame++;
     phone.update();
@@ -460,6 +470,7 @@ c.fillRect(0, 0, 128, 30);
 c.font = '15px monospace';
 c.fillStyle = 'white';
 c.fillText('Gunn admin MSG', 5, 25);
+c.strokeStyle = 'black';
 let code, codeChangeInterval, testedTunnelDoor;
 
 const doorPopupCanvas = document.createElement('canvas');
