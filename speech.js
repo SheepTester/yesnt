@@ -34,7 +34,7 @@ const lines = { // [subtitles, pathToAudio]
   expansionInstruct: ['Using victory breath from the back of the throat,', './sounds/tts/Using-victory-breath-from-the-back-of-the-throat-.mp3'],
   expansionArmsUp: ['breathe in, arms come up slowly, activate your vagus nerve,', './sounds/tts/breathe-in-arms-come-up-slowly-activate-your-vagus-nerve-.mp3'],
   expansionArmsDown: ['breathe out using victory, arms come down slowly', './sounds/tts/breathe-out-using-victory-arms-come-down-slowly.mp3'],
-  breatheIn: ['breathe in,', './sounds/tts/breathe-in-.mp3'],
+  breatheIn: ['breathe in,', './sounds/tts/breathe-in-comma.mp3'],
   breatheOut: ['breathe out,', './sounds/tts/breathe-out-.mp3'],
   holdBreath: ['hold your breath,', './sounds/tts/hold-your-breath-.mp3'],
   hold: ['hold,', './sounds/tts/hold-.mp3'],
@@ -58,7 +58,7 @@ const lines = { // [subtitles, pathToAudio]
 
   omOpening: ['Let’s take a deep breath in for the OM sound.', './sounds/tts/Let-s-take-a-deep-breath-in-for-the-om-sound-.mp3'],
   om: ['Ommm...', null],
-  omBreathe: ['Breathe in.', './sounds/tts/Breathe-in-.mp3'],
+  omBreathe: ['Breathe in.', './sounds/tts/breathe-in-.mp3'],
 
   stopRunning: ['Stop! Your vagus nerve is not fully activated!', './sounds/tts/Stop-Your-vagus-nerve-is-not-fully-activated-.mp3']
 };
