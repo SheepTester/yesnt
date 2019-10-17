@@ -119,6 +119,8 @@ function start(minimal = false) {
     animations.push({type: 'start', start: Date.now(), duration: 1000});
     moving = 'sitting';
     document.body.classList.remove('hide-pose');
+    document.body.classList.remove('escaped');
+    document.body.classList.remove('completed');
   }
   if (playerState.phoneOut) setPhoneState(false);
   playerState.canDie = false;
@@ -333,6 +335,10 @@ async function startGame() {
   } else {
     cassette.play();
     doneWithYES = true;
+    die();
+    document.body.classList.remove('hide-end');
+    document.body.classList.add('completed');
+    document.exitPointerLock();
   }
   interruptInstructor = null;
 }
@@ -1084,6 +1090,7 @@ function animate() {
           animation.doors.left.rotation.y = 0;
           animation.doors.right.rotation.y = Math.PI;
           document.body.classList.remove('hide-end');
+          document.body.classList.add('escaped');
           renderer.domElement.style.opacity = null;
           document.body.style.backgroundColor = null;
           document.exitPointerLock();

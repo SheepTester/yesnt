@@ -304,19 +304,39 @@ canvas {
   right: 0;
   bottom: 0;
   z-index: 4;
-  background-color: white;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: rgba(0, 0, 0, 0.8);
+  padding-left: 250px;
+}
+.hide-options .end {
+  padding-left: 0;
 }
 .end .wrapper {
   max-width: 500px;
-  animation: fade-out .5s reverse;
   font-size: 18px;
 }
 .hide-end .end {
   display: none;
+}
+.escaped .end {
+  background-color: white;
+  color: rgba(0, 0, 0, 0.8);
+}
+.completed .end {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+.escaped .end .wrapper,
+.completed .end {
+  animation: fade-out .5s reverse;
+}
+.end-reason {
+  display: none;
+}
+.escaped .escape,
+.completed .complete {
+  display: block;
 }
 
 .error {
