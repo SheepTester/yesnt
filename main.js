@@ -88,6 +88,9 @@ const instructorCanMove = params.get('freeze-instructor') !== 'please';
 const checkPlayer = !params.get('override-player-check');
 const alwaysCheckPlayer = params.get('override-player-check') === 'omniscient';
 const loseOxygen = params.get('unrealistic-breathing') !== 'true';
+const abridged = params.get('abridged');
+const POWER_REPS = abridged === 'some' ? 10 : abridged === 'very' ? 2 : 15;
+const OMS = abridged === 'very' ? 1 : 3;
 
 const camera = new THREE.PerspectiveCamera(options.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
@@ -244,7 +247,8 @@ async function startGame() {
         && await speak('six', 1000)
         && await speak('holdBreath', 2000);
     }
-    for (let i = 0; i < 3 && !haltYES; i++) {
+    const count = abridged === 'some' ? 1 : abridged === 'very' ? 0 : 3;
+    for (let i = 0; i < count && !haltYES; i++) {
       yesState = {type: 'expansion', mode: 'up', start: Date.now()};
       await speak('breatheIn', 1000)
         && await speak('two', 1000)
@@ -266,7 +270,7 @@ async function startGame() {
         && await speak('hold', 1000)
         && await speak('two', 1000);
     }
-    for (let i = 0; i < 3 && !haltYES; i++) {
+    for (let i = 0; i < count && !haltYES; i++) {
       yesState = {type: 'expansion', mode: 'up', start: Date.now()};
       await speak('breatheIn', 6000)
         && await speak('hold', 4000)
@@ -287,7 +291,7 @@ async function startGame() {
     async function doPower() {
       yesState = {type: 'power-down', start: Date.now()};
       if (!haltYES) await speak('powerStart');
-      for (let i = 0; i < 15 && !haltYES; i++) {
+      for (let i = 0; i < POWER_REPS && !haltYES; i++) {
         yesState = {type: 'power-up', start: Date.now()};
         await speak('up', 800)
           && (yesState = {type: 'power-down', start: Date.now()})
@@ -314,7 +318,7 @@ async function startGame() {
     }
     removeKeyHint('power');
   }
-  for (let i = 0; i < 3 && !haltYES; i++) {
+  for (let i = 0; i < OMS && !haltYES; i++) {
     if (i > 0) await speak('omBreathe');
     if (!haltYES) {
       // TODO: adjust timings

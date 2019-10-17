@@ -60,6 +60,12 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
 
 `one-door-only=true` will not require you to test the code in a corridor
 
+`load-audio=false` will make it not load all the audio
+
+`abridged=very` will make the YES program only do a few rounds
+
+`abdriged=some` will make the YES program do less rounds than usual
+
 ## To do
 
 - ending for doing the actual YES program

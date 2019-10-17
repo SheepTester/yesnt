@@ -65,6 +65,7 @@ const lines = { // [subtitles, pathToAudio]
 
 const usingTTS = params.get('use-tts') !== 'false';
 const MS_PER_CHAR = params.get('fast-guess') ? 5 : 100; // guesstimate
+const loadAudio = params.get('load-audio') !== 'false';
 
 let subtitles, ttsSpeak, ttsPromise;
 
@@ -92,7 +93,7 @@ function initSpeech() {
 
   return Promise.all([
     userInteraction.then(() => listener.context.state === 'suspended' && listener.context.resume()),
-    ...Object.values(lines).map(line => {
+    ...(loadAudio ? Object.values(lines).map(line => {
       if (!line[1]) return;
       return new Promise((res, rej) => {
         audioLoader.load(line[1], buffer => {
@@ -100,7 +101,7 @@ function initSpeech() {
           res();
         }, null, rej);
       });
-    }),
+    }) : []),
     usingTTS && ttsPromise
   ]);
 }
@@ -115,7 +116,7 @@ function speaking(instructorVoice) {
     speak: (lineID, length = null) => new Promise((res, rej) => {
       const line = lines[lineID];
       if (!line) return rej("Line doesn't exist.");
-      if (line[1]) {
+      if (line[1] && loadAudio) {
         instructorVoice.setBuffer(line[1]);
         instructorVoice.play();
         if (!length) onEnd = () => res();
