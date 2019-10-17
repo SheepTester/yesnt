@@ -228,7 +228,7 @@ function loadPeople(scene, onframe) {
   instructor.head.add(lookLight.target);
 
   const sound = new THREE.PositionalAudio(listener);
-  sound.setRefDistance(3); // TODO: change
+  sound.setRefDistance(5);
   instructor.head.add(sound);
 
   onframe.push(timeStamp => {

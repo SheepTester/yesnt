@@ -284,8 +284,8 @@ async function startGame() {
         await speak('powerOpening');
       }
     }
-    async function doPower(first) {
-      yesState = {type: 'power-down', start: Date.now(), first};
+    async function doPower() {
+      yesState = {type: 'power-down', start: Date.now()};
       if (!haltYES) await speak('powerStart');
       for (let i = 0; i < 15 && !haltYES; i++) {
         yesState = {type: 'power-up', start: Date.now()};
@@ -295,7 +295,7 @@ async function startGame() {
       }
       yesState = null;
     }
-    await doPower(true);
+    await doPower();
     if (!haltYES) {
       await speak('relaxShort')
         && await speak('powerKleenex2');
@@ -419,7 +419,7 @@ function isPlayerCatchworthy() {
         }
         break;
       case 'power-down':
-        if (!(yesState.first && time < POWER_PREP_TIME)) {
+        if (time >= POWER_PREP_TIME) {
           if (playerState.pose !== 'power') {
              return 'be ready for power breath';
           } else if (playerState.up) {
@@ -428,7 +428,7 @@ function isPlayerCatchworthy() {
         }
         break;
       case 'power-up':
-        if (!(yesState.first && time < POWER_PREP_TIME)) {
+        if (time >= POWER_PREP_TIME) {
           if (playerState.pose !== 'power') {
              return 'be ready for power breath';
           } else if (!playerState.up) {

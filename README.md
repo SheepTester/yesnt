@@ -62,25 +62,17 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
 
 ## To do
 
-- sounds
+- ending for doing the actual YES program
 
-  - instructor voices
+- sounds
 
   - footstep sounds
 
-  - caught sounds (static or something)
+  - om sound
 
 - minor touches
 
   - better touch controls
-
-  - options screen
-
-    - should be while the game plays so player can live test
-
-    - option to restart
-
-  - betterify instructor's player model (hair)
 
   - Kleenex(r)
 
