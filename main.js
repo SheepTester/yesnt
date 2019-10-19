@@ -248,6 +248,7 @@ async function startGame() {
   };
   const {speak, interrupt} = speaking(instructorVoice);
   let haltForever = false, haltYES = false, doneWithYES = false;
+  let animation = {type: 'instructor-start-walking', duration: 500, ended: false};
   interruptInstructor = reason => {
     if (reason === 'getting up') {
       haltYES = true;
@@ -258,9 +259,17 @@ async function startGame() {
       haltYES = haltForever = true;
     }
     interrupt();
+    if (!animation.ended) {
+      const index = animations.indexOf(animation);
+      if (~index) animations.splice(index, 1);
+      instructor.walkOffsetTime = Date.now();
+    }
   };
   if (!skipEyesClosed) await speak('eyesClosed');
-  animations.push({type: 'instructor-start-walking', start: Date.now(), duration: 500});
+  if (!haltYES) {
+    animation.start = Date.now();
+    animations.push(animation);
+  }
   const sound = new THREE.Audio(listener);
   sound.setBuffer(sounds.lights);
   sound.play();
@@ -1181,6 +1190,7 @@ function animate() {
         case 'instructor-start-walking': {
           instructor.moving = 'watch';
           instructor.walkOffsetTime = now;
+          animation.ended = true;
           break;
         }
         case 'run-to-cassette': {
