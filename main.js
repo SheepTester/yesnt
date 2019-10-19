@@ -98,7 +98,7 @@ function saveStats(stats) {
   totalStats.checks += stats.checks;
   totalStats.fails += stats.fails;
   totalStats.codeEntries += stats.codeEntries;
-  localStorage.setItem('[yesnt] stats', JSON.stringify(totalStats));
+  // localStorage.setItem('[yesnt] stats', JSON.stringify(totalStats));
 }
 
 const tunnelXBounds = {
@@ -1024,6 +1024,7 @@ function die() {
   stats.accuracy = 1 - stats.fails / stats.checks;
   stats.duration = Date.now() - stats.startTime;
   saveStats(stats);
+  console.log(stats);
 }
 function caught() {
   die();
