@@ -71,6 +71,36 @@ function saveOptions() {
   localStorage.setItem('[yesnt] options', JSON.stringify(options));
 }
 
+let totalStats, stats;
+try {
+  totalStats = JSON.parse(localStorage.getItem('[yesnt] stats'));
+  if (totalStats === null || typeof totalStats !== 'object') throw new Error();
+} catch (e) {
+  totalStats = JSON.parse(JSON.stringify({
+    attempts: 0,
+    runDistance: 0,
+    breaths: 0,
+    powerBreaths: 0,
+    expansionBreaths: 0,
+    time: 0,
+    checks: 0,
+    fails: 0,
+    codeEntries: 0
+  }));
+}
+function saveStats(stats) {
+  totalStats.attempts++;
+  totalStats.runDistance += stats.runDistance;
+  totalStats.breaths += stats.breaths;
+  totalStats.powerBreaths += stats.powerBreaths;
+  totalStats.expansionBreaths += stats.expansionBreaths;
+  totalStats.time += stats.duration;
+  totalStats.checks += stats.checks;
+  totalStats.fails += stats.fails;
+  totalStats.codeEntries += stats.codeEntries;
+  localStorage.setItem('[yesnt] stats', JSON.stringify(totalStats));
+}
+
 const tunnelXBounds = {
   left: [
     -500 + DARK_DOOR_TUNNEL_PADDING + PLAYER_THICKNESS,
@@ -127,6 +157,7 @@ function start(minimal = false) {
     document.body.classList.remove('escaped');
     document.body.classList.remove('completed');
   }
+  playerState.needsDown = false;
   if (playerState.phoneOut) setPhoneState(false);
   playerState.canDie = false;
   resetLimbRotations(sittingPlayer, false, restRotations);
@@ -205,6 +236,16 @@ const skipEyesClosed = params.get('skip-eyes-closed') === 'true';
 let yesState = null, currentGame;
 async function startGame() {
   if (interruptInstructor) throw new Error('A game is still ongoing it seems.');
+  stats = {
+    startTime: Date.now(),
+    runDistance: 0,
+    breaths: 0,
+    powerBreaths: 0,
+    expansionBreaths: 0,
+    checks: 0,
+    fails: 0,
+    codeEntries: 0
+  };
   const {speak, interrupt} = speaking(instructorVoice);
   let haltForever = false, haltYES = false, doneWithYES = false;
   interruptInstructor = reason => {
@@ -426,6 +467,7 @@ function setCanBreathe(to) {
     playerState.lungSize = 0;
     respire.set(playerState.lungSize);
     playerState.respireVel = 0;
+    playerState.wasExhaling = false;
     setLungIndicator(playerState.oxygen / MAX_OXYGEN, playerState.lungSize / LUNG_RANGE);
     document.body.classList.remove('hide-lungs');
   } else {
@@ -434,41 +476,48 @@ function setCanBreathe(to) {
 }
 function isPlayerCatchworthy() {
   const now = Date.now();
-  if (playerState.phoneOut && now - playerState.phoneOutSince > PHONE_LENIENCY_DELAY) {
-    return 'hide your phone';
+  if (playerState.phoneOut) {
+    return now - playerState.phoneOutSince > PHONE_LENIENCY_DELAY ? 'hide your phone' : 'tolerable';
   }
   if (yesState) {
     const time = now - yesState.start;
     switch (yesState.type) {
-      case 'expansion':
-        if (!(yesState.first && time < EXPANSION_PREP_TIME)) {
-          if (playerState.pose !== 'expansion') {
-            return 'be ready for expansion breath';
-          } else if (time > EXPANSION_REACTION_TIME) {
-            if (playerState.position < 0.5 && yesState.mode === 'up') return 'raise your arms at the right time';
-            if (playerState.position > 0.5 && yesState.mode === 'down') return 'lower your arms at the right time';
+      case 'expansion': {
+        const ok = yesState.first && time < EXPANSION_PREP_TIME;
+        if (playerState.pose !== 'expansion') {
+          return ok ? 'tolerable' : 'be ready for expansion breath';
+        } else {
+          const idealPos = Math.max(Math.min(time / 6000, 1), 0);
+          const diff = Math.abs((yesState.mode === 'up' ? idealPos : 1 - idealPos) - playerState.position);
+          if (diff > 0.2) {
+            return !ok && time > EXPANSION_REACTION_TIME && diff > 0.5
+              ? (yesState.mode === 'up' ? 'raise your arms at the right time' : 'lower your arms at the right time')
+              : 'tolerable';
           }
         }
         break;
-      case 'power-down':
-        if (time >= POWER_PREP_TIME) {
-          if (playerState.pose !== 'power') {
-             return 'be ready for power breath';
-          } else if (playerState.up) {
-            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'raise your arms at the right time';
-          }
+      }
+      case 'power-down': {
+        const ok = time < POWER_PREP_TIME;
+        if (playerState.pose !== 'power') {
+          return ok ? 'tolerable' : 'be ready for power breath';
+        } else if (playerState.up) {
+          return !ok && time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME ? 'raise your arms at the right time' : 'tolerable';
         }
         break;
-      case 'power-up':
-        if (time >= POWER_PREP_TIME) {
-          if (playerState.pose !== 'power') {
-             return 'be ready for power breath';
-          } else if (!playerState.up) {
-            if (time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME) return 'lower your arms at the right time';
-          }
+      }
+      case 'power-up': {
+        const ok = time < POWER_PREP_TIME;
+        if (playerState.pose !== 'power') {
+          return ok ? 'tolerable' : 'be ready for power breath';
+        } else if (!playerState.up) {
+          return !ok && time > POWER_REACTION_TIME && time < 800 - POWER_EARLY_TIME ? 'lower your arms at the right time' : 'tolerable';
         }
         break;
+      }
     }
+  } else if (playerState.pose !== 'rest') {
+    return 'tolerable';
   }
   return false;
 }
@@ -531,6 +580,7 @@ function renderDoorPopup(internalCall = false) {
   switch (selectedDoor.metadata.type) {
     case 'code': {
       if (internalCall && typeProgress.length >= CODE_LENGTH) {
+        if (stats) stats.codeEntries++;
         if (typeProgress === code) {
           if (testedTunnelDoor && !selectedDoor.wrong) {
             die();
@@ -873,6 +923,9 @@ const onKeyPress = {
   },
   'power-down'() {
     if (moving !== 'sitting') return;
+    if (stats && playerState.pose === 'power' && playerState.up) {
+      stats.powerBreaths++;
+    }
     if (playerState.phoneOut) setPhoneState(false);
     setPose('power');
     document.body.classList.remove('indicate-power-up');
@@ -968,6 +1021,9 @@ function die() {
   moving = 'caught';
   if (interruptInstructor) interruptInstructor('caught');
   playerState.canDie = false;
+  stats.accuracy = 1 - stats.fails / stats.checks;
+  stats.duration = Date.now() - stats.startTime;
+  saveStats(stats);
 }
 function caught() {
   die();
@@ -1321,6 +1377,8 @@ function animate() {
       ]);
     }
 
+    const oldPos = camera.position.clone();
+
     camera.position.x += movement.x;
     if (camera.position.x < MIN_X) camera.position.x = MIN_X;
     if (camera.position.x > MAX_X) {
@@ -1365,6 +1423,10 @@ function animate() {
         }
       }
     });
+
+    if (stats) {
+      stats.runDistance += Math.hypot(camera.position.x - oldPos.x, camera.position.z - oldPos.z);
+    }
 
     if (lampHand.children.length === 0) {
       const xz = camera.position.clone().setY(0);
@@ -1446,17 +1508,32 @@ function animate() {
         setPose('expansion');
         playerState.position = 0;
       }
-      if (keys['exp-down']) playerState.position -= EXPANSION_SPEED * elapsedTime;
-      if (keys['exp-up']) playerState.position += EXPANSION_SPEED * elapsedTime;
+      if (keys['exp-down']) {
+        playerState.position -= EXPANSION_SPEED * elapsedTime;
+        if (playerState.needsDown && playerState.position < 0.2) {
+          playerState.needsDown = false;
+          if (stats) stats.expansionBreaths++;
+        }
+      }
+      if (keys['exp-up']) {
+        playerState.position += EXPANSION_SPEED * elapsedTime;
+        if (!playerState.needsDown && playerState.position > 0.8) {
+          playerState.needsDown = true;
+        }
+      }
       if (playerState.position < 0) playerState.position = 0;
       else if (playerState.position > 1) playerState.position = 1;
       sittingPlayer.limbs[0].limb.idealRot.z = playerState.position * (Math.PI - 0.2) + 0.1;
       sittingPlayer.limbs[1].limb.idealRot.z = -playerState.position * (Math.PI - 0.2) - 0.1;
       document.body.style.setProperty('--expansion', playerState.position * 180 - 90 + 'deg');
     }
+    const reason = isPlayerCatchworthy();
+    if (stats) {
+      stats.checks++;
+      if (reason) stats.fails++;
+    }
     if (checkPlayer ? instructorDirection.angleTo(playerDirection) < Math.PI * 0.2 : alwaysCheckPlayer) {
-      const reason = isPlayerCatchworthy();
-      if (reason) {
+      if (reason && reason !== 'tolerable') {
         youFailedTo(reason);
         caught();
       }
@@ -1485,6 +1562,10 @@ function animate() {
     }
     playerState.respireVel *= 0.8;
     if (keys.inhale) {
+      if (playerState.wasExhaling && !keys.exhale) {
+        playerState.wasExhaling = false;
+        if (stats) stats.breaths++;
+      }
       if (!keys._inhaleWasDown) {
         playerState.respireVel += BREATHING_BOOST_SPEED;
         keys._inhaleWasDown = true;
@@ -1492,6 +1573,9 @@ function animate() {
       playerState.respireVel += BREATHING_SPEED * elapsedTime;
     } else keys._inhaleWasDown = false;
     if (keys.exhale) {
+      if (!playerState.wasExhaling && !keys.inhale) {
+        playerState.wasExhaling = true;
+      }
       if (!keys._exhaleWasDown) {
         playerState.respireVel -= BREATHING_BOOST_SPEED;
         keys._exhaleWasDown = true;
