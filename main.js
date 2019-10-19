@@ -108,9 +108,14 @@ function start(minimal = false) {
   }
   instructor.head.rotation.set(0, 0, 0);
   instructor.person.rotation.y = Math.PI;
+  instructor.person.position.x = 0;
   instructor.person.position.z = -475;
   instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI;
   instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = 0;
+  instructor.limbs[2].limb.rotation.x = Math.PI;
+  instructor.limbs[3].limb.rotation.x = Math.PI;
+  instructor.limbs[2].forearm.rotation.x = 0;
+  instructor.limbs[3].forearm.rotation.x = 0;
   if (!minimal) {
     camera.position.set(0, SITTING_EYE_HEIGHT, MAT_FIRST_ROW_Z - 0.7);
     camera.rotation.set(0, 0, 0);
@@ -200,8 +205,6 @@ const skipEyesClosed = params.get('skip-eyes-closed') === 'true';
 let yesState = null, currentGame;
 async function startGame() {
   if (interruptInstructor) throw new Error('A game is still ongoing it seems.');
-  instructor.moving = 'watch';
-  instructor.walkOffsetTime = Date.now();
   const {speak, interrupt} = speaking(instructorVoice);
   let haltForever = false, haltYES = false, doneWithYES = false;
   interruptInstructor = reason => {
@@ -216,6 +219,7 @@ async function startGame() {
     interrupt();
   };
   if (!skipEyesClosed) await speak('eyesClosed');
+  animations.push({type: 'instructor-start-walking', start: Date.now(), duration: 500});
   const sound = new THREE.Audio(listener);
   sound.setBuffer(sounds.lights);
   sound.play();
@@ -228,12 +232,12 @@ async function startGame() {
   addKeyHint('get-up');
   if (!skipExpansion) {
     for (const line of breathing) {
+      if (haltYES) break;
       if (line === 'expansionOpening') {
         yesState = {type: 'expansion-ready'};
         addKeyHint('expansion');
       }
       await speak(line);
-      if (haltYES) break;
     }
     if (!haltYES) {
       yesState = {type: 'expansion', mode: 'up', start: Date.now(), first: true};
@@ -333,9 +337,27 @@ async function startGame() {
       await speak('stopRunning');
     }
   } else {
+    die();
+    instructor.moving = true;
+    await new Promise(res => {
+      const startPos = instructor.person.position.clone();
+      const dest = cassette.parent.position.clone().setZ(-490);
+      animations.push({
+        type: 'run-to-cassette',
+        start: Date.now(),
+        duration: startPos.distanceTo(dest) / INSTRUCTOR_RUN_SPEED,
+        done: res,
+        startPos,
+        dest
+      });
+    });
+    instructor.moving = false;
+    instructor.limbs[2].limb.rotation.x = Math.PI;
+    instructor.limbs[3].limb.rotation.x = Math.PI;
+    instructor.limbs[2].forearm.rotation.x = 0;
+    instructor.limbs[3].forearm.rotation.x = 0;
     cassette.play();
     doneWithYES = true;
-    die();
     document.body.classList.remove('hide-end');
     document.body.classList.add('completed');
     document.exitPointerLock();
@@ -1061,7 +1083,7 @@ function animate() {
             currentGame = startGame();
           } else {
             setCanBreathe(true);
-            animations.push({type: 'start', start: Date.now(), duration: 1000});
+            animations.push({type: 'start', start: now, duration: 1000});
           }
           break;
         }
@@ -1075,7 +1097,7 @@ function animate() {
           document.body.style.backgroundColor = 'white';
           animations.push({
             type: 'into-the-light',
-            start: Date.now(),
+            start: now,
             doors: animation.doors,
             initialPlayerX: camera.position.x,
             initialPlayerZ: camera.position.z,
@@ -1097,6 +1119,19 @@ function animate() {
           break;
         }
         case 'camera-pan': {
+          break;
+        }
+        case 'instructor-start-walking': {
+          instructor.moving = 'watch';
+          instructor.walkOffsetTime = now;
+          break;
+        }
+        case 'run-to-cassette': {
+          instructor.person.position.copy(animation.dest);
+          instructor.person.rotation.y = 0;
+          instructor.head.rotation.x = -0.2;
+          camera.lookAt(instructor.person.position.clone().setY(11));
+          animation.done();
           break;
         }
       }
@@ -1198,7 +1233,7 @@ function animate() {
           camera.rotation.z = animation.roll * (1 - 2 * prog);
           break;
         }
-        case 'start-screen-pan':
+        case 'start-screen-pan': {
           let prog = easeOutCubic((now - animation.start) / animation.actualDuration);
           if (prog > 1) {
             camera.position.y = Math.random() * 30 + 10;
@@ -1207,7 +1242,7 @@ function animate() {
             animation.actualDuration = Math.abs(animation.deltaAngle) * 3000 + 1000;
             animation.startRadius = Math.random() * 100 + 10;
             animation.deltaRadius = Math.random() * 100 + 10 - animation.startRadius;
-            animation.start = Date.now();
+            animation.start = now;
             prog = 0;
           }
           const angle = animation.startAngle + prog * animation.deltaAngle;
@@ -1223,6 +1258,21 @@ function animate() {
           instructor.limbs[3].limb.rotation.x = Math.PI + (1 - Math.cos(now / 200)) * 0.5;
           instructor.limbs[3].forearm.rotation.x = Math.cos(now / 200) - 1;
           break;
+        }
+        case 'instructor-start-walking': {
+          const position = easeOutCubic(progress);
+          instructor.person.rotation.y = Math.PI + position * Math.PI / 2;
+          instructor.head.rotation.y = -position * Math.PI / 4;
+          break;
+        }
+        case 'run-to-cassette': {
+          instructor.person.position.x = progress * (animation.dest.x - animation.startPos.x) + animation.startPos.x;
+          instructor.person.position.z = progress * (animation.dest.z - animation.startPos.z) + animation.startPos.z;
+          instructor.person.rotation.y = Math.atan2(animation.startPos.x - animation.dest.x, animation.startPos.z - animation.dest.z);
+          instructor.head.rotation.x = progress * -0.2;
+          camera.lookAt(instructor.person.position.clone().setY(11));
+          break;
+        }
       }
     }
   }

@@ -233,20 +233,21 @@ function loadPeople(scene, onframe) {
 
   onframe.push(timeStamp => {
     if (!instructor.moving) return;
+    const time = timeStamp - instructor.walkOffsetTime;
     if (instructor.moving === 'watch') {
-      const pos = ((timeStamp - instructor.walkOffsetTime) / 200 + 150) % 600;
+      const pos = (time / 200 + 150) % 600;
       instructor.person.position.x = pos > 300 ? 450 - pos : pos - 150;
       instructor.person.rotation.y = pos > 300 ? Math.PI / 2 : -Math.PI / 2;
-      instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 200) * 0.3 + 0.1;
-      instructor.limbs[2].forearm.rotation.x = -0.3 + Math.sin(timeStamp / 200 - 2.5) * 0.3;
-      instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 200) * 0.3 + 0.1;
-      instructor.limbs[3].forearm.rotation.x = -0.3 - Math.sin(timeStamp / 200 - 2.5) * 0.3;
-      instructor.head.rotation.y = Math.sin(timeStamp / 800) * Math.PI * 0.2 + Math.PI / 4 * (pos > 300 ? 1 : -1);
+      instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(time / 200) * 0.3 + 0.1;
+      instructor.limbs[2].forearm.rotation.x = -0.3 + Math.sin(time / 200 - 2.5) * 0.3;
+      instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(time / 200) * 0.3 + 0.1;
+      instructor.limbs[3].forearm.rotation.x = -0.3 - Math.sin(time / 200 - 2.5) * 0.3;
+      instructor.head.rotation.y = Math.sin(time / 800) * Math.PI * 0.2 + Math.PI / 4 * (pos > 300 ? 1 : -1);
     } else {
-      instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(timeStamp / 100) * 0.6 + 0.1;
-      instructor.limbs[2].forearm.rotation.x = Math.sin(timeStamp / 100 - 2.1) * 0.6 - 0.6;
-      instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(timeStamp / 100) * 0.6 + 0.1;
-      instructor.limbs[3].forearm.rotation.x = -Math.sin(timeStamp / 100 - 2.1) * 0.6 - 0.6;
+      instructor.limbs[2].limb.rotation.x = Math.PI + Math.sin(time / 100) * 0.6 + 0.1;
+      instructor.limbs[2].forearm.rotation.x = Math.sin(time / 100 - 2.1) * 0.6 - 0.6;
+      instructor.limbs[3].limb.rotation.x = Math.PI - Math.sin(time / 100) * 0.6 + 0.1;
+      instructor.limbs[3].forearm.rotation.x = -Math.sin(time / 100 - 2.1) * 0.6 - 0.6;
     }
   });
 
