@@ -378,8 +378,8 @@ async function startGame() {
     if (i > 0) await speak('omBreathe');
     if (!haltYES) {
       // TODO: adjust timings
-      animations.push({type: 'intense-om', start: Date.now(), duration: 8000, anchorY: camera.position.y});
-      await speak('om', 8000);
+      animations.push({type: 'intense-om', start: Date.now(), duration: 3000, anchorY: camera.position.y});
+      await speak('om', 3000);
     }
   }
   if (haltYES) {
@@ -398,7 +398,8 @@ async function startGame() {
         duration: startPos.distanceTo(dest) / INSTRUCTOR_RUN_SPEED,
         done: res,
         startPos,
-        dest
+        dest,
+        initCamRot: camera.rotation.clone()
       });
     });
     instructor.moving = false;
@@ -1343,6 +1344,11 @@ function animate() {
           instructor.person.rotation.y = Math.atan2(animation.startPos.x - animation.dest.x, animation.startPos.z - animation.dest.z);
           instructor.head.rotation.x = progress * -0.2;
           camera.lookAt(instructor.person.position.clone().setY(11));
+          if (progress < 0.5) {
+            const pos = easeOutCubic(progress * 2);
+            camera.rotation.x = animation.initCamRot.x + pos * (camera.rotation.x - animation.initCamRot.x);
+            camera.rotation.y = animation.initCamRot.y + pos * (camera.rotation.y - animation.initCamRot.y);
+          }
           break;
         }
       }
