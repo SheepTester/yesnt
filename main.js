@@ -916,6 +916,7 @@ const onKeyPress = {
     document.body.classList.add('hide-pose');
     const sound = new THREE.Audio(listener);
     sound.setBuffer(sounds.creak);
+    sound.setVolume(0.05);
     sound.play();
   },
   'skip-intro'() {
@@ -1116,8 +1117,10 @@ function animate() {
         case 'intensify': {
           camera.filmOffset = 0;
           camera.updateProjectionMatrix();
-          start();
-          currentGame = startGame();
+          if (!interruptInstructor) {
+            start();
+            currentGame = startGame();
+          }
           document.body.style.backgroundColor = null;
           break;
         }
@@ -1145,8 +1148,10 @@ function animate() {
           camera.zoom = 1;
           camera.updateProjectionMatrix();
           if (animation.restart) {
-            start();
-            currentGame = startGame();
+            if (!interruptInstructor) {
+              start();
+              currentGame = startGame();
+            }
           } else {
             setCanBreathe(true);
             animations.push({type: 'start', start: now, duration: 1000});
@@ -1713,6 +1718,9 @@ document.addEventListener('DOMContentLoaded', e => {
     if (skipIntro) return skipIntro();
     die();
     document.body.classList.add('hide-end');
+    animations.forEach(anim => {
+      anim.duration = 0;
+    });
     Promise.resolve(currentGame).then(() => {
       start();
       currentGame = startGame();
@@ -1723,32 +1731,32 @@ document.addEventListener('DOMContentLoaded', e => {
   initTouch();
 
   lastTime = Date.now();
-  const speechPromise = initSpeech();
   // renderer.domElement.style.opacity = 0;
   let currentAnimation = null;
-  resourcesReady.then(() => {
-    if (logLoadingProgress) console.log('loading done');
-    loadingBar.classList.add('hide-bar');
-  }).then(() => {
-    camera.position.set(0, 5, -350);
-    camera.rotation.x = -0.1;
-    scene.add(logo);
-    start(true);
-    instructor.head.parent.updateMatrixWorld();
-    animations.push(currentAnimation = {
-      type: 'start-screen-pan',
-      start: Date.now(),
-      duration: Infinity,
-      actualDuration: 3000,
-      startAngle: Math.PI / 2,
-      deltaAngle: 0,
-      startRadius: 500,
-      deltaRadius: -480,
-      lookTarget: instructor.head.getWorldPosition(new THREE.Vector3())
-    });
-    animate();
-    return speechPromise;
-  }).then(async () => {
+  camera.position.set(0, 5, -350);
+  camera.rotation.x = -0.1;
+  scene.add(logo);
+  start(true);
+  instructor.head.parent.updateMatrixWorld();
+  animations.push(currentAnimation = {
+    type: 'start-screen-pan',
+    start: Date.now(),
+    duration: Infinity,
+    actualDuration: 3000,
+    startAngle: Math.PI / 2,
+    deltaAngle: 0,
+    startRadius: 500,
+    deltaRadius: -480,
+    lookTarget: instructor.head.getWorldPosition(new THREE.Vector3())
+  });
+  animate();
+  Promise.all([
+    resourcesReady.then(() => {
+      if (logLoadingProgress) console.log('loading done');
+      loadingBar.classList.add('hide-bar');
+    }),
+    initSpeech()
+  ]).then(async () => {
     scene.remove(logo);
     currentAnimation.duration = 0;
     instructor.person.position.y = 0;
