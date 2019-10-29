@@ -85,20 +85,67 @@ try {
     time: 0,
     checks: 0,
     fails: 0,
-    codeEntries: 0
+    codeEntries: 0,
+    escapes: 0,
+    completions: 0
   }));
 }
-function saveStats(stats) {
-  totalStats.attempts++;
-  totalStats.runDistance += stats.runDistance;
-  totalStats.breaths += stats.breaths;
-  totalStats.powerBreaths += stats.powerBreaths;
-  totalStats.expansionBreaths += stats.expansionBreaths;
-  totalStats.time += stats.duration;
-  totalStats.checks += stats.checks;
-  totalStats.fails += stats.fails;
-  totalStats.codeEntries += stats.codeEntries;
+function saveStats(stats = null) {
+  if (stats) {
+    console.log('Adding new attempt');
+    totalStats.attempts++;
+    totalStats.runDistance += stats.runDistance;
+    totalStats.breaths += stats.breaths;
+    totalStats.powerBreaths += stats.powerBreaths;
+    totalStats.expansionBreaths += stats.expansionBreaths;
+    totalStats.time += stats.duration;
+    totalStats.checks += stats.checks;
+    totalStats.fails += stats.fails;
+    totalStats.codeEntries += stats.codeEntries;
+  }
   // localStorage.setItem('[yesnt] stats', JSON.stringify(totalStats));
+}
+let statTable;
+function displayStatRow([label, value]) {
+  const row = document.createElement('div');
+  row.classList.add('stat-row');
+
+  const labelItem = document.createElement('div');
+  labelItem.classList.add('stat-label');
+  labelItem.textContent = label;
+  row.appendChild(labelItem);
+
+  const valueItem = document.createElement('div');
+  valueItem.classList.add('stat-value');
+  valueItem.textContent = value;
+  row.appendChild(valueItem);
+
+  statTable.appendChild(row);
+}
+function displayStats(winMode) {
+  console.log(stats);
+  const durationString = Math.floor(stats.duration / 60000) + ':'
+    + (stats.duration / 1000).toFixed(3).padStart(6, '0');
+  statTable.innerHTML = '';
+  if (winMode === 'escape') {
+    totalStats.escapes++;
+    [
+      ['Time taken', durationString],
+      ['Breaths taken', stats.breaths],
+      ['Distance run', stats.runDistance.toFixed(2)],
+      ['Codes entered', stats.codeEntries]
+    ].forEach(displayStatRow);
+  } else if (winMode === 'complete') {
+    totalStats.completions++;
+    [
+      ['Time taken', durationString],
+      ['Breaths taken', stats.breaths],
+      ['Power breaths', stats.powerBreaths],
+      ['Expansion breaths', stats.expansionBreaths],
+      ['Accuracy', Math.round(stats.accuracy * 100) / 100 + '%']
+    ].forEach(displayStatRow);
+  }
+  saveStats();
 }
 
 const tunnelXBounds = {
@@ -388,6 +435,7 @@ async function startGame() {
     }
   } else {
     die();
+    displayStats('complete');
     instructor.moving = true;
     await new Promise(res => {
       const startPos = instructor.person.position.clone();
@@ -594,6 +642,7 @@ function renderDoorPopup(internalCall = false) {
         if (typeProgress === code) {
           if (testedTunnelDoor && !selectedDoor.wrong) {
             die();
+            displayStats('escape');
             dc.fillStyle = '#00ff00';
             typingTimeout = setTimeout(() => {
               typeProgress = '';
@@ -1035,7 +1084,6 @@ function die() {
   stats.accuracy = 1 - stats.fails / stats.checks;
   stats.duration = Date.now() - stats.startTime;
   saveStats(stats);
-  console.log(stats);
 }
 function caught() {
   die();
@@ -1673,6 +1721,7 @@ document.addEventListener('DOMContentLoaded', e => {
   lungIndicator = document.getElementById('lung-indicator');
   keyHintText = document.getElementById('key-hint');
   deathReason = document.getElementById('death-reason');
+  statTable = document.getElementById('stattable')
 
   const fovSlider = document.getElementById('fov');
   const fovValue = document.getElementById('fov-val');

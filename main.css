@@ -324,7 +324,7 @@ canvas {
   color: rgba(0, 0, 0, 0.8);
 }
 .completed .end {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.6);
   color: white;
 }
 .escaped .end .wrapper,
@@ -337,6 +337,27 @@ canvas {
 .escaped .escape,
 .completed .complete {
   display: block;
+}
+.stat-table {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  margin: 20px 0;
+}
+.stat-row {
+  display: flex;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  align-items: stretch;
+}
+.stat-row:last-child {
+  border-bottom: none;
+}
+.stat-row div {
+  padding: 10px;
+}
+.stat-row .stat-value {
+  text-align: right;
+  flex: auto;
 }
 
 .error {
