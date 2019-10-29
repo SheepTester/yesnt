@@ -358,6 +358,7 @@ canvas {
 .stat-row .stat-value {
   text-align: right;
   flex: auto;
+  white-space: nowrap;
 }
 
 .error {
@@ -382,7 +383,7 @@ canvas {
   padding: 20px;
   position: fixed;
   z-index: 4;
-  background-color: rgba(127, 127, 127, 0.8);
+  background-color: rgba(175, 175, 175, 0.8);
   color: rgba(0, 0, 0, 0.9);
   top: 0;
   left: 0;

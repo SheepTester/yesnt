@@ -87,12 +87,12 @@ try {
     fails: 0,
     codeEntries: 0,
     escapes: 0,
+    abridgedCompletions: 0,
     completions: 0
   }));
 }
 function saveStats(stats = null) {
   if (stats) {
-    console.log('Adding new attempt');
     totalStats.attempts++;
     totalStats.runDistance += stats.runDistance;
     totalStats.breaths += stats.breaths;
@@ -102,11 +102,12 @@ function saveStats(stats = null) {
     totalStats.checks += stats.checks;
     totalStats.fails += stats.fails;
     totalStats.codeEntries += stats.codeEntries;
+    displayTotalStats();
   }
   // localStorage.setItem('[yesnt] stats', JSON.stringify(totalStats));
 }
-let statTable;
-function displayStatRow([label, value]) {
+let statTable, totalStatTable;
+function statRow([label, value]) {
   const row = document.createElement('div');
   row.classList.add('stat-row');
 
@@ -120,32 +121,51 @@ function displayStatRow([label, value]) {
   valueItem.textContent = value;
   row.appendChild(valueItem);
 
-  statTable.appendChild(row);
+  return row;
 }
-function displayStats(winMode) {
-  console.log(stats);
+function displayStats(winMode = null) {
   const durationString = Math.floor(stats.duration / 60000) + ':'
     + (stats.duration / 1000).toFixed(3).padStart(6, '0');
   statTable.innerHTML = '';
   if (winMode === 'escape') {
-    totalStats.escapes++;
     [
       ['Time taken', durationString],
       ['Breaths taken', stats.breaths],
       ['Distance run', stats.runDistance.toFixed(2)],
       ['Codes entered', stats.codeEntries]
-    ].forEach(displayStatRow);
+    ].forEach(entry => statTable.appendChild(statRow(entry)));
   } else if (winMode === 'complete') {
-    totalStats.completions++;
     [
       ['Time taken', durationString],
       ['Breaths taken', stats.breaths],
       ['Power breaths', stats.powerBreaths],
       ['Expansion breaths', stats.expansionBreaths],
-      ['Accuracy', Math.round(stats.accuracy * 100) / 100 + '%']
-    ].forEach(displayStatRow);
+      ['Accuracy', Math.round(stats.accuracy * 10000) / 100 + '%']
+    ].forEach(entry => statTable.appendChild(statRow(entry)));
   }
   saveStats();
+}
+function displayTotalStats() {
+  const durationString = Math.floor(totalStats.time / 3600000) + ':'
+    + (Math.floor(totalStats.time / 60000 % 60) + '').padStart(2, '0') + ':'
+    + (totalStats.time / 1000).toFixed(3).padStart(6, '0');
+  const accuracy = totalStats.checks
+    ? Math.round((1 - totalStats.fails / totalStats.checks) * 10000) / 100 + '%'
+    : '--';
+  totalStatTable.innerHTML = '';
+  [
+    ['Attempts', totalStats.attempts],
+    ['Escapes', totalStats.escapes],
+    ['Completions', totalStats.completions],
+    ['Abridged completions', totalStats.abridgedCompletions],
+    ['Time played', durationString],
+    ['Breaths taken', totalStats.breaths],
+    ['Power breaths', totalStats.powerBreaths],
+    ['Expansion breaths', totalStats.expansionBreaths],
+    ['YES program accuracy', accuracy],
+    ['Distance run', totalStats.runDistance.toFixed(2)],
+    ['Codes entered', totalStats.codeEntries]
+  ].forEach(entry => totalStatTable.appendChild(statRow(entry)));
 }
 
 const tunnelXBounds = {
@@ -434,6 +454,11 @@ async function startGame() {
       await speak('stopRunning');
     }
   } else {
+    if (abridged) {
+      totalStats.abridgedCompletions++;
+    } else {
+      totalStats.completions++;
+    }
     die();
     displayStats('complete');
     instructor.moving = true;
@@ -641,6 +666,7 @@ function renderDoorPopup(internalCall = false) {
         if (stats) stats.codeEntries++;
         if (typeProgress === code) {
           if (testedTunnelDoor && !selectedDoor.wrong) {
+            totalStats.escapes++;
             die();
             displayStats('escape');
             dc.fillStyle = '#00ff00';
@@ -1721,7 +1747,9 @@ document.addEventListener('DOMContentLoaded', e => {
   lungIndicator = document.getElementById('lung-indicator');
   keyHintText = document.getElementById('key-hint');
   deathReason = document.getElementById('death-reason');
-  statTable = document.getElementById('stattable')
+  statTable = document.getElementById('stattable');
+  totalStatTable = document.getElementById('total-stattable');
+  displayTotalStats();
 
   const fovSlider = document.getElementById('fov');
   const fovValue = document.getElementById('fov-val');
