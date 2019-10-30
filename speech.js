@@ -63,8 +63,9 @@ const lines = { // [subtitles, pathToAudio]
   stopRunning: ['Stop! Your vagus nerve is not fully activated!', './sounds/tts/Stop-Your-vagus-nerve-is-not-fully-activated-.mp3']
 };
 
-const usingTTS = params.get('use-tts') !== 'false';
-const MS_PER_CHAR = params.get('fast-guess') ? 5 : 100; // guesstimate
+const usingTTS = params.get('use-tts') !== 'false'
+  && window.speechSynthesis.onvoiceschanged !== undefined;
+const MS_PER_CHAR = params.get('fast-guess') ? 5 : 70; // guesstimate
 const loadAudio = params.get('load-audio') !== 'false';
 
 let subtitles, ttsSpeak, ttsPromise;
