@@ -19,7 +19,12 @@
     <script src="./bloom-pass/UnrealBloomPass.js"></script>
 
     <script type="text/javascript">
+      if (!localStorage.getItem('[yesnt] options')) {
+        window.location = './settings.html';
+      }
+
       const params = new URL(window.location).searchParams;
+      const devMode = window.location.search.length > 1;
       function outputError(msg) {
         const errorMsg = document.createElement('div');
         errorMsg.classList.add('error');
@@ -31,6 +36,57 @@
       }
       window.addEventListener('error', e => outputError(e.message));
       window.addEventListener('unhandledrejection', e => outputError(e.reason));
+
+      const defaultOptions = {
+        fov: 75,
+        sensitivity: 700,
+        touchSensitivity: 200,
+        controls: {
+          default: true,
+          87: 'forth', // w
+          65: 'left', // a
+          83: 'back', // s
+          68: 'right', // d
+          16: 'get-up', // shift
+          70: 'phone', // f
+          13: 'skip-intro', // enter
+          8: 'del-code-digit', // backspace
+          82: 'reset', // r
+          79: 'om', // o
+          81: 'inhale', // q
+          69: 'exhale', // e
+          32: 'trip', // space
+          37: 'exp-down', // left
+          38: 'power-up', // up
+          39: 'exp-up', // right
+          40: 'power-down', // down
+          90: 'pick-up' // z
+        },
+        keyNames: {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'Shift', 70: 'f', 13: 'Enter',
+          8: 'Backspace', 82: 'r', 79: 'o', 81: 'q', 69: 'e', 32: 'Space',
+          37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown', 90: 'z'},
+        lambert: false,
+        abridged: true,
+        audio: 2
+      };
+      let options;
+      try {
+        options = JSON.parse(localStorage.getItem('[yesnt] options'));
+        if (options === null || typeof options !== 'object') throw new Error();
+      } catch (e) {
+        options = JSON.parse(JSON.stringify(defaultOptions));
+      }
+      function saveOptions() {
+        localStorage.setItem('[yesnt] options', JSON.stringify(options));
+      }
+      if (Object.keys(defaultOptions).filter(prop => {
+        if (!options.hasOwnProperty(prop)) {
+          options[prop] = defaultOptions[prop];
+          return true;
+        }
+      }).length) {
+        saveOptions();
+      }
     </script>
     <script src="./speech.js" charset="utf-8"></script>
     <script src="./room-setup.js" charset="utf-8"></script>
@@ -38,7 +94,7 @@
     <script src="./touch.js" charset="utf-8"></script>
     <script src="./main.js" charset="utf-8"></script>
   </head>
-  <body class="hide-lungs hide-cant-jump hide-end hide-options hide-pose">
+  <body class="hide-lungs hide-cant-jump hide-end hide-options hide-pose hide-dev">
     <p id="subtitles"></p>
     <p id="key-hint"></p>
     <p id="hint"></p>
@@ -103,5 +159,6 @@
       <p>Your plan: Do the YESNT breathing arms while the instructor is watching, and when she's not, take out your phone and spy on the administration's secret broadcast for the passcode to a door. Get up, which will inevitably attract the attention of the instructor, try the code on every single door, and escape when it works.</p>
       <p>Anything is worth having a free mind.</p>
     </div>
+    <div class="note-content dev-note">You have test parameters meant for development enabled, so the game will not save your progress. To undo this, remove the part of the URL after the question mark (?).</div>
   </body>
 </html>

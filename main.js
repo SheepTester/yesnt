@@ -31,46 +31,6 @@ const CODE_LENGTH = 4;
 const KEY_HINT_CYCLE_SPEED = 5000;
 // ?INHALE_OXYGEN_SPEED=0.0003&BREATHING_SPEED=0.00005&MAX_OXYGEN=1&LUNG_RANGE=1&LIVING_OXYGEN_USAGE=0.00005&LOW_OXYGEN=0.4&ASPHYXIATION=0.1
 
-const defaultOptions = {
-  fov: 75,
-  sensitivity: 700,
-  touchSensitivity: 200,
-  controls: {
-    default: true,
-    87: 'forth', // w
-    65: 'left', // a
-    83: 'back', // s
-    68: 'right', // d
-    16: 'get-up', // shift
-    70: 'phone', // f
-    13: 'skip-intro', // enter
-    8: 'del-code-digit', // backspace
-    82: 'reset', // r
-    79: 'om', // o
-    81: 'inhale', // q
-    69: 'exhale', // e
-    32: 'trip', // space
-    37: 'exp-down', // left
-    38: 'power-up', // up
-    39: 'exp-up', // right
-    40: 'power-down', // down
-    90: 'pick-up' // z
-  },
-  keyNames: {87: 'w', 65: 'a', 83: 's', 68: 'd', 16: 'Shift', 70: 'f', 13: 'Enter',
-    8: 'Backspace', 82: 'r', 79: 'o', 81: 'q', 69: 'e', 32: 'Space',
-    37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown', 90: 'z'}
-};
-let options;
-try {
-  options = JSON.parse(localStorage.getItem('[yesnt] options'));
-  if (options === null || typeof options !== 'object') throw new Error();
-} catch (e) {
-  options = JSON.parse(JSON.stringify(defaultOptions));
-}
-function saveOptions() {
-  localStorage.setItem('[yesnt] options', JSON.stringify(options));
-}
-
 let totalStats, stats;
 try {
   totalStats = JSON.parse(localStorage.getItem('[yesnt] stats'));
@@ -104,7 +64,9 @@ function saveStats(stats = null) {
     totalStats.codeEntries += stats.codeEntries;
     displayTotalStats();
   }
-  // localStorage.setItem('[yesnt] stats', JSON.stringify(totalStats));
+  if (!devMode) {
+    localStorage.setItem('[yesnt] stats', JSON.stringify(totalStats));
+  }
 }
 let statTable, totalStatTable;
 function statRow([label, value]) {
@@ -185,7 +147,7 @@ const instructorCanMove = params.get('freeze-instructor') !== 'please';
 const checkPlayer = !params.get('override-player-check');
 const alwaysCheckPlayer = params.get('override-player-check') === 'omniscient';
 const loseOxygen = params.get('unrealistic-breathing') !== 'true';
-const abridged = params.get('abridged');
+const abridged = params.get('abridged') || (options.abridged ? 'some' : null);
 const POWER_REPS = abridged === 'some' ? 10 : abridged === 'very' ? 2 : 15;
 const OMS = abridged === 'very' ? 1 : 3;
 
@@ -519,7 +481,7 @@ audioLoader.load('./sounds/wrong.mp3', buffer => sounds.wrong = buffer);
 audioLoader.load('./sounds/correct.mp3', buffer => sounds.correct = buffer);
 audioLoader.load('./sounds/caught.mp3', buffer => sounds.caught = buffer);
 
-const usingLambert = params.get('lambert') === 'true';
+const usingLambert = params.get('lambert') === 'true' || options.lambert;
 const wireframe = params.get('wireframe') === 'true';
 const gameMaterial = usingLambert ? (colour, emissive) => {
   return new THREE.MeshLambertMaterial({color: colour, emissive, wireframe});
@@ -1750,6 +1712,10 @@ document.addEventListener('DOMContentLoaded', e => {
   statTable = document.getElementById('stattable');
   totalStatTable = document.getElementById('total-stattable');
   displayTotalStats();
+
+  if (window.location.search.length > 1) {
+    document.body.classList.remove('hide-dev');
+  }
 
   const fovSlider = document.getElementById('fov');
   const fovValue = document.getElementById('fov-val');

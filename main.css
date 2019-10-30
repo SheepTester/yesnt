@@ -504,3 +504,21 @@ button:focus {
   max-width: 90vw;
   max-height: 90vh;
 }
+
+.dev-note {
+  position: fixed;
+  top: 0;
+  right: 0;
+  max-width: 300px;
+  width: 80%;
+  margin: 10px;
+  border-color: rgba(255, 0, 0, 0.7);
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  color: white;
+  opacity: 0.5;
+  pointer-events: none;
+  font-size: 10px;
+}
+.hide-dev .dev-note {
+  display: none;
+}
