@@ -481,20 +481,30 @@ input[type=range]::-webkit-slider-thumb {
   color: rgba(255, 78, 81, 0.5);
 }
 
-button {
+.button {
   -webkit-appearance: none;
   cursor: pointer;
   padding: 10px;
   border: 1px solid currentColor;
   background: none;
   border-radius: 5px;
+  white-space: pre;
+  display: inline-block;
+  box-sizing: border-box;
+  font: inherit;
+  color: black;
+  margin: 5px 0;
   transition: background-color .2s, color .2s;
 }
-button:hover {
+a.button {
+  text-decoration: none;
+  color: inherit;
+}
+.button:hover {
   background-color: black;
   color: white;
 }
-button:focus {
+.button:focus {
   outline: none;
 }
 
