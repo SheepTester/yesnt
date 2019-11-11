@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>YESNT / Leaderboard</title>
+    <meta name="description" content="Global leaderboard in YESNT"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+    <link href="https://fonts.googleapis.com/css?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style media="screen">
+body {
+  margin: 0;
+  font-size: 0;
+  font-family: 'Share Tech Mono', monospace;
+  color: white;
+  background-color: black;
+}
+button {
+  -webkit-appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+:focus {
+  outline: none;
+}
+
+.ldrboards {
+  background-color: #191919;
+}
+.ldr-select {
+  font-size: 16px;
+  padding: 10px;
+  background-image: linear-gradient(#343434, #242424);
+  border-right: 1px solid #0e0e0e;
+}
+.ldr-select:hover {
+  background-image: linear-gradient(#444444, #2f2f2f);
+}
+.ldr-select:active,
+.ldr-select.selected {
+  background-image: linear-gradient(#242424, #343434);
+}
+.ldr-select.selected {
+  cursor: default;
+}
+
+.problem {
+  color: red;
+  font-size: 16px;
+  white-space: pre-wrap;
+}
+    </style>
+  </head>
+  <body>
+    <div class="ldrboards">
+      <button type="button" class="ldr-select" id="escaped">Escapees</button>
+      <button type="button" class="ldr-select" id="completed">Full completionists</button>
+      <button type="button" class="ldr-select" id="abridged">Abridged completionists</button>
+    </div>
+    <script type="text/javascript">
+const entries = (localStorage.getItem('[yesnt] submitted') || '').split(' ');
+const defaultHeadings = [
+  ['index', '#', 'Position'],
+  ['name', 'NAM', 'Name/URL'],
+  ['duration', 'DUR', 'Length of gameplay'],
+  ['breaths', 'BTH', 'Times breathed']
+];
+const escapeHeadings = [
+  ['distance', 'DIS', 'Distance run'],
+  ['codeEntries', 'TRY', 'Code entries tried']
+];
+const completeHeadings = [
+  ['powers', 'POW', 'Power breaths performed'],
+  ['expands', 'XPD', 'Expansion breaths performed'],
+  ['accuracy', 'ACC', 'Percent accuracy']
+];
+const ldrboardHeadings = {
+  abridged: [...defaultHeadings, ...completeHeadings],
+  completed: [...defaultHeadings, ...completeHeadings],
+  escaped: [...defaultHeadings, ...escapeHeadings]
+};
+const ldrboardBtns = {
+  abridged: document.getElementById('abridged'),
+  completed: document.getElementById('completed'),
+  escaped: document.getElementById('escaped')
+};
+const leaderboardData = {};
+const leaderboards = {};
+let currentLdrboard;
+
+async function showLeaderboard(ldrboard) {
+  if (currentLdrboard) {
+    ldrboardBtns[currentLdrboard].classList.remove('selected');
+    document.body.removeChild(leaderboards[currentLdrboard]);
+  }
+  currentLdrboard = ldrboard;
+  ldrboardBtns[ldrboard].classList.add('selected');
+  if (leaderboards[ldrboard]) {
+    document.body.appendChild(leaderboards[ldrboard]);
+  } else {
+    const board = document.createElement('div');
+    board.classList.add('leaderboard');
+    document.body.appendChild(board);
+    leaderboards[ldrboard] = board;
+
+    leaderboardData[ldrboard] = await fetch('https://test-9d9aa.firebaseapp.com/yesntScores?leaderboard=' + ldrboard)
+      .then(r => r.ok ? r.json() : r.text().then(content => Promise.reject(content)))
+      .catch(err => {
+        board.classList.add('problem');
+        board.textContent = 'Fetching the leaderboard did not go smoothly:\n' + err;
+        return null;
+      });
+    if (!leaderboardData[ldrboard]) return;
+
+    const headings = ldrboardHeadings[ldrboard];
+  }
+}
+showLeaderboard('escaped');
+ldrboardBtns.abridged.addEventListener('click', e => showLeaderboard('abridged'));
+ldrboardBtns.completed.addEventListener('click', e => showLeaderboard('completed'));
+ldrboardBtns.escaped.addEventListener('click', e => showLeaderboard('escaped'));
+    </script>
+  </body>
+</html>

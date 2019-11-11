@@ -439,10 +439,13 @@ canvas {
   text-align: right;
 }
 .mine {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
   opacity: 0.9;
 }
-.entry-name:link {
+.completed .mine {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.entry-name:link, .entry-name:visited {
   color: inherit;
   opacity: 1;
   text-decoration: none;

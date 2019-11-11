@@ -167,6 +167,8 @@ function displayLeaderboard(scores, headings, myEntry) {
       }
       entry.textContent = id === 'accuracy'
         ? (score.accuracy * 100).toFixed(2) + '%'
+        : id === 'distance'
+        ? score.distance.toFixed(2)
         : id === 'index'
         ? i + 1
         : score[id];
@@ -707,7 +709,6 @@ function renderDoorPopup(internalCall = false) {
   switch (selectedDoor.metadata.type) {
     case 'code': {
       if (internalCall && typeProgress.length >= CODE_LENGTH) {
-        if (stats) stats.codeEntries++;
         if (typeProgress === code) {
           if (testedTunnelDoor && !selectedDoor.wrong) {
             totalStats.escapes++;
@@ -767,6 +768,7 @@ function renderDoorPopup(internalCall = false) {
         typingTimeout = setTimeout(() => {
           renderDoorPopup(true);
         }, 500);
+        if (stats) stats.codeEntries++;
       }
       break;
     }
@@ -1855,12 +1857,12 @@ document.addEventListener('DOMContentLoaded', e => {
         .then(r => r.ok ? r.text() : r.text().then(msg => Promise.reject(msg)))
         .then(id => {
           const ids = localStorage.getItem('[yesnt] submitted');
-          localStorage.setItem('[yesnt] submitted', ids ? id : ids + ' ' + id);
+          localStorage.setItem('[yesnt] submitted', ids ? ids + ' ' + id : id);
           fetch('https://test-9d9aa.firebaseapp.com/yesntScores?leaderboard=' + mode)
             .then(r => r.ok ? r.json() : r.text().then(content => Promise.reject(content)))
             .then(leaderboard => {
               const success = displayLeaderboard(
-                winMode === 'escaped'
+                winMode === 'escape'
                   ? leaderboard.sort((a, b) => a.duration - b.duration)
                   : leaderboard.sort((a, b) => b.accuracy - a.accuracy),
                 [
@@ -1868,7 +1870,7 @@ document.addEventListener('DOMContentLoaded', e => {
                   ['name', 'NAM', 'Name/URL'],
                   ['duration', 'DUR', 'Length of gameplay'],
                   ['breaths', 'BTH', 'Times breathed'],
-                  ...(winMode === 'escaped' ? [
+                  ...(winMode === 'escape' ? [
                     ['distance', 'DIS', 'Distance run'],
                     ['codeEntries', 'TRY', 'Code entries tried']
                   ] : [
