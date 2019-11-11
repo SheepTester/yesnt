@@ -413,10 +413,53 @@ canvas {
   white-space: pre-wrap;
 }
 .hidden {
-  display: hidden;
+  display: none;
 }
-#play-again {
+.full {
   width: 100%;
+}
+.leaderboard {
+  display: flex;
+  justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  position: relative;
+}
+.column {
+  display: inline-block;
+}
+.leaderboard-entry {
+  display: block;
+  opacity: 0.7;
+  padding: 0 5px;
+}
+.heading {
+  opacity: 1;
+}
+.entry-data {
+  text-align: right;
+}
+.mine {
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 0.9;
+}
+.entry-name:link {
+  color: inherit;
+  opacity: 1;
+  text-decoration: none;
+}
+.entry-name:link:hover {
+  text-decoration: underline;
+}
+.ellipsis {
+  height: 0.5em;
+  opacity: 0.2;
+}
+.column:first-child .ellipsis::before {
+  content: '\B7\B7\B7';
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
 }
 
 .error {
@@ -552,6 +595,7 @@ input[type=range]::-webkit-slider-thumb {
   font: inherit;
   color: black;
   margin: 5px 0;
+  text-align: center;
   transition: background-color .2s, color .2s;
 }
 a.button {

@@ -105,7 +105,7 @@ function displayStats() {
       ['Breaths taken', stats.breaths],
       ['Power breaths', stats.powerBreaths],
       ['Expansion breaths', stats.expansionBreaths],
-      ['Accuracy', Math.round(stats.accuracy * 10000) / 100 + '%']
+      ['Accuracy', (stats.accuracy * 100).toFixed(2) + '%']
     ].forEach(entry => statTable.appendChild(statRow(entry)));
   }
 }
@@ -114,7 +114,7 @@ function displayTotalStats() {
     + (Math.floor(totalStats.time / 60000 % 60) + '').padStart(2, '0') + ':'
     + (totalStats.time / 1000).toFixed(3).padStart(6, '0');
   const accuracy = totalStats.checks
-    ? Math.round((1 - totalStats.fails / totalStats.checks) * 10000) / 100 + '%'
+    ? ((1 - totalStats.fails / totalStats.checks) * 100).toFixed(2) + '%'
     : '--';
   totalStatTable.innerHTML = '';
   [
@@ -131,8 +131,79 @@ function displayTotalStats() {
     ['Codes entered', totalStats.codeEntries]
   ].forEach(entry => totalStatTable.appendChild(statRow(entry)));
 }
-function displayLeaderboard(scores, id) {
-  //
+function displayLeaderboard(scores, headings, myEntry) {
+  leaderboard.innerHTML = '';
+  const columns = {};
+  headings.forEach(([id, name, label]) => {
+    const column = document.createElement('div');
+    column.classList.add('column');
+    leaderboard.appendChild(column);
+    columns[id] = column;
+    const heading = document.createElement('span');
+    heading.classList.add('leaderboard-entry');
+    heading.classList.add('heading');
+    heading.textContent = name;
+    heading.title = label;
+    column.appendChild(heading);
+  });
+  let myScoreDisplayed = false;
+  scores.slice(0, 10).forEach((score, i) => {
+    headings.forEach(([id]) => {
+      const entry = document.createElement(id === 'name' ? 'a' : 'span');
+      entry.classList.add('leaderboard-entry');
+      if (score.id === myEntry) {
+        entry.classList.add('mine');
+        myScoreDisplayed = true;
+      }
+      if (id === 'name') {
+        entry.classList.add('entry-name');
+        if (score.url) {
+          entry.href = score.url;
+          entry.setAttribute('target', '_blank');
+          entry.setAttribute('rel', 'noopener noreferrer');
+        }
+      } else {
+        entry.classList.add('entry-data');
+      }
+      entry.textContent = id === 'accuracy'
+        ? (score.accuracy * 100).toFixed(2) + '%'
+        : id === 'index'
+        ? i + 1
+        : score[id];
+      columns[id].appendChild(entry);
+    });
+  });
+  if (!myScoreDisplayed) {
+    const scoreIndex = scores.findIndex(score => score.id === myEntry);
+    if (!~scoreIndex) return "okn't";
+    const score = scores[scoreIndex];
+    headings.forEach(([id]) => {
+      const ellipsis = document.createElement('span');
+      ellipsis.classList.add('leaderboard-entry');
+      ellipsis.classList.add('ellipsis');
+      columns[id].appendChild(ellipsis);
+      const entry = document.createElement(id === 'name' ? 'a' : 'span');
+      entry.classList.add('leaderboard-entry');
+      entry.classList.add('mine');
+      if (id === 'name') {
+        entry.classList.add('entry-name');
+        if (score.url) {
+          entry.href = score.url;
+          entry.setAttribute('target', '_blank');
+          entry.setAttribute('rel', 'noopener noreferrer');
+        }
+      } else {
+        entry.classList.add('entry-data');
+      }
+      entry.textContent = id === 'accuracy'
+        ? (score.accuracy * 100).toFixed(2) + '%'
+        : id === 'index'
+        ? scoreIndex + 1
+        : score[id];
+      columns[id].appendChild(entry);
+    });
+  }
+  return 'ok';
 }
 
 const tunnelXBounds = {
@@ -1760,8 +1831,9 @@ document.addEventListener('DOMContentLoaded', e => {
       problemMessage.textContent = problems;
     } else {
       submitScoreBtn.disabled = true;
-      const mode = stats.winMode === 'escape' ? 'escaped'
-        : stats.winMode === 'complete' ? 'completed' : 'abridged';
+      const winMode = stats.winMode; // in case it changes later on
+      const mode = winMode === 'escape' ? 'escaped'
+        : winMode === 'complete' ? 'completed' : 'abridged';
       fetch('https://test-9d9aa.firebaseapp.com/yesntScores?leaderboard=' + mode, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -1770,7 +1842,7 @@ document.addEventListener('DOMContentLoaded', e => {
           url: urlInput.value,
           duration: stats.duration,
           breaths: stats.breaths,
-          ...(stats.winMode === 'escape' ? {
+          ...(winMode === 'escape' ? {
             distance: stats.runDistance,
             codeEntries: stats.codeEntries
           } : {
@@ -1785,9 +1857,38 @@ document.addEventListener('DOMContentLoaded', e => {
           const ids = localStorage.getItem('[yesnt] submitted');
           localStorage.setItem('[yesnt] submitted', ids ? id : ids + ' ' + id);
           fetch('https://test-9d9aa.firebaseapp.com/yesntScores?leaderboard=' + mode)
-            .then(r => r.json())
+            .then(r => r.ok ? r.json() : r.text().then(content => Promise.reject(content)))
             .then(leaderboard => {
-              displayLeaderboard(leaderboard, id);
+              const success = displayLeaderboard(
+                winMode === 'escaped'
+                  ? leaderboard.sort((a, b) => a.duration - b.duration)
+                  : leaderboard.sort((a, b) => b.accuracy - a.accuracy),
+                [
+                  ['index', '#', 'Position'],
+                  ['name', 'NAM', 'Name/URL'],
+                  ['duration', 'DUR', 'Length of gameplay'],
+                  ['breaths', 'BTH', 'Times breathed'],
+                  ...(winMode === 'escaped' ? [
+                    ['distance', 'DIS', 'Distance run'],
+                    ['codeEntries', 'TRY', 'Code entries tried']
+                  ] : [
+                    ['powers', 'POW', 'Power breaths performed'],
+                    ['expands', 'XPD', 'Expansion breaths performed'],
+                    ['accuracy', 'ACC', 'Percent accuracy']
+                  ])
+                ],
+                id
+              );
+              if (success === 'ok') {
+                problemMessage.classList.add('hidden');
+              } else {
+                problemMessage.classList.remove('hidden');
+                problemMessage.textContent = 'Could not find the score you just submitted. Oof!';
+              }
+            })
+            .catch(err => {
+              problemMessage.classList.remove('hidden');
+              problemMessage.textContent = 'There was a problem fetching the leaderboard:\n' + err;
             });
         })
         .catch(err => {
