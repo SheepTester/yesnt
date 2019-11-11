@@ -69,6 +69,9 @@ function saveStats(stats = null) {
   }
 }
 let statTable, totalStatTable;
+let usernameInput, urlInput, problemMessage, submitScoreBtn, leaderboard;
+const badNameRegex = /[^A-Z0-9]/i;
+const urlRegex = /^(https?):\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,.;]*[\-A-Za-z0-9+&@#\/%=~_|]$/;
 function statRow([label, value]) {
   const row = document.createElement('div');
   row.classList.add('stat-row');
@@ -85,18 +88,18 @@ function statRow([label, value]) {
 
   return row;
 }
-function displayStats(winMode = null) {
+function displayStats() {
   const durationString = Math.floor(stats.duration / 60000) + ':'
     + (stats.duration / 1000).toFixed(3).padStart(6, '0');
   statTable.innerHTML = '';
-  if (winMode === 'escape') {
+  if (stats.winMode === 'escape') {
     [
       ['Time taken', durationString],
       ['Breaths taken', stats.breaths],
       ['Distance run', stats.runDistance.toFixed(2)],
       ['Codes entered', stats.codeEntries]
     ].forEach(entry => statTable.appendChild(statRow(entry)));
-  } else if (winMode === 'complete') {
+  } else {
     [
       ['Time taken', durationString],
       ['Breaths taken', stats.breaths],
@@ -105,7 +108,6 @@ function displayStats(winMode = null) {
       ['Accuracy', Math.round(stats.accuracy * 10000) / 100 + '%']
     ].forEach(entry => statTable.appendChild(statRow(entry)));
   }
-  saveStats();
 }
 function displayTotalStats() {
   const durationString = Math.floor(totalStats.time / 3600000) + ':'
@@ -128,6 +130,9 @@ function displayTotalStats() {
     ['Distance run', totalStats.runDistance.toFixed(2)],
     ['Codes entered', totalStats.codeEntries]
   ].forEach(entry => totalStatTable.appendChild(statRow(entry)));
+}
+function displayLeaderboard(scores, id) {
+  //
 }
 
 const tunnelXBounds = {
@@ -200,6 +205,10 @@ function start(minimal = false) {
     selectedDoor = null;
   }
   if (minimal) return;
+  if (document.body.classList.contains('hide-dev')) {
+    problemMessage.classList.add('hidden');
+    submitScoreBtn.disabled = false;
+  }
   code = '';
   const digits = digitSet.split('');
   const symbols = symbolSet.split('');
@@ -418,11 +427,13 @@ async function startGame() {
   } else {
     if (abridged) {
       totalStats.abridgedCompletions++;
+      stats.winMode = 'abridged';
     } else {
       totalStats.completions++;
+      stats.winMode = 'complete';
     }
     die();
-    displayStats('complete');
+    displayStats();
     instructor.moving = true;
     await new Promise(res => {
       const startPos = instructor.person.position.clone();
@@ -630,7 +641,8 @@ function renderDoorPopup(internalCall = false) {
           if (testedTunnelDoor && !selectedDoor.wrong) {
             totalStats.escapes++;
             die();
-            displayStats('escape');
+            stats.winMode = 'escape';
+            displayStats();
             dc.fillStyle = '#00ff00';
             typingTimeout = setTimeout(() => {
               typeProgress = '';
@@ -1711,11 +1723,80 @@ document.addEventListener('DOMContentLoaded', e => {
   deathReason = document.getElementById('death-reason');
   statTable = document.getElementById('stattable');
   totalStatTable = document.getElementById('total-stattable');
+  usernameInput = document.getElementById('username');
+  urlInput = document.getElementById('url');
+  problemMessage = document.getElementById('problem');
+  submitScoreBtn = document.getElementById('submit-score');
+  leaderboard = document.getElementById('leaderboard');
   displayTotalStats();
 
   if (window.location.search.length > 1) {
     document.body.classList.remove('hide-dev');
+    problemMessage.classList.remove('hidden');
+    problemMessage.textContent = 'You cannot submit scores in development mode.';
+    // usernameInput.disabled = true;
+    // urlInput.disabled = true;
+    // submitScoreBtn.disabled = true;
   }
+
+  usernameInput.addEventListener('keypress', e => {
+    if (badNameRegex.test(e.key)) {
+      e.preventDefault();
+    }
+  });
+  submitScoreBtn.addEventListener('click', e => {
+    let problems = '';
+    if (usernameInput.value.length !== 3) {
+      problems += 'Name not three characters long.\n';
+    }
+    if (badNameRegex.test(usernameInput.value)) {
+      problems += 'Name has non-alphanumerical characters.\n'
+    }
+    if (urlInput.value && !urlRegex.test(urlInput.value)) {
+      problems += 'Weird URL.\n';
+    }
+    if (problems) {
+      problemMessage.classList.remove('hidden');
+      problemMessage.textContent = problems;
+    } else {
+      submitScoreBtn.disabled = true;
+      const mode = stats.winMode === 'escape' ? 'escaped'
+        : stats.winMode === 'complete' ? 'completed' : 'abridged';
+      fetch('https://test-9d9aa.firebaseapp.com/yesntScores?leaderboard=' + mode, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({
+          name: usernameInput.value.toUpperCase(),
+          url: urlInput.value,
+          duration: stats.duration,
+          breaths: stats.breaths,
+          ...(stats.winMode === 'escape' ? {
+            distance: stats.runDistance,
+            codeEntries: stats.codeEntries
+          } : {
+            powers: stats.powerBreaths,
+            expands: stats.expansionBreaths,
+            accuracy: stats.accuracy
+          })
+        })
+      })
+        .then(r => r.ok ? r.text() : r.text().then(msg => Promise.reject(msg)))
+        .then(id => {
+          const ids = localStorage.getItem('[yesnt] submitted');
+          localStorage.setItem('[yesnt] submitted', ids ? id : ids + ' ' + id);
+          fetch('https://test-9d9aa.firebaseapp.com/yesntScores?leaderboard=' + mode)
+            .then(r => r.json())
+            .then(leaderboard => {
+              displayLeaderboard(leaderboard, id);
+            });
+        })
+        .catch(err => {
+          problemMessage.classList.remove('hidden');
+          problemMessage.textContent = 'There was a problem submitting the score:\n' + err;
+          submitScoreBtn.disabled = false;
+        });
+    }
+  });
 
   const fovSlider = document.getElementById('fov');
   const fovValue = document.getElementById('fov-val');
@@ -1763,7 +1844,7 @@ document.addEventListener('DOMContentLoaded', e => {
     saveOptions();
   });
 
-  document.getElementById('restart').addEventListener('click', e => {
+  function restart() {
     if (skipIntro) return skipIntro();
     die();
     document.body.classList.add('hide-end');
@@ -1774,7 +1855,9 @@ document.addEventListener('DOMContentLoaded', e => {
       start();
       currentGame = startGame();
     });
-  });
+  }
+  document.getElementById('restart').addEventListener('click', restart);
+  document.getElementById('play-again').addEventListener('click', restart);
 
   document.body.appendChild(renderer.domElement);
   initTouch();

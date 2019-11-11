@@ -6,7 +6,7 @@
     <meta name="description" content="Your school is pushing their psuedoscientific agenda on you; you must escape before things get worse."/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-    <link href="https://fonts.googleapis.com/css?family=Karla:400,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Karla:400,700|Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./main.css">
     <link rel="stylesheet" href="./touch.css">
 
@@ -122,13 +122,20 @@
         <div class="end-reason escape"><h1>You've escaped</h1></div>
         <div class="end-reason complete"><h1>Reeducation complete</h1></div>
         <div id="stattable" class="stat-table"></div>
+        <p>Submit your score to the leaderboard:</p>
+        <p><label>Three-letter/number name: <input type="text" class="input" maxlength="3" id="username" placeholder="YES"></label></p>
+        <p><label class="url-wrapper">URL (optional): <input type="url" class="input" id="url" placeholder="https://gunn.app/"></label></p>
+        <p class="problem hidden" id="problem"></p>
+        <p><button type="button" class="button" id="submit-score">Submit</button></p>
+        <div class="leaderboard hidden" id="leaderboard"></div>
+        <button type="button" class="button" id="play-again">Play again</button>
       </div>
     </div>
     <div class="options clickable">
       <p>Click outside of this panel to close.</p>
       <p><button class="button" id="restart">Restart</button></p>
+      <p><a class="button" href="./settings.html">Gameplay settings</a></p>
       <h1>Controls</h1>
-      <p><a href="./settings.html">Click here to open the game settings page</a></p>
       <p><button class="button" id="reset-settings">Reset settings</button></p>
       <label>FOV <div class="slider-wrapper"><input type="range" id="fov" min="30" max="120"><span id="fov-val"></span></div></label>
       <label>Mouse sensitivity <div class="slider-wrapper"><input type="range" id="sensitivity" min="2.2" max="4" step="any"></div></label>
@@ -154,6 +161,7 @@
       <p><span class="key-input" tabindex="0" data-fn="pick-up"></span>Pick up light</p>
       <p><span class="key-input" tabindex="0" data-fn="del-code-digit"></span>Delete last code digit</p>
       <h2>Total stats</h2>
+      <p><a class="button" href="./leaderboard.html">Global leaderboard</a></p>
       <div id="total-stattable" class="stat-table"></div>
       <h1>About</h1>
       <p>A mysterious YESNT (YESNT Eradication of Students' Nerve Tension) Program has come to your school, and you immediately suspect something going on. You deduce that they are trialing an experimental breathing exercise to brainwash students. As an indepedent citizen, you do not desire to be dictated by a foreign power, so you must egress from the situation promptly!</p>
