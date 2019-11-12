@@ -316,6 +316,10 @@ canvas {
 .hide-options .end {
   padding-left: 0;
 }
+.wrapper {
+  overflow: auto;
+  max-height: 100%;
+}
 .end .wrapper {
   max-width: 500px;
   font-size: 18px;

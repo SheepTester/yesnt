@@ -1808,7 +1808,7 @@ document.addEventListener('DOMContentLoaded', e => {
   if (window.location.search.length > 1) {
     document.body.classList.remove('hide-dev');
     problemMessage.classList.remove('hidden');
-    problemMessage.textContent = 'You cannot submit scores in development mode.';
+    problemMessage.textContent = 'You cannot submit scores in development mode. (currently you can because i want you test my game thancc)';
     // usernameInput.disabled = true;
     // urlInput.disabled = true;
     // submitScoreBtn.disabled = true;
@@ -1846,6 +1846,7 @@ document.addEventListener('DOMContentLoaded', e => {
           url: urlInput.value,
           duration: stats.duration,
           breaths: stats.breaths,
+          time: Date.now(),
           ...(winMode === 'escape' ? {
             distance: stats.runDistance,
             codeEntries: stats.codeEntries
