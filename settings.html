@@ -212,7 +212,7 @@
         } catch (e) {
           options = {};
         }
-        if (options.lambert !== undefined) {
+        if (options.material !== undefined) {
           document.querySelector(`input[name=material][value=${['standard', 'lambert', 'emissive'][options.material]}]`).checked = true;
         }
         if (options.audio !== undefined) {
