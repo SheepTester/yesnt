@@ -1808,6 +1808,7 @@ document.addEventListener('DOMContentLoaded', e => {
   if (window.location.search.length > 1) {
     document.body.classList.remove('hide-dev');
     problemMessage.classList.remove('hidden');
+    // TEMP
     problemMessage.textContent = 'You cannot submit scores in development mode. (currently you can because i want you test my game thancc)';
     // usernameInput.disabled = true;
     // urlInput.disabled = true;

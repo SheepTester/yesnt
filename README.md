@@ -68,8 +68,6 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
 
 ## To do
 
-- ending for doing the actual YES program
-
 - sounds
 
   - footstep sounds
@@ -83,3 +81,5 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
   - Kleenex(r)
 
   - PE teacher sitting at the back
+
+- minify YESNT

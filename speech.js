@@ -71,21 +71,23 @@ const loadAudio = params.get('load-audio') !== 'false' && options.audio === 2;
 let subtitles, ttsSpeak, ttsPromise;
 
 if (usingTTS) {
-  ttsPromise = new Promise(res => {
-    window.speechSynthesis.onvoiceschanged = () => {
-      const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => v.lang.includes('IN')) || voices[0];
-      ttsSpeak = text => {
-        window.speechSynthesis.cancel();
-        const speech = new SpeechSynthesisUtterance(text);
-        speech.voice = voice;
-        window.speechSynthesis.speak(speech);
-        console.log(text);
-        return speech;
-      };
+  ttsPromise = new Promise(async res => {
+    let voices = window.speechSynthesis.getVoices();
+    if (!voices.length) {
+      await new Promise(res => window.speechSynthesis.onvoiceschanged = res);
+      voices = window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = null;
-      res();
+    }
+    const voice = voices.find(v => v.lang.includes('IN')) || voices[0];
+    ttsSpeak = text => {
+      window.speechSynthesis.cancel();
+      const speech = new SpeechSynthesisUtterance(text);
+      speech.voice = voice;
+      window.speechSynthesis.speak(speech);
+      console.log(text);
+      return speech;
     };
+    res();
   });
 }
 
