@@ -1854,7 +1854,8 @@ document.addEventListener('DOMContentLoaded', e => {
             powers: stats.powerBreaths,
             expands: stats.expansionBreaths,
             accuracy: stats.accuracy
-          })
+          }),
+          msg: 'This is too easy to hack oof'
         })
       })
         .then(r => r.ok ? r.text() : r.text().then(msg => Promise.reject(msg)))
