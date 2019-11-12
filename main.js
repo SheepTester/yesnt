@@ -222,7 +222,7 @@ const tunnelXBounds = {
 };
 const tunnelZBound = MAX_X + DARK_TUNNEL_LENGTH - PLAYER_THICKNESS;
 
-const shaders = params.get('shaders') !== 'false';
+const shaders = params.get('shaders') !== 'false' && options.material !== 2;
 const instructorCanMove = params.get('freeze-instructor') !== 'please';
 const checkPlayer = !params.get('override-player-check');
 const alwaysCheckPlayer = params.get('override-player-check') === 'omniscient';
@@ -567,9 +567,12 @@ audioLoader.load('./sounds/wrong.mp3', buffer => sounds.wrong = buffer);
 audioLoader.load('./sounds/correct.mp3', buffer => sounds.correct = buffer);
 audioLoader.load('./sounds/caught.mp3', buffer => sounds.caught = buffer);
 
-const usingLambert = params.get('lambert') === 'true' || options.lambert;
+const usingLambert = params.get('lambert') === 'true' || options.material === 1;
 const wireframe = params.get('wireframe') === 'true';
-const gameMaterial = usingLambert ? (colour, emissive) => {
+const emissive = params.get('emissive') === 'true' || options.material === 2;
+const gameMaterial = emissive ? (colour, emissive) => {
+  return new THREE.MeshBasicMaterial({color: emissive || colour, wireframe});
+} : usingLambert ? (colour, emissive) => {
   return new THREE.MeshLambertMaterial({color: colour, emissive, wireframe});
 } : (colour, emissive, roughness, metalness) => {
   return new THREE.MeshStandardMaterial({color: colour, emissive, roughness, metalness, wireframe});

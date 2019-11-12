@@ -152,6 +152,14 @@
             <div class="choice-desc">Faster lighting.</div>
           </div>
         </label>
+        <label class="block-choice">
+          <input type="radio" name="material" value="emissive">
+          <div class="block">
+            <div class="choice-name">Emissive material</div>
+            <img src="./images/emissive.png" alt="Screenshot of emissive material lighting">
+            <div class="choice-desc">No lighting, but works on Safari.</div>
+          </div>
+        </label>
       </div>
       <p><img src="./images/audio-icon.svg" alt="Audio icon" class="icon"> This game has audio. Adjust your volume to best suit your environment.</p>
       <div class="checkboxes">
@@ -205,10 +213,10 @@
           options = {};
         }
         if (options.lambert !== undefined) {
-          document.querySelector(`input[name=material][value=${options.lambert ? 'lambert' : 'standard'}]`).checked = true;
+          document.querySelector(`input[name=material][value=${['standard', 'lambert', 'emissive'][options.material]}]`).checked = true;
         }
         if (options.audio !== undefined) {
-          document.querySelector(`input[name=audio][value=${['audio', 'tts', 'none'][options.audio]}]`).checked = true;
+          document.querySelector(`input[name=audio][value=${['none', 'tts', 'audio'][options.audio]}]`).checked = true;
         }
         if (options.abridged !== undefined) {
           document.querySelector(`input[name=abridged][value=${options.abridged ? 'abridged' : 'full'}]`).checked = true;
@@ -217,7 +225,7 @@
           const material = document.querySelector('input[name=material]:checked').value;
           const audio = document.querySelector('input[name=audio]:checked').value;
           const abridged = document.querySelector('input[name=abridged]:checked').value;
-          options.lambert = material === 'lambert';
+          options.material = material === 'emissive' ? 2 : material === 'lambert' ? 1 : 0;
           options.audio = audio === 'audio' ? 2 : audio === 'tts' ? 1 : 0;
           options.abridged = abridged === 'abridged';
           localStorage.setItem('[yesnt] options', JSON.stringify(options));

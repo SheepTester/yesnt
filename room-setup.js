@@ -447,8 +447,8 @@ function createLightRoom() {
   rightWallRightPanel.position.set(ROOM_WIDTH / 2, DOOR_TUNNEL_HEIGHT / 2, -500 + ROOM_LENGTH - DOOR_TUNNEL_PADDING / 2);
   lightRoom.add(rightWallRightPanel);
 
-  const tunnelMaterial = wallMaterial.clone();
-  tunnelMaterial.emissive.set(0x222222);
+  // used to clone from wallMaterial and set emissive, but this broke emissive mode
+  const tunnelMaterial = gameMaterial(0xffffff, 0x222222, 0.9, 0.1);
   const TUNNEL_LENGTH = 150;
   [
     -500 + DOOR_TUNNEL_PADDING + DOOR_TUNNEL_WIDTH / 2,

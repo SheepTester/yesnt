@@ -66,6 +66,8 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
 
 `abdriged=some` will make the YES program do less rounds than usual
 
+`emissive=true` will make all materials use emissive colours
+
 ## To do
 
 - sounds
