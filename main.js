@@ -169,6 +169,8 @@ function displayLeaderboard(scores, headings, myEntry) {
         ? (score.accuracy * 100).toFixed(2) + '%'
         : id === 'distance'
         ? score.distance.toFixed(2)
+        : id === 'duration'
+        ? (score.duration / 1000).toFixed(3)
         : id === 'index'
         ? i + 1
         : score[id];
