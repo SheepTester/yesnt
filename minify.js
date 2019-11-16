@@ -35,7 +35,7 @@ function minify (js) {
 
 const fatScriptRegex = /<script(?:(?: type="text\/javascript")?>([^\0]+?)| src=+"([^"]+)"(?: charset="utf-8")?>)<\/script>/g
 
-(async () => {
+;(async () => {
   const proms = []
   const html = await read(Path.resolve(__dirname, './source.html'))
     .replace(fatScriptRegex, (match, js, path) => {
