@@ -35,35 +35,31 @@ function minify (js) {
 
 const fatScriptRegex = /<script(?:(?: type="text\/javascript")?>([^\0]+?)| src=+"([^"]+)"(?: charset="utf-8")?>)<\/script>/g
 
+const noWhitespaceRegex = /\s*\r?\n\s*/g
+
 ;(async () => {
   const proms = []
-  const html = await read(Path.resolve(__dirname, './source.html'))
+  const html = (await read(Path.resolve(__dirname, './source.html')))
     .replace(fatScriptRegex, (match, js, path) => {
       if (js) {
-        proms.push(Promise.resolve()
-          .then(() => {
-            console.log('Minifying inline JS')
-            return minify(js)
-          }))
+        proms.push(Promise.resolve(js))
       } else {
-        proms.push(read(Path.resolve(__dirname, path))
-          .then(js => {
-            console.log('Minifying ' + path)
-            return minify(js)
-          }))
+        proms.push(read(Path.resolve(__dirname, path)))
       }
       // assumes HTML source does not contain __YEET__
       return '__YEET__'
     })
-  const js = await Promise.all(proms).join('\n')
+  const js = (await Promise.all(proms)).join('\n')
+  console.log('JS obtained; minifying then writing...');
   await Promise.all([
     write(
       Path.resolve(__dirname, './index.html'),
       // replace first __YEET__ with script tag to minified JS and remove the rest
       html.replace('__YEET__', '<script src="./yesnt.min.js" charset="utf-8"></script>')
         .replace(/__YEET__/g, '')
+        .replace(noWhitespaceRegex, '')
     ),
-    write(Path.resolve(__dirname, './yesnt.min.js'), js)
+    write(Path.resolve(__dirname, './yesnt.min.js'), minify(js))
   ])
   console.log('Done!')
 })()
