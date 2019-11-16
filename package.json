@@ -1,0 +1,22 @@
+{
+  "name": "yesnt",
+  "version": "1.0.0",
+  "description": "Your school is pushing their psuedoscientific agenda on you; you must escape before things get worse.",
+  "main": "minify.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SheepTester/yesnt.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SheepTester/yesnt/issues"
+  },
+  "homepage": "https://github.com/SheepTester/yesnt#readme",
+  "dependencies": {
+    "uglify-es": "^3.3.9"
+  }
+}
