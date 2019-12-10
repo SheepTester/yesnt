@@ -78,6 +78,7 @@
   background-size: auto 100%;
   vertical-align: middle;
   margin: -5px;
+  pointer-events: none;
 }
 .pose-icon {
   background-image: url('./images/poses.svg');
@@ -86,4 +87,4 @@
 .sim-power-up { background-position-x: 50%; }
 .sim-power-down { background-position-x: 75%; }
 .sim-reset { background-position-x: 0; }
-.sim-exp-up { background-image: url('./images/'); }
+.sim-exp-up { background-image: url('./images/exp-up.svg'); }
