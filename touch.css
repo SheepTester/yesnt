@@ -67,7 +67,7 @@
   display: inline-block;
 }
 .pressed {
-  background-color: rgba(0, 162, 198, 0.5);
+  background-color: rgba(0, 162, 198, 0.6);
 }
 .touch-icon {
   display: inline-block;
@@ -88,3 +88,4 @@
 .sim-power-down { background-position-x: 75%; }
 .sim-reset { background-position-x: 0; }
 .sim-exp-up { background-image: url('./images/exp-up.svg'); }
+.sim-exp-down { background-image: url('./images/exp-down.svg'); }
