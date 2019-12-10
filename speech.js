@@ -117,7 +117,19 @@ function speaking(instructorVoice) {
     this.isPlaying = false;
   };
   return {
-    speak: (lineID, length = null) => new Promise((res, rej) => {
+    speak: (lineID, length = null) => new Promise(async (res, rej) => {
+      // Wait a frame before starting; otherwise, if the tab is left open,
+      // the game will continue speaking and the player may be able to continue
+      // to the end without any checks.
+      let requestID;
+      const prom = new Promise(res => requestID = window.requestAnimationFrame(res));
+      cancelEarly = () => {
+        window.cancelAnimationFrame(requestID);
+        res(true);
+      };
+      await prom;
+      cancelEarly = null;
+
       const line = lines[lineID];
       if (!line) return rej("Line doesn't exist.");
       if (line[1] && loadAudio) {
