@@ -74,9 +74,10 @@ if (usingTTS) {
   ttsPromise = new Promise(async res => {
     let voices = window.speechSynthesis.getVoices();
     if (!voices.length) {
-      await new Promise(res => window.speechSynthesis.onvoiceschanged = res);
+      await new Promise(res => {
+        window.speechSynthesis.addEventListener('voiceschanged', res, {once: true});
+      });
       voices = window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = null;
     }
     const voice = voices.find(v => v.lang.includes('IN')) || voices[0];
     ttsSpeak = text => {

@@ -274,6 +274,7 @@ function start(minimal = false) {
   if (playerState.canBreathe) setCanBreathe(false);
   playerState.canAsphyxiate = true;
   if (lampHand.children.length) lights.get(lampHand.children[0]).add(lampHand.children[0]);
+  canSimKeys([]);
   removeKeyHint(true); // remove what? yes.
   if (selectedDoor) {
     selectedDoor.remove(doorPopup);
@@ -391,6 +392,7 @@ async function startGame() {
   instructor.face.map = creepyFace;
   playerState.canDie = true;
   setCanBreathe(true);
+  canSimKeys(['get-up', 'phone', 'arms']);
   addKeyHint('phone');
   addKeyHint('get-up');
   if (!skipExpansion) {
@@ -936,7 +938,7 @@ let currentKeyHints;
 function addKeyHint(keyHint, overwrite = false) {
   if (currentKeyHints.has(keyHint) && !overwrite) return;
   clearTimeout(keyHintTimeout);
-  keyHintText.style.display = 'block';
+  keyHintText.classList.remove('hidden');
   if (overwrite) {
     currentKeyHints = new Set([keyHint]);
     keyHintIndex = 0;
@@ -954,7 +956,7 @@ function removeKeyHint(keyHint) {
     keyHintIndex = keyHintIndex % currentKeyHints.size;
     showKeyHint();
   } else {
-    keyHintText.style.display = null;
+  keyHintText.classList.add('hidden');
     if (keyHint === true) currentKeyHints = new Set();
   }
 }
@@ -1038,6 +1040,8 @@ const onKeyPress = {
     instructor.limbs[0].limb.rotation.x = instructor.limbs[1].limb.rotation.x = Math.PI * 1.4;
     instructor.limbs[0].forearm.rotation.x = instructor.limbs[1].forearm.rotation.x = Math.PI * 0.1;
     if (interruptInstructor) interruptInstructor('getting up');
+    document.body.classList.add('can-move');
+    canSimKeys(['phone']);
     addKeyHint('phone', true);
     addKeyHint('breathe');
     addKeyHint('move');
@@ -1157,6 +1161,9 @@ function die() {
   instructor.moving = false;
   setCanBreathe(false);
   moving = 'caught';
+  document.body.classList.remove('can-move');
+  canSimKeys([]);
+  removeKeyHint(true);
   if (interruptInstructor) interruptInstructor('caught');
   playerState.canDie = false;
   stats.accuracy = 1 - stats.fails / stats.checks;
@@ -1589,10 +1596,12 @@ function animate() {
         if (keys['pick-up']) {
           lampHand.add(selectedLight);
         } else if (!playerState.showedPickupHint) {
+          canSimKeys(['phone', 'pick-up']);
           addKeyHint('pick-up');
           playerState.showedPickupHint = true;
         }
       } else if (playerState.showedPickupHint) {
+        canSimKeys(['phone']);
         removeKeyHint('pick-up');
         playerState.showedPickupHint = false;
       }
@@ -2048,6 +2057,8 @@ document.addEventListener('DOMContentLoaded', e => {
       }
     });
     currentAnimation.setTrack([-150, 30, -350], [-15, 15, -440], -0.2);
+    document.body.classList.remove('can-move');
+    canSimKeys(['skip-intro']);
     addKeyHint('skip-intro');
     if (!dontContinue) await speak('intro1');
     currentAnimation.setTrack([5, 10, -447], [1, 5, -452], 0.1);
@@ -2068,6 +2079,7 @@ document.addEventListener('DOMContentLoaded', e => {
     playerState.canAsphyxiate = false;
     moving = 'sitting';
 
+    canSimKeys(['skip-intro', 'arms']);
     addKeyHint('skip-intro');
     addKeyHint('breathe');
     ({speak, interrupt} = speaking(instructorVoice));
@@ -2099,6 +2111,7 @@ document.addEventListener('DOMContentLoaded', e => {
         await speak(line);
       }
     }
+    canSimKeys([]);
     removeKeyHint('skip-intro');
     skipIntro = null;
     if (params.get('stay-intro') !== 'true') {

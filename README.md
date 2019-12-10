@@ -70,6 +70,8 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
 
 ## To do
 
+- better touch controls
+
 - sounds
 
   - footstep sounds
@@ -78,10 +80,6 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
 
 - minor touches
 
-  - better touch controls
-
   - Kleenex(r)
 
   - PE teacher sitting at the back
-
-- minify YESNT

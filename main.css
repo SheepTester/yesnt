@@ -37,7 +37,6 @@ canvas {
   max-width: 500px;
 }
 #key-hint {
-  display: none;
   background-color: rgba(0, 0, 0, 0.3);
   font-size: 12px;
   padding: 5px 10px;
@@ -238,7 +237,7 @@ canvas {
   display: block;
   width: 40px;
   height: 45px;
-  background-image: url(./images/poses.svg);
+  background-image: url('./images/poses.svg');
   background-size: auto 100%;
   background-position-x: 0;
 }

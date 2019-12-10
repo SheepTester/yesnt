@@ -1,9 +1,27 @@
 let usingTouch = false;
 let touchMovement = null;
+let canSimKeys;
 
 function initTouch() {
   const touchUI = document.getElementById('touch-ui');
   const touchCircle = document.getElementById('touch-circle');
+
+  const simKeys = {}
+  for (const simKey of document.getElementsByClassName('touch-button')) {
+    simKeys[simKey.dataset.simKey] = simKey
+  }
+  canSimKeys = (keys = null) => {
+    if (keys && keys.includes('arms')) {
+      keys.push('exp-up', 'exp-down', 'power-up', 'power-down', 'reset')
+    }
+    for (const [simKey, elem] of Object.entries(simKeys)) {
+      if (!keys || keys.includes(simKey)) {
+        elem.classList.add('available')
+      } else {
+        elem.classList.remove('available')
+      }
+    }
+  }
 
   let cameraRotator = null;
   let movement = null;
@@ -28,6 +46,7 @@ function initTouch() {
           touchCircle.classList.add('moving');
           calcMovementFromTouch(touch);
         } else if (touch.target.dataset.simKey) {
+          touch.target.classList.add('pressed');
           const key = touch.target.dataset.simKey;
           keys[key] = true;
           if (onKeyPress[key]) onKeyPress[key]();
@@ -70,6 +89,7 @@ function initTouch() {
         movement = null;
         touchCircle.classList.remove('moving');
       } else if (touch.target.dataset.simKey) {
+        touch.target.classList.remove('pressed');
         keys[touch.target.dataset.simKey] = false;
       }
     }

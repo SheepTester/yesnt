@@ -10,6 +10,9 @@
 .using-touch #touch-ui {
   display: block;
 }
+.using-touch #key-hint {
+  display: none;
+}
 
 #touch-circle {
   position: absolute;
@@ -21,6 +24,13 @@
   height: 80px;
   background-color: rgba(0, 0, 0, 0.2);
   border: 3px solid rgba(255, 255, 255, 0.1);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.can-move #touch-circle {
+  opacity: 1;
+  pointer-events: all;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
 }
 .moving::after {
   content: '';
@@ -42,6 +52,7 @@
   white-space: nowrap;
 }
 .touch-button {
+  display: none;
   border: 3px solid rgba(0, 162, 198, 0.3);
   color: white;
   background-color: rgba(0, 162, 198, 0.3);
@@ -52,3 +63,27 @@
   font-size: 16px;
   cursor: pointer;
 }
+.available {
+  display: inline-block;
+}
+.pressed {
+  background-color: rgba(0, 162, 198, 0.5);
+}
+.touch-icon {
+  display: inline-block;
+  width: 32px;
+  height: 36px;
+  font-size: 0;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  vertical-align: middle;
+  margin: -5px;
+}
+.pose-icon {
+  background-image: url('./images/poses.svg');
+}
+.sim-phone { background-position-x: 25%; }
+.sim-power-up { background-position-x: 50%; }
+.sim-power-down { background-position-x: 75%; }
+.sim-reset { background-position-x: 0; }
+.sim-exp-up { background-image: url('./images/'); }

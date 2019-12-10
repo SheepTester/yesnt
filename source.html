@@ -96,7 +96,7 @@
   </head>
   <body class="hide-lungs hide-cant-jump hide-end hide-options hide-pose hide-dev">
     <p id="subtitles"></p>
-    <p id="key-hint"></p>
+    <p id="key-hint" class="hidden"></p>
     <p id="hint"></p>
     <div class="death-note hide-death-note"><img src="./images/death-icon.svg" alt=":(">You failed to <span id="death-reason">breathe</span>.</div>
     <div class="note">
@@ -110,7 +110,13 @@
       <div class="button-wrapper">
         <button class="touch-target touch-button" data-sim-key="skip-intro">skip intro</button>
         <button class="touch-target touch-button" data-sim-key="get-up">get up</button>
-        <button class="touch-target touch-button" data-sim-key="phone">phone out/away</button>
+        <button class="touch-target touch-button" data-sim-key="phone"><span class="touch-icon pose-icon sim-phone">phone out/away</span></button>
+        <button class="touch-target touch-button" data-sim-key="exp-up"><span class="touch-icon sim-exp-up">expansion up</span></button>
+        <button class="touch-target touch-button" data-sim-key="exp-down"><span class="touch-icon sim-exp-down">expansion down</span></button>
+        <button class="touch-target touch-button" data-sim-key="power-up"><span class="touch-icon pose-icon sim-power-up">power up</span></button>
+        <button class="touch-target touch-button" data-sim-key="power-down"><span class="touch-icon pose-icon sim-power-down">power down</span></button>
+        <button class="touch-target touch-button" data-sim-key="reset"><span class="touch-icon pose-icon sim-reset">reset pose</span></button>
+        <button class="touch-target touch-button" data-sim-key="pick-up">pick up light</button>
       </div>
     </div>
     <div id="progress-bar"></div>
