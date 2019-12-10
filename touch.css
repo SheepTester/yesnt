@@ -5,7 +5,7 @@
   width: 100%;
   height: 100%;
   display: none;
-  z-index: 1;
+  z-index: 2;
 }
 .using-touch #touch-ui {
   display: block;
@@ -89,3 +89,43 @@
 .sim-reset { background-position-x: 0; }
 .sim-exp-up { background-image: url('./images/exp-up.svg'); }
 .sim-exp-down { background-image: url('./images/exp-down.svg'); }
+
+.using-touch #lung-indicator {
+  margin: 80px;
+  transform: scale(1.5);
+}
+.using-touch .pose-indicator {
+  bottom: 40px;
+  right: 160px;
+}
+#breathe-interaction {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 160px;
+  height: 160px;
+  flex-direction: column;
+}
+.hide-lungs #breathe-interaction {
+  display: none;
+}
+.breath-direction {
+  flex: auto;
+  pointer-events: none;
+  margin: 10px;
+}
+.inhale-label {
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
+  margin-bottom: 0;
+}
+.exhale-label {
+  border-bottom-left-radius: 25px;
+  border-bottom-right-radius: 25px;
+  margin-top: 0;
+}
+.inhaling .inhale-label,
+.exhaling .exhale-label {
+  background-color: rgba(255, 255, 255, 0.2);
+}

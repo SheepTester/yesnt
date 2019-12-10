@@ -5,26 +5,28 @@ let canSimKeys;
 function initTouch() {
   const touchUI = document.getElementById('touch-ui');
   const touchCircle = document.getElementById('touch-circle');
+  const breathePad = document.getElementById('breathe-interaction');
 
   const simKeys = {}
   for (const simKey of document.getElementsByClassName('touch-button')) {
-    simKeys[simKey.dataset.simKey] = simKey
+    simKeys[simKey.dataset.simKey] = simKey;
   }
   canSimKeys = (keys = null) => {
     if (keys && keys.includes('arms')) {
-      keys.push('exp-up', 'exp-down', 'power-up', 'power-down', 'reset')
+      keys.push('exp-up', 'exp-down', 'power-up', 'power-down', 'reset');
     }
     for (const [simKey, elem] of Object.entries(simKeys)) {
       if (!keys || keys.includes(simKey)) {
-        elem.classList.add('available')
+        elem.classList.add('available');
       } else {
-        elem.classList.remove('available')
+        elem.classList.remove('available');
       }
     }
   }
 
   let cameraRotator = null;
   let movement = null;
+  let breather = null;
   function calcMovementFromTouch(touch) {
     touchMovement = new THREE.Vector2((touch.clientX - movement.centreX) / 40, (touch.clientY - movement.centreY) / 40);
     if (touchMovement.lengthSq() > 1) touchMovement.normalize();
@@ -45,6 +47,24 @@ function initTouch() {
           };
           touchCircle.classList.add('moving');
           calcMovementFromTouch(touch);
+        } else if (touch.target === breathePad) {
+          breathePad.classList.add('breathing');
+          const rect = breathePad.getBoundingClientRect();
+          if (touch.clientY - rect.top < rect.height / 2) {
+            keys.inhale = true;
+            keys.exhale = false;
+            breathePad.classList.add('inhaling');
+            breathePad.classList.remove('exhaling');
+          } else {
+            keys.inhale = false;
+            keys.exhale = true;
+            breathePad.classList.remove('inhaling');
+            breathePad.classList.add('exhaling');
+          }
+          breather = {
+            identifier: touch.identifier,
+            rect
+          };
         } else if (touch.target.dataset.simKey) {
           touch.target.classList.add('pressed');
           const key = touch.target.dataset.simKey;
@@ -70,6 +90,18 @@ function initTouch() {
         cameraRotator.lastY = touch.clientY;
       } else if (movement && movement.identifier === touch.identifier) {
         calcMovementFromTouch(touch);
+      } else if (breather && breather.identifier === touch.identifier) {
+        if (touch.clientY - breather.rect.top < breather.rect.height / 2) {
+          keys.inhale = true;
+          keys.exhale = false;
+          breathePad.classList.add('inhaling');
+          breathePad.classList.remove('exhaling');
+        } else {
+          keys.inhale = false;
+          keys.exhale = true;
+          breathePad.classList.remove('inhaling');
+          breathePad.classList.add('exhaling');
+        }
       }
     }
     e.preventDefault();
@@ -88,6 +120,13 @@ function initTouch() {
         touchMovement = null;
         movement = null;
         touchCircle.classList.remove('moving');
+      } else if (breather && breather.identifier === touch.identifier) {
+        keys.inhale = false;
+        keys.exhale = false;
+        breathePad.classList.remove('breathing');
+        breathePad.classList.remove('inhaling');
+        breathePad.classList.remove('exhaling');
+        breather = null;
       } else if (touch.target.dataset.simKey) {
         touch.target.classList.remove('pressed');
         keys[touch.target.dataset.simKey] = false;
