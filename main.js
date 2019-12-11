@@ -1605,6 +1605,10 @@ function animate() {
         removeKeyHint('pick-up');
         playerState.showedPickupHint = false;
       }
+    } else if (playerState.showedPickupHint) {
+      canSimKeys(['phone']);
+      removeKeyHint('pick-up');
+      playerState.showedPickupHint = false;
     }
 
     raycaster.setFromCamera(new THREE.Vector2(), camera);

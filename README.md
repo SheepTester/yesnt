@@ -72,6 +72,12 @@ Sad face icon from [Material Design](https://material.io/resources/icons/?search
 
 - better touch controls
 
+  - labels (INHALE, EXHALE) on breathing
+
+  - numpad
+
+  - also I don't think the pick up light thing works oof
+
 - sounds
 
   - footstep sounds

@@ -62,12 +62,14 @@
   font: inherit;
   font-size: 16px;
   cursor: pointer;
+  transition: all .2s;
 }
 .available {
   display: inline-block;
 }
 .pressed {
   background-color: rgba(0, 162, 198, 0.6);
+  transform: scale(1.2);
 }
 .touch-icon {
   display: inline-block;
