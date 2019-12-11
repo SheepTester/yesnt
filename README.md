@@ -24,7 +24,7 @@ Caught sound by [onderwish](https://freesound.org/people/onderwish/sounds/469141
 
 Introduction is read by [Justin](https://ttsmp3.com/).
 
-Sad face icon and the arrow icons from [Material Design](https://material.io/resources/icons/?search=social&icon=mood_bad&style=baseline).
+Sad face and settings icon and the arrow icons from [Material Design](https://material.io/resources/icons/?search=social&icon=mood_bad&style=baseline).
 
 ## URL parameters
 
@@ -70,11 +70,7 @@ Sad face icon and the arrow icons from [Material Design](https://material.io/res
 
 ## To do
 
-- better touch controls
-
-  - numpad
-
-  - open options
+- touch numpad
 
 - sounds
 

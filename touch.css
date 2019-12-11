@@ -91,6 +91,17 @@
 .sim-reset { background-position-x: 0; }
 .sim-exp-up { background-image: url('./images/exp-up.svg'); }
 .sim-exp-down { background-image: url('./images/exp-down.svg'); }
+.options-btn {
+  border-color: rgba(127, 127, 127, 0.3);
+  background-color: rgba(127, 127, 127, 0.3);
+}
+.options-btn.pressed {
+  background-color: rgba(127, 127, 127, 0.6);
+}
+.options-icon {
+  width: 36px;
+  background-image: url('./images/settings-icon.svg');
+}
 
 .using-touch #lung-indicator {
   margin: 80px;

@@ -8,7 +8,7 @@ function initTouch() {
   const breathePad = document.getElementById('breathe-interaction');
 
   const simKeys = {}
-  for (const simKey of document.getElementsByClassName('touch-button')) {
+  for (const simKey of document.querySelectorAll('[data-sim-key]')) {
     simKeys[simKey.dataset.simKey] = simKey;
   }
   canSimKeys = (keys = null) => {
@@ -27,6 +27,7 @@ function initTouch() {
   let cameraRotator = null;
   let movement = null;
   let breather = null;
+  let optionClick = null;
   function calcMovementFromTouch(touch) {
     touchMovement = new THREE.Vector2((touch.clientX - movement.centreX) / 40, (touch.clientY - movement.centreY) / 40);
     if (touchMovement.lengthSq() > 1) touchMovement.normalize();
@@ -38,7 +39,10 @@ function initTouch() {
     if (!usingTouch) {
       usingTouch = true;
       document.body.classList.add('using-touch');
-      document.addEventListener('touchend', userInteracted, {once: true})
+      document.addEventListener('touchend', userInteracted, {once: true});
+    }
+    if (!document.body.classList.contains('hide-options')) {
+      document.body.classList.add('hide-options');
     }
     document.body.classList.add('hide-options');
     for (const touch of e.changedTouches) {
@@ -75,6 +79,9 @@ function initTouch() {
           const key = touch.target.dataset.simKey;
           keys[key] = true;
           if (onKeyPress[key]) onKeyPress[key]();
+        } else if (touch.target.classList.contains('options-btn')) {
+          touch.target.classList.add('pressed');
+          optionClick = touch.identifier;
         }
       } else if (!cameraRotator) {
         cameraRotator = {
@@ -130,6 +137,10 @@ function initTouch() {
       } else if (touch.target.dataset.simKey) {
         touch.target.classList.remove('pressed');
         keys[touch.target.dataset.simKey] = false;
+      } else if (optionClick === touch.identifier) {
+        touch.target.classList.remove('pressed');
+        document.body.classList.remove('hide-options');
+        optionClick = null;
       }
     }
     e.preventDefault();
