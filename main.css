@@ -218,11 +218,10 @@ canvas {
 .pose-indicator {
   position: fixed;
   z-index: 1;
-  bottom: 0;
-  right: 80px;
+  bottom: 80px;
+  right: 15px;
   background-color: rgba(0, 0, 0, 0.3);
   padding: 5px;
-  margin: 7px;
   border-radius: 10px;
 }
 .pose-indicator::before {
